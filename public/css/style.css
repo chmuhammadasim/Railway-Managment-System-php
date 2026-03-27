@@ -72,6 +72,9 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+/* Adjust brand when using Bootstrap navbar-brand */
+.navbar-brand .fw-bold { color: white; }
+.navbar-brand .fs-4 { line-height: 1; }
 
 .navbar .nav-links {
     display: flex;
