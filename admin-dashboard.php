@@ -41,36 +41,15 @@ $pending_payments = $payment_obj->getAllPayments(['payment_status' => 'pending']
 if (!$pending_payments) $pending_payments = array();
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Railway Management System</title>
-    <link rel="stylesheet" href="public/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script defer src="public/js/admin-charts.js"></script>
-    <script defer src="public/js/search-filter.js"></script>
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar admin-navbar">
-        <div class="container">
-            <div class="logo">
-                <h1>🚂 Railway System - Admin</h1>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="admin-dashboard.php">Dashboard</a></li>
-                <li><a href="manage-trains.php">Trains</a></li>
-                <li><a href="manage-routes.php">Routes</a></li>
-                <li><a href="manage-bookings.php">Bookings</a></li>
-                <li><a href="manage-payments.php">Payments</a></li>
-                <li><a href="manage-users.php">Users</a></li>
-                <li><a href="logout.php" class="btn-logout">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
+<?php
+$pageTitle = 'Admin Dashboard - Railway Management System';
+$extraScripts = [
+    'https://cdn.jsdelivr.net/npm/chart.js',
+    'public/js/admin-charts.js'
+];
+require_once 'inc/header.php';
+
+?>
 
     <!-- Admin Dashboard Section -->
     <section class="admin-dashboard">

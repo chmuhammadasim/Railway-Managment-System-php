@@ -1113,6 +1113,37 @@ body {
     }
 }
 
+/* Signup enhancements */
+.signup-box {
+    border: 1px solid rgba(0,0,0,0.05);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+}
+
+.strength-meter {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.strength-meter .bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+    transition: width 220ms ease-in-out;
+}
+.strength-text { color: #6b7280; }
+
+.password-toggle {
+    border-left: 1px solid rgba(0,0,0,0.06);
+}
+
+.match-text { font-size: 0.9rem; }
+
+/* Slight adjustments for Bootstrap + existing styles */
+.form-label { font-weight: 600; color: var(--dark-color); }
+.form-control { border-radius: 8px; }
+
+
 /* Dark Mode Support (Optional) */
 @media (prefers-color-scheme: dark) {
     /* Uncomment to enable dark mode */

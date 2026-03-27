@@ -13,13 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $db->connect();
     
     $user = new User($db);
-    $username = isset($_POST['username']) ? $_POST['username'] : '';
-    $email = isset($_POST['email']) ? $_POST['email'] : '';
+    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
     $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
-    $full_name = isset($_POST['full_name']) ? $_POST['full_name'] : '';
-    $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
-    $address = isset($_POST['address']) ? $_POST['address'] : '';
+    $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
+    $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+    $address = isset($_POST['address']) ? trim($_POST['address']) : '';
 
     // Validate inputs
     if (empty($username) || empty($email) || empty($password) || empty($full_name)) {
@@ -39,99 +39,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Railway Management System</title>
-    <link rel="stylesheet" href="public/css/style.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo">
-                <h1>🚂 Railway System</h1>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="login.php" class="btn-login">Login</a></li>
-                <li><a href="signup.php" class="btn-signup">Sign Up</a></li>
-            </ul>
-        </div>
-    </nav>
+$extraScripts = ['public/js/signup.js'];
+$pageTitle = 'Sign Up - Railway Management System';
+require_once 'inc/header.php';
+?>
 
     <!-- Signup Section -->
     <section class="auth-section">
-        <div class="auth-container">
-            <div class="auth-box signup-box">
-                <h2>Create Your Account</h2>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6">
+                    <div class="auth-box signup-box p-4">
+                        <h2 class="mb-3">Create Your Account</h2>
 
-                <?php if ($error_message): ?>
-                    <div class="alert alert-error"><?php echo $error_message; ?></div>
-                <?php endif; ?>
+                        <?php if ($error_message): ?>
+                            <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                        <?php endif; ?>
 
-                <?php if ($success_message): ?>
-                    <div class="alert alert-success"><?php echo $success_message; ?></div>
-                <?php endif; ?>
+                        <?php if ($success_message): ?>
+                            <div class="alert alert-success"><?php echo $success_message; ?></div>
+                        <?php endif; ?>
 
-                <form method="POST" action="signup.php">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="full_name">Full Name *</label>
-                            <input type="text" id="full_name" name="full_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="username">Username *</label>
-                            <input type="text" id="username" name="username" required>
+                        <form method="POST" action="signup.php" id="signupForm" novalidate>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="full_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="e.g., John Doe" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">Username *</label>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="choose-a-username" required>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="you@domain.com" required>
+                                </div>
+
+                                <div class="col-md-6 position-relative">
+                                    <label for="password" class="form-label">Password *</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter a secure password" required aria-describedby="passwordHelp">
+                                        <button type="button" class="btn btn-outline-secondary password-toggle" data-target="password" aria-label="Show password">Show</button>
+                                    </div>
+                                    <div id="passwordHelp" class="form-text">Minimum 6 characters. Use letters, numbers & symbols for strength.</div>
+                                    <div class="strength-meter mt-2" aria-hidden="true">
+                                        <div class="bar"></div>
+                                        <div class="strength-text mt-1 small"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 position-relative">
+                                    <label for="confirm_password" class="form-label">Confirm Password *</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
+                                        <button type="button" class="btn btn-outline-secondary password-toggle" data-target="confirm_password" aria-label="Show password">Show</button>
+                                    </div>
+                                    <div class="match-text mt-1 small text-muted"></div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="+91 98765 43210">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="address" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="address" name="address" placeholder="City, State">
+                                </div>
+
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="auth-footer mt-3 text-center">
+                            <p class="mb-0">Already have an account? <a href="login.php">Login Here</a></p>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">Password *</label>
-                            <input type="password" id="password" name="password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm_password">Confirm Password *</label>
-                            <input type="password" id="confirm_password" name="confirm_password" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone</label>
-                            <input type="tel" id="phone" name="phone">
-                        </div>
-                        <div class="form-group">
-                            <label for="address">Address</label>
-                            <input type="text" id="address" name="address">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Create Account</button>
-                </form>
-
-                <div class="auth-footer">
-                    <p>Already have an account? <a href="login.php">Login Here</a></p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Railway Management System. All rights reserved.</p>
-        </div>
-    </footer>
-</body>
-</html>
+<?php require_once 'inc/footer.php'; ?>

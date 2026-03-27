@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $db->connect();
     
     $user = new User($db);
-    $username = isset($_POST['username']) ? $_POST['username'] : '';
+    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
 
     $result = $user->login($username, $password);
@@ -25,30 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error_message = $result['message'];
     }
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Railway Management System</title>
-    <link rel="stylesheet" href="public/css/style.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo">
-                <h1>🚂 Railway System</h1>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="login.php" class="btn-login">Login</a></li>
-                <li><a href="signup.php" class="btn-signup">Sign Up</a></li>
-            </ul>
-        </div>
-    </nav>
+$pageTitle = 'Login - Railway Management System';
+require_once 'inc/header.php';
+?>
 
     <!-- Login Section -->
     <section class="auth-section">
@@ -81,11 +61,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Railway Management System. All rights reserved.</p>
-        </div>
-    </footer>
-</body>
-</html>
+<?php require_once 'inc/footer.php'; ?>
+

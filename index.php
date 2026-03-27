@@ -1,6 +1,4 @@
 <?php
-// index.php - Home Page
-
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
@@ -15,37 +13,10 @@ $routes = $train->getAllRoutes();
 // Get unique cities for search
 $citiesQuery = "SELECT DISTINCT departure_city AS city FROM routes UNION SELECT DISTINCT arrival_city AS city FROM routes";
 $cities = $db->select($citiesQuery);
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Management System</title>
-    <link rel="stylesheet" href="public/css/style.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo">
-                <h1>🚂 Railway System</h1>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">Home</a></li>
-                <?php if (User::isLoggedIn()): ?>
-                    <li><a href="dashboard.php">Dashboard</a></li>
-                    <li><a href="bookings.php">My Bookings</a></li>
-                    <li><a href="profile.php">Profile</a></li>
-                    <li><a href="logout.php" class="btn-logout">Logout</a></li>
-                <?php else: ?>
-                    <li><a href="login.php" class="btn-login">Login</a></li>
-                    <li><a href="signup.php" class="btn-signup">Sign Up</a></li>
-                <?php endif; ?>
-            </ul>
-        </div>
-    </nav>
+$pageTitle = 'Railway Management System';
+require_once 'inc/header.php';
+?>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -133,11 +104,5 @@ $cities = $db->select($citiesQuery);
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Railway Management System. All rights reserved.</p>
-        </div>
-    </footer>
-</body>
-</html>
+<?php require_once 'inc/footer.php'; ?>
+

@@ -56,41 +56,10 @@ if ($bookings) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - Railway Management System</title>
-    <link rel="stylesheet" href="public/css/style.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo">
-                <h1>🚂 Railway System</h1>
-            </div>
-            <ul class="nav-links">
-                            <li><a href="index.php">Home</a></li>
-                            <li><a href="dashboard.php">Dashboard</a></li>
-                            <li><a href="bookings.php">My Bookings</a></li>
-                            <li><a href="profile.php">Profile</a></li>
-                            <li style="position:relative;">
-                                <a href="notifications.php" style="position:relative;">
-                                    <span style="font-size:1.3em;">🔔</span>
-                                    <?php
-                                    // Notification count (notifications table not yet implemented)
-                                    $notif_count = 0;
-                                    if ($notif_count > 0): ?>
-                                    <span style="position:absolute;top:-6px;right:-8px;background:var(--danger-color);color:#fff;border-radius:50%;padding:2px 7px;font-size:0.8em;"> <?= $notif_count ?> </span>
-                                    <?php endif; ?>
-                                </a>
-                            </li>
-                            <li><a href="logout.php" class="btn-logout">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
+<?php
+$pageTitle = 'User Dashboard - Railway Management System';
+require_once 'inc/header.php';
+?>
 
     <!-- Dashboard Section -->
     <section class="dashboard-section">
@@ -181,11 +150,4 @@ if ($bookings) {
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Railway Management System. All rights reserved.</p>
-        </div>
-    </footer>
-</body>
-</html>
+<?php require_once 'inc/footer.php'; ?>
