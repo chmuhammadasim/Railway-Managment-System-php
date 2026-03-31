@@ -25,15 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     if ($action == 'add') {
         $data = array(
-            'train_id' => $_POST['train_id'],
-            'departure_city' => $_POST['departure_city'],
-            'arrival_city' => $_POST['arrival_city'],
+            'train_id' => (int)$_POST['train_id'],
+            'departure_city' => trim($_POST['departure_city']),
+            'arrival_city' => trim($_POST['arrival_city']),
             'departure_time' => $_POST['departure_time'],
             'arrival_time' => $_POST['arrival_time'],
-            'distance_km' => $_POST['distance_km'],
-            'base_fare' => $_POST['base_fare'],
+            'distance_km' => (float)$_POST['distance_km'],
+            'base_fare' => (float)$_POST['base_fare'],
             'journey_date' => $_POST['journey_date'],
-            'available_seats' => $_POST['available_seats'],
+            'available_seats' => (int)$_POST['available_seats'],
             'status' => $_POST['status']
         );
         
@@ -41,6 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $success_message = 'Route added successfully!';
         } else {
             $error_message = 'Failed to add route!';
+        }
+    } elseif ($action == 'edit') {
+        $route_id = (int)$_POST['route_id'];
+        $data = array(
+            'train_id'       => (int)$_POST['train_id'],
+            'departure_city' => trim($_POST['departure_city']),
+            'arrival_city'   => trim($_POST['arrival_city']),
+            'departure_time' => $_POST['departure_time'],
+            'arrival_time'   => $_POST['arrival_time'],
+            'distance_km'    => (float)$_POST['distance_km'],
+            'base_fare'      => (float)$_POST['base_fare'],
+            'journey_date'   => $_POST['journey_date'],
+            'available_seats'=> (int)$_POST['available_seats'],
+            'status'         => $_POST['status']
+        );
+        if ($db->update('routes', 'route_id', $route_id, $data)) {
+            $success_message = 'Route updated successfully!';
+        } else {
+            $error_message = 'Failed to update route!';
         }
     } elseif ($action == 'delete') {
         $route_id = $_POST['route_id'];
@@ -83,6 +102,7 @@ if (!$all_trains) $all_trains = array();
                 <li><a href="manage-trains.php">Trains</a></li>
                 <li><a href="manage-routes.php" class="active">Routes</a></li>
                 <li><a href="manage-users.php">Users</a></li>
+                <li><a href="reports.php">Reports</a></li>
                 <li><a href="logout.php" class="btn-logout">Logout</a></li>
             </ul>
         </div>
@@ -140,6 +160,7 @@ if (!$all_trains) $all_trains = array();
                                 </span>
                             </td>
                             <td>
+                                <button onclick='editRoute(<?= json_encode($route) ?>)' class="btn-edit">Edit</button>
                                 <button onclick="deleteRoute(<?php echo $route['route_id']; ?>)" class="btn-delete">Delete</button>
                             </td>
                         </tr>
@@ -231,6 +252,71 @@ if (!$all_trains) $all_trains = array();
         </div>
     </div>
 
+    <!-- Edit Route Modal -->
+    <div id="editRouteModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h3>Edit Route</h3>
+
+            <form method="POST" action="manage-routes.php">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="route_id" id="edit_route_id">
+
+                <div class="form-group">
+                    <label>Select Train</label>
+                    <select id="edit_train_id" name="train_id" required>
+                        <option value="">-- Select Train --</option>
+                        <?php foreach ($all_trains as $train): ?>
+                        <option value="<?= $train['train_id'] ?>"><?= htmlspecialchars($train['train_name']) ?> (<?= htmlspecialchars($train['train_number']) ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Departure City</label>
+                    <input type="text" id="edit_departure_city" name="departure_city" required>
+                </div>
+                <div class="form-group">
+                    <label>Arrival City</label>
+                    <input type="text" id="edit_arrival_city" name="arrival_city" required>
+                </div>
+                <div class="form-group">
+                    <label>Departure Time</label>
+                    <input type="time" id="edit_departure_time" name="departure_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Arrival Time</label>
+                    <input type="time" id="edit_arrival_time" name="arrival_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Journey Date</label>
+                    <input type="date" id="edit_journey_date" name="journey_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Distance (KM)</label>
+                    <input type="number" step="0.01" id="edit_distance_km" name="distance_km" required>
+                </div>
+                <div class="form-group">
+                    <label>Base Fare (Rs.)</label>
+                    <input type="number" step="0.01" id="edit_base_fare" name="base_fare" required>
+                </div>
+                <div class="form-group">
+                    <label>Available Seats</label>
+                    <input type="number" id="edit_available_seats" name="available_seats" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="edit_status" name="status" required>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">Update Route</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
@@ -252,6 +338,21 @@ if (!$all_trains) $all_trains = array();
             document.getElementById('routeModal').style.display = 'block';
         }
 
+        function editRoute(route) {
+            document.getElementById('edit_route_id').value        = route.route_id;
+            document.getElementById('edit_train_id').value        = route.train_id;
+            document.getElementById('edit_departure_city').value  = route.departure_city;
+            document.getElementById('edit_arrival_city').value    = route.arrival_city;
+            document.getElementById('edit_departure_time').value  = route.departure_time;
+            document.getElementById('edit_arrival_time').value    = route.arrival_time;
+            document.getElementById('edit_journey_date').value    = route.journey_date;
+            document.getElementById('edit_distance_km').value     = route.distance_km;
+            document.getElementById('edit_base_fare').value       = route.base_fare;
+            document.getElementById('edit_available_seats').value = route.available_seats;
+            document.getElementById('edit_status').value          = route.status;
+            document.getElementById('editRouteModal').style.display = 'block';
+        }
+
         function deleteRoute(routeId) {
             document.getElementById('deleteRouteId').value = routeId;
             document.getElementById('deleteModal').style.display = 'block';
@@ -261,20 +362,22 @@ if (!$all_trains) $all_trains = array();
             document.getElementById('routeModal').style.display = 'none';
         }
 
+        function closeEditModal() {
+            document.getElementById('editRouteModal').style.display = 'none';
+        }
+
         function closeDeleteModal() {
             document.getElementById('deleteModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside
+        // Close modals when clicking outside
         window.onclick = function(event) {
-            const routeModal = document.getElementById('routeModal');
-            const deleteModal = document.getElementById('deleteModal');
-            if (event.target == routeModal) {
-                routeModal.style.display = 'none';
-            }
-            if (event.target == deleteModal) {
-                deleteModal.style.display = 'none';
-            }
+            const routeModal     = document.getElementById('routeModal');
+            const editRouteModal = document.getElementById('editRouteModal');
+            const deleteModal    = document.getElementById('deleteModal');
+            if (event.target == routeModal)     routeModal.style.display = 'none';
+            if (event.target == editRouteModal) editRouteModal.style.display = 'none';
+            if (event.target == deleteModal)    deleteModal.style.display = 'none';
         }
     </script>
 

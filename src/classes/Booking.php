@@ -94,30 +94,143 @@ class Booking {
         return false;
     }
 
-    // Cancel booking
+    // Cancel booking immediately (Admin use or internal)
     public function cancelBooking($booking_id, $reason = '') {
         $booking = $this->getBookingById($booking_id);
-        
+
         if (!$booking) {
             return array('success' => false, 'message' => 'Booking not found!');
         }
 
-        // Update booking status
-        $this->db->update('bookings', 'booking_id', $booking_id, 
+        $this->db->update('bookings', 'booking_id', $booking_id,
                           array('booking_status' => BOOKING_CANCELLED));
 
-        // Release seats
         $query = "SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}";
         $seats = $this->db->select($query);
-        
+
         if ($seats) {
             foreach ($seats as $seat) {
-                $this->db->update('seats', 'seat_id', $seat['seat_id'], 
+                $this->db->update('seats', 'seat_id', $seat['seat_id'],
                                   array('status' => 'available'));
             }
         }
 
+        // Restore available_seats on the route
+        $this->db->query("UPDATE routes SET available_seats = available_seats + {$booking['number_of_seats']} WHERE route_id = {$booking['route_id']}");
+
         return array('success' => true, 'message' => 'Booking cancelled successfully!');
+    }
+
+    // Request cancellation with 24-hour time restriction (Passenger use)
+    public function requestCancellation($booking_id, $user_id = null) {
+        $booking = $this->getBookingById($booking_id);
+
+        if (!$booking) {
+            return array('success' => false, 'message' => 'Booking not found!');
+        }
+
+        if ($user_id !== null && $booking['user_id'] != $user_id) {
+            return array('success' => false, 'message' => 'Unauthorised.');
+        }
+
+        if ($booking['booking_status'] === BOOKING_CANCELLED) {
+            return array('success' => false, 'message' => 'Booking is already cancelled.');
+        }
+
+        // Enforce 24-hour cancellation window
+        $journey_datetime = strtotime($booking['journey_date'] . ' 00:00:00');
+        $hours_until_journey = ($journey_datetime - time()) / 3600;
+
+        if ($hours_until_journey < 24) {
+            return array('success' => false, 'message' => 'Cancellations are only allowed up to 24 hours before the journey date.');
+        }
+
+        // Cancel booking and release seats
+        $this->db->update('bookings', 'booking_id', $booking_id,
+                          array('booking_status' => BOOKING_CANCELLED));
+
+        $query = "SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}";
+        $seats = $this->db->select($query);
+        if ($seats) {
+            foreach ($seats as $seat) {
+                $this->db->update('seats', 'seat_id', $seat['seat_id'],
+                                  array('status' => 'available'));
+            }
+        }
+
+        // Restore available_seats on the route
+        $this->db->query("UPDATE routes SET available_seats = available_seats + {$booking['number_of_seats']} WHERE route_id = {$booking['route_id']}");
+
+        // Mark payment as refunded if it was completed
+        $this->db->query("UPDATE payments SET payment_status = 'refunded', refund_date = NOW(), refund_reason = 'Passenger cancellation' WHERE booking_id = {$booking_id} AND payment_status = 'completed'");
+        $this->db->query("UPDATE bookings SET payment_status = 'refunded' WHERE booking_id = {$booking_id} AND payment_status = 'completed'");
+
+        return array('success' => true, 'message' => 'Booking cancelled successfully. A refund will be processed if applicable.');
+    }
+
+    // Update booking journey date (change journey to another available route for the same origin/destination)
+    public function updateBookingJourney($booking_id, $new_route_id, $user_id = null) {
+        $booking = $this->getBookingById($booking_id);
+
+        if (!$booking) {
+            return array('success' => false, 'message' => 'Booking not found!');
+        }
+
+        if ($user_id !== null && $booking['user_id'] != $user_id) {
+            return array('success' => false, 'message' => 'Unauthorised.');
+        }
+
+        if ($booking['booking_status'] === BOOKING_CANCELLED) {
+            return array('success' => false, 'message' => 'Cannot update a cancelled booking.');
+        }
+
+        // Enforce 24-hour update window
+        $journey_datetime = strtotime($booking['journey_date'] . ' 00:00:00');
+        $hours_until = ($journey_datetime - time()) / 3600;
+        if ($hours_until < 24) {
+            return array('success' => false, 'message' => 'Updates are only allowed up to 24 hours before the journey date.');
+        }
+
+        // Validate new route
+        $new_route = $this->db->selectRow("SELECT * FROM routes WHERE route_id = {$new_route_id} AND status = 'scheduled'");
+        if (!$new_route) {
+            return array('success' => false, 'message' => 'Selected route is not available.');
+        }
+
+        if ($new_route['available_seats'] < $booking['number_of_seats']) {
+            return array('success' => false, 'message' => 'Not enough seats available on the selected route.');
+        }
+
+        $old_route_id = $booking['route_id'];
+        $num_seats    = $booking['number_of_seats'];
+        $new_fare     = $new_route['base_fare'] * $num_seats;
+
+        // Release old seats
+        $old_seats = $this->db->select("SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}");
+        if ($old_seats) {
+            foreach ($old_seats as $s) {
+                $this->db->update('seats', 'seat_id', $s['seat_id'], array('status' => 'available'));
+            }
+        }
+        // Restore old route available seats count
+        $this->db->query("UPDATE routes SET available_seats = available_seats + {$num_seats} WHERE route_id = {$old_route_id}");
+
+        // Remove old booking_seats rows
+        $this->db->query("DELETE FROM booking_seats WHERE booking_id = {$booking_id}");
+
+        // Update booking record
+        $this->db->update('bookings', 'booking_id', $booking_id, array(
+            'route_id'     => $new_route_id,
+            'journey_date' => $new_route['journey_date'],
+            'total_fare'   => $new_fare,
+            'booking_status' => BOOKING_PENDING,
+            'payment_status' => PAYMENT_PENDING,
+        ));
+
+        // Decrease new route seats
+        $this->db->query("UPDATE routes SET available_seats = available_seats - {$num_seats} WHERE route_id = {$new_route_id}");
+
+        return array('success' => true, 'message' => 'Booking updated successfully! Please complete payment for the new fare.', 'new_fare' => $new_fare);
     }
 
     // Confirm booking (after payment)

@@ -109,6 +109,11 @@ require_once 'inc/header.php';
                     <p>Total Payments</p>
                     <a href="manage-payments.php">View Payments →</a>
                 </div>
+                <div class="stat-card admin-stat" style="border-top: 4px solid #28a745;">
+                    <h3><i class="bi bi-bar-chart-line" style="font-size:1.8rem; color:#28a745;"></i></h3>
+                    <p>Reports</p>
+                    <a href="reports.php">View Reports →</a>
+                </div>
             </div>
 
             <!-- Pending Items -->

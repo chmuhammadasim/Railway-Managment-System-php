@@ -88,6 +88,7 @@ if (!$all_trains) $all_trains = array();
                 <li><a href="manage-trains.php" class="active">Trains</a></li>
                 <li><a href="manage-routes.php">Routes</a></li>
                 <li><a href="manage-users.php">Users</a></li>
+                <li><a href="reports.php">Reports</a></li>
                 <li><a href="logout.php" class="btn-logout">Logout</a></li>
             </ul>
         </div>

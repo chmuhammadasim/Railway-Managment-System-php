@@ -65,8 +65,28 @@ class User {
     }
 
     // Update User Profile
-    public function updateProfile($user_id, $data) {
-        return $this->db->update('users', 'user_id', $user_id, $data);
+    // Accepts either updateProfile($id, $data_array) or updateProfile($id, $full_name, $email, $phone, $address, $password)
+    public function updateProfile($user_id, $full_name_or_data, $email = '', $phone = '', $address = '', $password = '') {
+        if (is_array($full_name_or_data)) {
+            $data = $full_name_or_data;
+        } else {
+            $data = array();
+            if (!empty($full_name_or_data)) $data['full_name'] = trim($full_name_or_data);
+            if (!empty($email))   $data['email']    = trim($email);
+            if (!empty($phone))   $data['phone']    = trim($phone);
+            if (!empty($address)) $data['address']  = trim($address);
+            if (!empty($password)) $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+        }
+
+        if (empty($data)) {
+            return array('success' => false, 'message' => 'No data to update!');
+        }
+
+        if ($this->db->update('users', 'user_id', $user_id, $data)) {
+            return array('success' => true, 'message' => 'Profile updated successfully!');
+        } else {
+            return array('success' => false, 'message' => 'Failed to update profile!');
+        }
     }
 
     // Change Password
