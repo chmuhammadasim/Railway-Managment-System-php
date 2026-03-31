@@ -8,7 +8,6 @@ require_once 'src/classes/Booking.php';
 require_once 'src/classes/Payment.php';
 require_once 'src/classes/Train.php';
 
-// Check if user is logged in and is admin
 if (!User::isLoggedIn() || $_SESSION['role'] != 'admin') {
     header('Location: login.php');
     exit();
@@ -17,202 +16,667 @@ if (!User::isLoggedIn() || $_SESSION['role'] != 'admin') {
 $db = new Database();
 $db->connect();
 
-$user_id = $_SESSION['user_id'];
+$user_id  = $_SESSION['user_id'];
 $user_obj = new User($db);
-$user = $user_obj->getUserById($user_id);
+$user     = $user_obj->getUserById($user_id);
 
-$booking_obj = new Booking($db);
-$payment_obj = new Payment($db);
-$train_obj = new Train($db);
+// ── KPI counts ──────────────────────────────────────────────────────────────
+$total_users     = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE role='user'")['c']    ?? 0);
+$total_employees = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE role='employee'")['c'] ?? 0);
+$active_trains   = (int)($db->selectRow("SELECT COUNT(*) AS c FROM trains WHERE status='active'")['c'] ?? 0);
+$total_routes    = (int)($db->selectRow("SELECT COUNT(*) AS c FROM routes WHERE status='scheduled'")['c'] ?? 0);
 
-$all_bookings = $booking_obj->getAllBookings();
-if (!$all_bookings) $all_bookings = array();
-$all_payments = $payment_obj->getAllPayments();
-if (!$all_payments) $all_payments = array();
-$all_trains = $train_obj->getAllTrains();
-if (!$all_trains) $all_trains = array();
-$all_users = $db->select("SELECT * FROM users WHERE role != 'admin' ORDER BY created_at DESC");
-if (!$all_users) $all_users = array();
+$confirmed_bookings  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE booking_status='confirmed'")['c']  ?? 0);
+$pending_bookings_n  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE booking_status='pending'")['c']   ?? 0);
+$cancelled_bookings  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE booking_status='cancelled'")['c'] ?? 0);
+$total_bookings      = $confirmed_bookings + $pending_bookings_n + $cancelled_bookings;
 
-// Calculate stats
-$pending_bookings = $booking_obj->getAllBookings(['booking_status' => 'pending']);
-if (!$pending_bookings) $pending_bookings = array();
-$pending_payments = $payment_obj->getAllPayments(['payment_status' => 'pending']);
-if (!$pending_payments) $pending_payments = array();
-?>
+$total_revenue       = (float)($db->selectRow("SELECT IFNULL(SUM(amount),0) AS s FROM payments WHERE payment_status='completed'")['s'] ?? 0);
+$pending_payments_n  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM payments WHERE payment_status='pending'")['c'] ?? 0);
 
-<?php
-$pageTitle = 'Admin Dashboard - Railway Management System';
-$extraScripts = [
-    'https://cdn.jsdelivr.net/npm/chart.js',
-    'public/js/admin-charts.js'
+// Today's activity
+$today_bookings = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE DATE(booking_date)=CURDATE()")['c']                            ?? 0);
+$today_revenue  = (float)($db->selectRow("SELECT IFNULL(SUM(amount),0) AS s FROM payments WHERE DATE(payment_date)=CURDATE() AND payment_status='completed'")['s'] ?? 0);
+$today_users    = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE DATE(created_at)=CURDATE()")['c']                                 ?? 0);
+
+// Booking status breakdown for doughnut
+$status_counts = [
+    'Confirmed'  => $confirmed_bookings,
+    'Pending'    => $pending_bookings_n,
+    'Cancelled'  => $cancelled_bookings,
 ];
-require_once 'inc/header.php';
 
+// Bookings per month – last 6 months
+$bpm_rows = $db->select("SELECT DATE_FORMAT(booking_date,'%b %Y') AS lbl, COUNT(*) AS cnt FROM bookings GROUP BY DATE_FORMAT(booking_date,'%Y-%m') ORDER BY DATE_FORMAT(booking_date,'%Y-%m') DESC LIMIT 6");
+$bpm_rows = $bpm_rows ? array_reverse($bpm_rows) : [];
+$bpm_labels = array_column($bpm_rows, 'lbl');
+$bpm_data   = array_map('intval', array_column($bpm_rows, 'cnt'));
+
+// Revenue per month – last 6 months
+$rpm_rows = $db->select("SELECT DATE_FORMAT(payment_date,'%b %Y') AS lbl, SUM(amount) AS total FROM payments WHERE payment_status='completed' GROUP BY DATE_FORMAT(payment_date,'%Y-%m') ORDER BY DATE_FORMAT(payment_date,'%Y-%m') DESC LIMIT 6");
+$rpm_rows = $rpm_rows ? array_reverse($rpm_rows) : [];
+$rpm_labels = array_column($rpm_rows, 'lbl');
+$rpm_data   = array_map('floatval', array_column($rpm_rows, 'total'));
+
+// Recent bookings (10)
+$recent_bookings = $db->select("SELECT b.booking_id, b.booking_reference, b.booking_status, b.payment_status, b.total_fare, b.journey_date, b.booking_date, u.full_name, r.departure_city, r.arrival_city, t.train_name FROM bookings b JOIN users u ON b.user_id=u.user_id JOIN routes r ON b.route_id=r.route_id JOIN trains t ON r.train_id=t.train_id ORDER BY b.booking_date DESC LIMIT 10");
+if (!$recent_bookings) $recent_bookings = [];
+
+// Recent users (8)
+$recent_users = $db->select("SELECT user_id, username, full_name, email, role, created_at FROM users WHERE role!='admin' ORDER BY created_at DESC LIMIT 8");
+if (!$recent_users) $recent_users = [];
+
+// Top 5 trains by revenue
+$top_trains = $db->select("SELECT t.train_name, IFNULL(SUM(b.total_fare),0) AS revenue, COUNT(b.booking_id) AS bookings FROM trains t LEFT JOIN routes r ON r.train_id=t.train_id LEFT JOIN bookings b ON b.route_id=r.route_id AND b.payment_status='completed' GROUP BY t.train_id ORDER BY revenue DESC LIMIT 5");
+if (!$top_trains) $top_trains = [];
+$max_revenue = $top_trains ? max(array_column($top_trains, 'revenue')) : 1;
+?>
+<?php
+$pageTitle = 'Admin Dashboard';
+require_once 'inc/header.php';
 ?>
 
-    <!-- Admin Dashboard Section -->
-    <section class="admin-dashboard">
-        <div class="container">
-            <h2>Admin Dashboard</h2>
+<style>
+/* ── Dashboard shell ─────────────────────────────── */
+.adm-wrap   { display:flex; min-height:calc(100vh - 64px); }
 
-                <!-- Analytics Charts -->
-                <?php
-                // Bookings per month (last 6 months)
-                $bookings_per_month = $db->select("SELECT DATE_FORMAT(journey_date, '%Y-%m') as month, COUNT(*) as cnt FROM bookings GROUP BY month ORDER BY month DESC LIMIT 6");
-                $bookings_per_month = array_reverse($bookings_per_month);
-                $bpm_labels = array_map(fn($row) => $row['month'], $bookings_per_month);
-                $bpm_data = array_map(fn($row) => (int)$row['cnt'], $bookings_per_month);
+/* ── Sidebar ─────────────────────────────────────── */
+.adm-sidebar {
+    width: 240px; flex-shrink:0;
+    background: linear-gradient(180deg,#1a2e4a 0%,#0f1e32 100%);
+    color:#c8d6e8; display:flex; flex-direction:column;
+    position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto;
+}
+.adm-sidebar .sb-brand {
+    padding:1.4rem 1.5rem 1rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+.adm-sidebar .sb-brand span { font-size:.7rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.5; display:block; margin-bottom:.3rem; }
+.adm-sidebar .sb-brand strong { font-size:1rem; color:#fff; }
+.adm-sidebar nav { flex:1; padding:.75rem 0; }
+.adm-sidebar nav a {
+    display:flex; align-items:center; gap:.75rem;
+    padding:.65rem 1.5rem; color:#c8d6e8; text-decoration:none;
+    font-size:.875rem; font-weight:500; transition:all .2s;
+    border-left:3px solid transparent;
+}
+.adm-sidebar nav a:hover, .adm-sidebar nav a.active {
+    background:rgba(255,255,255,.07); color:#fff;
+    border-left-color:#3b82f6;
+}
+.adm-sidebar nav a i { font-size:1rem; width:1.1rem; text-align:center; }
+.adm-sidebar .sb-sep { padding:.5rem 1.5rem .25rem; font-size:.68rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.4; margin-top:.5rem; }
+.adm-sidebar .sb-user {
+    padding:1rem 1.5rem; border-top:1px solid rgba(255,255,255,.08);
+    display:flex; align-items:center; gap:.75rem;
+}
+.adm-sidebar .sb-user .avatar {
+    width:34px; height:34px; border-radius:50%;
+    background:linear-gradient(135deg,#3b82f6,#6366f1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.875rem; font-weight:700; color:#fff; flex-shrink:0;
+}
+.adm-sidebar .sb-user .info small { display:block; font-size:.7rem; opacity:.5; }
+.adm-sidebar .sb-user .info strong { font-size:.8rem; color:#fff; }
 
-                // Revenue per month (last 6 months)
-                $revenue_per_month = $db->select("SELECT DATE_FORMAT(payment_date, '%Y-%m') as month, SUM(amount) as total FROM payments WHERE payment_status='completed' GROUP BY month ORDER BY month DESC LIMIT 6");
-                $revenue_per_month = array_reverse($revenue_per_month);
-                $rpm_labels = array_map(fn($row) => $row['month'], $revenue_per_month);
-                $rpm_data = array_map(fn($row) => (float)$row['total'], $revenue_per_month);
-                ?>
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <h3>Bookings Per Month</h3>
-                        <canvas id="bookingsPerMonthChart" height="120"></canvas>
-                        <script type="application/json" id="bookingsPerMonthData">
-                            {"labels":<?=json_encode($bpm_labels)?>,"data":<?=json_encode($bpm_data)?>}
-                        </script>
-                    </div>
-                    <div class="card">
-                        <h3>Revenue Per Month</h3>
-                        <canvas id="revenuePerMonthChart" height="120"></canvas>
-                        <script type="application/json" id="revenuePerMonthData">
-                            {"labels":<?=json_encode($rpm_labels)?>,"data":<?=json_encode($rpm_data)?>}
-                        </script>
-                    </div>
-                </div>
+/* ── Main content ────────────────────────────────── */
+.adm-main { flex:1; padding:2rem; overflow-x:hidden; }
 
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card admin-stat">
-                    <h3><?php echo count($all_users) ?? 0; ?></h3>
-                    <p>Total Users</p>
-                    <a href="manage-users.php">View Users →</a>
+/* ── Page header ─────────────────────────────────── */
+.adm-page-header {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;
+}
+.adm-page-header h2 { font-size:1.6rem; font-weight:800; color:#0f172a; margin:0; }
+.adm-page-header p  { color:#64748b; margin:.2rem 0 0; font-size:.875rem; }
+.adm-date-badge {
+    background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+    padding:.5rem 1rem; font-size:.8rem; color:#475569;
+    display:flex; align-items:center; gap:.4rem; box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+
+/* ── Today's strip ───────────────────────────────── */
+.today-strip {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
+    background:linear-gradient(135deg,#1e40af,#3b82f6);
+    border-radius:14px; padding:1.2rem 1.5rem; margin-bottom:1.75rem;
+    color:#fff;
+}
+.today-strip .ts-item { text-align:center; }
+.today-strip .ts-item .ts-val { font-size:1.75rem; font-weight:800; }
+.today-strip .ts-item .ts-lbl { font-size:.75rem; opacity:.8; margin-top:.1rem; }
+
+/* ── KPI cards ───────────────────────────────────── */
+.kpi-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(185px,1fr));
+    gap:1rem; margin-bottom:1.75rem;
+}
+.kpi-card {
+    background:#fff; border-radius:14px;
+    padding:1.2rem 1.4rem; position:relative; overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,.07); transition:transform .2s,box-shadow .2s;
+    cursor:default;
+}
+.kpi-card:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,.1); }
+.kpi-card .kpi-icon {
+    width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; margin-bottom:.75rem;
+}
+.kpi-card .kpi-val { font-size:1.9rem; font-weight:800; color:#0f172a; line-height:1; }
+.kpi-card .kpi-lbl { font-size:.78rem; color:#64748b; margin-top:.3rem; font-weight:500; }
+.kpi-card .kpi-link {
+    display:inline-flex; align-items:center; gap:.25rem;
+    font-size:.73rem; color:#3b82f6; text-decoration:none; margin-top:.6rem;
+    font-weight:600;
+}
+.kpi-card .kpi-link:hover { text-decoration:underline; }
+.kpi-card .kpi-bg {
+    position:absolute; right:-12px; bottom:-12px;
+    font-size:5rem; opacity:.05; pointer-events:none;
+}
+/* colour variants */
+.kpi-blue   .kpi-icon { background:#dbeafe; color:#2563eb; }
+.kpi-green  .kpi-icon { background:#dcfce7; color:#16a34a; }
+.kpi-amber  .kpi-icon { background:#fef3c7; color:#d97706; }
+.kpi-red    .kpi-icon { background:#fee2e2; color:#dc2626; }
+.kpi-purple .kpi-icon { background:#ede9fe; color:#7c3aed; }
+.kpi-teal   .kpi-icon { background:#ccfbf1; color:#0d9488; }
+
+/* ── Charts row ──────────────────────────────────── */
+.chart-row { display:grid; grid-template-columns:2fr 1fr; gap:1rem; margin-bottom:1.75rem; }
+.chart-card {
+    background:#fff; border-radius:14px; padding:1.4rem;
+    box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.chart-card h4 { font-size:.9rem; font-weight:700; color:#0f172a; margin:0 0 1rem; }
+
+/* ── Content row ─────────────────────────────────── */
+.content-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.75rem; }
+
+/* ── Section cards ───────────────────────────────── */
+.dash-section {
+    background:#fff; border-radius:14px; padding:1.4rem;
+    box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.dash-section-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:1rem; padding-bottom:.75rem; border-bottom:1px solid #f1f5f9;
+}
+.dash-section-header h4 { font-size:.9rem; font-weight:700; color:#0f172a; margin:0; }
+.dash-section-header a { font-size:.78rem; color:#3b82f6; text-decoration:none; font-weight:600; }
+.dash-section-header a:hover { text-decoration:underline; }
+
+/* ── Alert badges ────────────────────────────────── */
+.alert-strip {
+    display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.75rem;
+}
+.alert-card {
+    border-radius:12px; padding:1rem 1.2rem;
+    display:flex; align-items:center; gap:1rem;
+}
+.alert-card.warn  { background:#fffbeb; border:1px solid #fde68a; }
+.alert-card.info  { background:#eff6ff; border:1px solid #bfdbfe; }
+.alert-card .ac-icon {
+    width:40px; height:40px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:1.2rem;
+}
+.warn .ac-icon { background:#fef3c7; color:#d97706; }
+.info .ac-icon { background:#dbeafe; color:#2563eb; }
+.alert-card .ac-body .ac-num { font-size:1.4rem; font-weight:800; }
+.alert-card .ac-body .ac-lbl { font-size:.78rem; color:#64748b; }
+.warn .ac-body .ac-num { color:#92400e; }
+.info .ac-body .ac-num { color:#1e40af; }
+.alert-card a.ac-btn {
+    margin-left:auto; font-size:.75rem; padding:.4rem .9rem;
+    border-radius:8px; text-decoration:none; font-weight:600; white-space:nowrap;
+}
+.warn a.ac-btn { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+.info a.ac-btn { background:#dbeafe; color:#1e40af; border:1px solid #bfdbfe; }
+.alert-card a.ac-btn:hover { opacity:.8; }
+
+/* ── Quick actions ───────────────────────────────── */
+.qa-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
+.qa-btn {
+    display:flex; flex-direction:column; align-items:center; gap:.5rem;
+    background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;
+    padding:.9rem .5rem; text-decoration:none; color:#334155;
+    font-size:.78rem; font-weight:600; transition:all .2s; text-align:center;
+}
+.qa-btn i { font-size:1.3rem; color:#3b82f6; }
+.qa-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1e40af; }
+.qa-btn:hover i { color:#1d4ed8; }
+
+/* ── Mini table ──────────────────────────────────── */
+.mini-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.mini-table th { padding:.5rem .6rem; color:#64748b; font-weight:600; text-align:left; border-bottom:2px solid #f1f5f9; background:transparent; font-size:.75rem; text-transform:uppercase; letter-spacing:.4px; }
+.mini-table td { padding:.55rem .6rem; border-bottom:1px solid #f8fafc; color:#334155; }
+.mini-table tbody tr:hover { background:#f8fafc; }
+.mini-table tbody tr:last-child td { border-bottom:none; }
+.mini-table .ref { font-family:monospace; font-size:.77rem; color:#6366f1; }
+
+/* ── Progress bar ────────────────────────────────── */
+.prog-bar { background:#f1f5f9; border-radius:99px; height:6px; overflow:hidden; }
+.prog-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#6366f1); transition:width .6s ease; }
+
+/* ── Booking status pill ─────────────────────────── */
+.pill { display:inline-block; padding:.2em .65em; border-radius:999px; font-size:.72rem; font-weight:600; }
+.pill-confirmed { background:#dcfce7; color:#166534; }
+.pill-pending   { background:#fef3c7; color:#92400e; }
+.pill-cancelled { background:#fee2e2; color:#991b1b; }
+.pill-completed { background:#dbeafe; color:#1e40af; }
+.pill-refunded  { background:#ede9fe; color:#6b21a8; }
+.pill-user      { background:#e0f2fe; color:#0369a1; }
+.pill-employee  { background:#f0fdf4; color:#166534; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width:1100px) {
+    .chart-row   { grid-template-columns:1fr; }
+    .content-row { grid-template-columns:1fr; }
+}
+@media (max-width:860px) {
+    .adm-sidebar { display:none; }
+    .alert-strip { grid-template-columns:1fr; }
+    .today-strip { grid-template-columns:1fr 1fr; }
+    .kpi-grid    { grid-template-columns:repeat(2,1fr); }
+    .qa-grid     { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+
+<div class="adm-wrap">
+
+    <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+    <aside class="adm-sidebar">
+        <div class="sb-brand">
+            <span>Management Panel</span>
+            <strong>🚂 Railway Admin</strong>
+        </div>
+
+        <nav>
+            <div class="sb-sep">Main</div>
+            <a href="admin-dashboard.php" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+            <a href="reports.php"><i class="bi bi-bar-chart-line"></i> Reports</a>
+
+            <div class="sb-sep">Operations</div>
+            <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
+            <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
+            <a href="booking-admin.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
+
+            <div class="sb-sep">Users</div>
+            <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>
+
+            <div class="sb-sep">System</div>
+            <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+            <a href="profile.php"><i class="bi bi-person-gear"></i> My Profile</a>
+            <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </nav>
+
+        <div class="sb-user">
+            <div class="avatar"><?= strtoupper(substr($user['full_name'] ?? 'A', 0, 1)) ?></div>
+            <div class="info">
+                <strong><?= htmlspecialchars($user['full_name'] ?? 'Admin') ?></strong>
+                <small>Administrator</small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══ MAIN CONTENT ══════════════════════════════════════ -->
+    <main class="adm-main">
+
+        <!-- Page Header -->
+        <div class="adm-page-header">
+            <div>
+                <h2>Good <?= (int)date('H') < 12 ? 'Morning' : ((int)date('H') < 17 ? 'Afternoon' : 'Evening') ?>, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? 'Admin')[0]) ?> 👋</h2>
+                <p>Here's what's happening with your railway system today.</p>
+            </div>
+            <div class="adm-date-badge">
+                <i class="bi bi-calendar3"></i>
+                <?= date('l, d F Y') ?>
+            </div>
+        </div>
+
+        <!-- Today's Activity Strip -->
+        <div class="today-strip">
+            <div class="ts-item">
+                <div class="ts-val"><?= $today_bookings ?></div>
+                <div class="ts-lbl">Bookings Today</div>
+            </div>
+            <div class="ts-item">
+                <div class="ts-val">Rs.&nbsp;<?= number_format($today_revenue, 0) ?></div>
+                <div class="ts-lbl">Revenue Today</div>
+            </div>
+            <div class="ts-item">
+                <div class="ts-val"><?= $today_users ?></div>
+                <div class="ts-lbl">New Users Today</div>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-val"><?= number_format($total_users) ?></div>
+                <div class="kpi-lbl">Registered Users</div>
+                <a class="kpi-link" href="manage-users.php">Manage <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-people-fill"></i></div>
+            </div>
+            <div class="kpi-card kpi-teal">
+                <div class="kpi-icon"><i class="bi bi-person-badge-fill"></i></div>
+                <div class="kpi-val"><?= number_format($total_employees) ?></div>
+                <div class="kpi-lbl">Employees</div>
+                <a class="kpi-link" href="manage-users.php">Manage <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-person-badge-fill"></i></div>
+            </div>
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-icon"><i class="bi bi-train-front-fill"></i></div>
+                <div class="kpi-val"><?= number_format($active_trains) ?></div>
+                <div class="kpi-lbl">Active Trains</div>
+                <a class="kpi-link" href="manage-trains.php">Manage <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-train-front-fill"></i></div>
+            </div>
+            <div class="kpi-card kpi-teal">
+                <div class="kpi-icon"><i class="bi bi-map-fill"></i></div>
+                <div class="kpi-val"><?= number_format($total_routes) ?></div>
+                <div class="kpi-lbl">Scheduled Routes</div>
+                <a class="kpi-link" href="manage-routes.php">Manage <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-map-fill"></i></div>
+            </div>
+            <div class="kpi-card kpi-green">
+                <div class="kpi-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+                <div class="kpi-val"><?= number_format($total_bookings) ?></div>
+                <div class="kpi-lbl">Total Bookings</div>
+                <a class="kpi-link" href="booking-admin.php">View all <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-ticket-perforated-fill"></i></div>
+            </div>
+            <div class="kpi-card kpi-amber">
+                <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+                <div class="kpi-val" style="font-size:1.35rem;">Rs.&nbsp;<?= number_format($total_revenue, 0) ?></div>
+                <div class="kpi-lbl">Total Revenue</div>
+                <a class="kpi-link" href="reports.php">Reports <i class="bi bi-arrow-right"></i></a>
+                <div class="kpi-bg"><i class="bi bi-currency-rupee"></i></div>
+            </div>
+        </div>
+
+        <!-- Alert Strip -->
+        <div class="alert-strip">
+            <div class="alert-card warn">
+                <div class="ac-icon"><i class="bi bi-clock-history"></i></div>
+                <div class="ac-body">
+                    <div class="ac-num"><?= $pending_bookings_n ?></div>
+                    <div class="ac-lbl">Pending Bookings</div>
                 </div>
-                <div class="stat-card admin-stat">
-                    <h3><?php echo count($all_trains) ?? 0; ?></h3>
-                    <p>Active Trains</p>
-                    <a href="manage-trains.php">Manage Trains →</a>
+                <a href="booking-admin.php?status=pending" class="ac-btn">Review</a>
+            </div>
+            <div class="alert-card info">
+                <div class="ac-icon"><i class="bi bi-credit-card"></i></div>
+                <div class="ac-body">
+                    <div class="ac-num"><?= $pending_payments_n ?></div>
+                    <div class="ac-lbl">Pending Payments</div>
                 </div>
-                <div class="stat-card admin-stat">
-                    <h3><?php echo count($all_bookings) ?? 0; ?></h3>
-                    <p>Total Bookings</p>
-                    <a href="manage-bookings.php">View Bookings →</a>
+                <a href="reports.php?tab=income_trains" class="ac-btn">View</a>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="chart-row">
+            <!-- Bookings + Revenue combined -->
+            <div class="chart-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <h4 style="margin:0;">Bookings &amp; Revenue <span style="font-size:.75rem;font-weight:400;color:#94a3b8;">(last 6 months)</span></h4>
+                    <a href="reports.php" style="font-size:.75rem;color:#3b82f6;font-weight:600;text-decoration:none;">Full Report →</a>
                 </div>
-                <div class="stat-card admin-stat">
-                    <h3><?php echo count($all_payments) ?? 0; ?></h3>
-                    <p>Total Payments</p>
-                    <a href="manage-payments.php">View Payments →</a>
-                </div>
-                <div class="stat-card admin-stat" style="border-top: 4px solid #28a745;">
-                    <h3><i class="bi bi-bar-chart-line" style="font-size:1.8rem; color:#28a745;"></i></h3>
-                    <p>Reports</p>
-                    <a href="reports.php">View Reports →</a>
-                </div>
+                <canvas id="combinedChart" height="100"></canvas>
             </div>
 
-            <!-- Pending Items -->
-            <div class="pending-items">
-                <div class="pending-card">
-                    <h3>Pending Bookings: <?php echo count($pending_bookings) ?? 0; ?></h3>
-                    <p>Bookings waiting for confirmation</p>
-                    <a href="manage-bookings.php?status=pending" class="btn-action">Review</a>
-                </div>
-                <div class="pending-card">
-                    <h3>Pending Payments: <?php echo count($pending_payments) ?? 0; ?></h3>
-                    <p>Payments waiting for processing</p>
-                    <a href="manage-payments.php?status=pending" class="btn-action">Review</a>
+            <!-- Booking Status Doughnut -->
+            <div class="chart-card" style="display:flex;flex-direction:column;align-items:center;">
+                <h4 style="align-self:flex-start;">Booking Status</h4>
+                <canvas id="statusChart" style="max-width:200px;max-height:200px;"></canvas>
+                <div style="margin-top:1rem;width:100%;">
+                    <?php
+                    $status_colors = ['Confirmed'=>'#22c55e','Pending'=>'#f59e0b','Cancelled'=>'#ef4444'];
+                    foreach ($status_counts as $lbl => $val):
+                        $pct = $total_bookings > 0 ? round($val/$total_bookings*100) : 0;
+                    ?>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.8rem;">
+                        <span style="display:flex;align-items:center;gap:.4rem;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:<?= $status_colors[$lbl] ?>;display:inline-block;"></span>
+                            <?= $lbl ?>
+                        </span>
+                        <span style="font-weight:700;"><?= $val ?> <span style="color:#94a3b8;">(<?= $pct ?>%)</span></span>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Management Sections -->
-            <div class="admin-section">
-                <h3>Users Overview</h3>
-                <?php if ($all_users): ?>
-                        <div class="searchable-table-container">
-                            <input type="text" class="search-input" placeholder="Search users..." style="margin-bottom:1em;width:100%;padding:0.5em;">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Full Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Created At</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($all_users as $u): ?>
-                                        <tr>
-                                            <td><?php echo $u['username']; ?></td>
-                                            <td><?php echo $u['full_name']; ?></td>
-                                            <td><?php echo $u['email']; ?></td>
-                                            <td><?php echo ucfirst($u['role']); ?></td>
-                                            <td><?php echo date('M d, Y', strtotime($u['created_at'])); ?></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+        <!-- Content Row: Recent Bookings + Quick Actions -->
+        <div class="content-row">
+
+            <!-- Recent Bookings -->
+            <div class="dash-section">
+                <div class="dash-section-header">
+                    <h4><i class="bi bi-ticket-perforated me-1" style="color:#3b82f6;"></i> Recent Bookings</h4>
+                    <a href="booking-admin.php">View all →</a>
+                </div>
+                <?php if ($recent_bookings): ?>
+                <div style="overflow-x:auto;">
+                <table class="mini-table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Passenger</th>
+                            <th>Route</th>
+                            <th>Date</th>
+                            <th>Fare</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recent_bookings as $bk): ?>
+                        <tr>
+                            <td><span class="ref"><?= htmlspecialchars($bk['booking_reference']) ?></span></td>
+                            <td><?= htmlspecialchars($bk['full_name']) ?></td>
+                            <td style="font-size:.75rem;">
+                                <?= htmlspecialchars($bk['departure_city']) ?> → <?= htmlspecialchars($bk['arrival_city']) ?>
+                            </td>
+                            <td style="font-size:.75rem;white-space:nowrap;"><?= date('d M Y', strtotime($bk['journey_date'])) ?></td>
+                            <td style="white-space:nowrap;">Rs.&nbsp;<?= number_format($bk['total_fare'], 0) ?></td>
+                            <td>
+                                <span class="pill pill-<?= strtolower($bk['booking_status']) ?>">
+                                    <?= ucfirst($bk['booking_status']) ?>
+                                </span>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+                <?php else: ?>
+                    <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:1rem 0;">No bookings yet.</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Right column: Quick Actions + Top Trains -->
+            <div style="display:flex;flex-direction:column;gap:1rem;">
+
+                <!-- Quick Actions -->
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <h4><i class="bi bi-lightning-charge me-1" style="color:#f59e0b;"></i> Quick Actions</h4>
+                    </div>
+                    <div class="qa-grid">
+                        <a href="manage-trains.php" class="qa-btn">
+                            <i class="bi bi-train-front-fill"></i>Add Train
+                        </a>
+                        <a href="manage-routes.php" class="qa-btn">
+                            <i class="bi bi-map-fill"></i>Add Route
+                        </a>
+                        <a href="manage-users.php" class="qa-btn">
+                            <i class="bi bi-person-plus-fill"></i>Add User
+                        </a>
+                        <a href="reports.php?tab=income_trains&period=monthly" class="qa-btn">
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i>Monthly Report
+                        </a>
+                        <a href="reports.php?tab=trains" class="qa-btn">
+                            <i class="bi bi-list-ul"></i>Train List
+                        </a>
+                        <a href="reports.php?tab=routes" class="qa-btn">
+                            <i class="bi bi-signpost-2-fill"></i>Route List
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Top Trains by Revenue -->
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <h4><i class="bi bi-trophy me-1" style="color:#f59e0b;"></i> Top Trains by Revenue</h4>
+                        <a href="reports.php?tab=income_trains">Details →</a>
+                    </div>
+                    <?php foreach ($top_trains as $tt):
+                        $pct = $max_revenue > 0 ? ($tt['revenue'] / $max_revenue * 100) : 0;
+                    ?>
+                    <div style="margin-bottom:.85rem;">
+                        <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem;">
+                            <span style="font-weight:600;color:#334155;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <?= htmlspecialchars($tt['train_name']) ?>
+                            </span>
+                            <span style="color:#3b82f6;font-weight:700;">Rs.&nbsp;<?= number_format($tt['revenue'], 0) ?></span>
                         </div>
-                <?php else: ?>
-                    <p>No users found</p>
-                <?php endif; ?>
-            </div>
+                        <div class="prog-bar">
+                            <div class="prog-bar-fill" style="width:<?= round($pct) ?>%;"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($top_trains)): ?>
+                        <p style="color:#94a3b8;font-size:.8rem;text-align:center;">No revenue data yet.</p>
+                    <?php endif; ?>
+                </div>
 
-            <div class="admin-section">
-                <h3>Recent Bookings</h3>
-                <?php if ($all_bookings): ?>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Booking Ref</th>
-                                <th>User</th>
-                                <th>Train</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Fare</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach (array_slice($all_bookings, 0, 10) as $booking): ?>
-                                <tr>
-                                    <td><?php echo $booking['booking_reference']; ?></td>
-                                    <td><?php echo $booking['full_name']; ?></td>
-                                    <td><?php echo $booking['train_name']; ?></td>
-                                    <td><?php echo $booking['journey_date']; ?></td>
-                                    <td>
-                                        <span class="badge badge-<?php echo str_replace(' ', '-', strtolower($booking['booking_status'])); ?>">
-                                            <?php echo ucfirst($booking['booking_status']); ?>
-                                        </span>
-                                    </td>
-                                    <td>₹<?php echo number_format($booking['total_fare'], 2); ?></td>
-                                    <td>
-                                        <a href="booking-admin.php?id=<?php echo $booking['booking_id']; ?>" class="btn-small">
-                                            View
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p>No bookings found</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </section>
+            </div><!-- /right column -->
+        </div><!-- /content-row -->
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Railway Management System. All rights reserved.</p>
+        <!-- Recent Users -->
+        <div class="dash-section" style="margin-bottom:2rem;">
+            <div class="dash-section-header">
+                <h4><i class="bi bi-people me-1" style="color:#3b82f6;"></i> Recently Registered Users</h4>
+                <a href="manage-users.php">View all →</a>
+            </div>
+            <?php if ($recent_users): ?>
+            <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($recent_users as $i => $u): ?>
+                    <tr>
+                        <td style="color:#94a3b8;"><?= $i+1 ?></td>
+                        <td style="font-weight:600;"><?= htmlspecialchars($u['full_name']) ?></td>
+                        <td style="color:#6366f1;">@<?= htmlspecialchars($u['username']) ?></td>
+                        <td style="font-size:.77rem;color:#64748b;"><?= htmlspecialchars($u['email']) ?></td>
+                        <td>
+                            <span class="pill pill-<?= strtolower($u['role']) ?>"><?= ucfirst($u['role']) ?></span>
+                        </td>
+                        <td style="font-size:.75rem;white-space:nowrap;color:#64748b;">
+                            <?= date('d M Y', strtotime($u['created_at'])) ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <?php else: ?>
+                <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:1rem 0;">No users found.</p>
+            <?php endif; ?>
         </div>
-    </footer>
-</body>
-</html>
+
+    </main><!-- /adm-main -->
+</div><!-- /adm-wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    // Combined Bookings + Revenue chart
+    const bpmLabels = <?= json_encode($bpm_labels) ?>;
+    const bpmData   = <?= json_encode($bpm_data) ?>;
+    const rpmData   = <?= json_encode($rpm_data) ?>;
+
+    const ctx = document.getElementById('combinedChart');
+    if (ctx) {
+        new Chart(ctx, {
+            data: {
+                labels: bpmLabels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Bookings',
+                        data: bpmData,
+                        backgroundColor: 'rgba(99,102,241,0.25)',
+                        borderColor: 'rgba(99,102,241,0.8)',
+                        borderWidth: 2,
+                        yAxisID: 'y',
+                        borderRadius: 6,
+                    },
+                    {
+                        type: 'line',
+                        label: 'Revenue (Rs.)',
+                        data: rpmData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointRadius: 4,
+                        yAxisID: 'y2',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } },
+                scales: {
+                    y:  { position: 'left',  beginAtZero: true, ticks: { font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.05)' } },
+                    y2: { position: 'right', beginAtZero: true, ticks: { font: { size: 11 }, callback: v => 'Rs.' + v.toLocaleString() }, grid: { drawOnChartArea: false } },
+                    x:  { ticks: { font: { size: 11 } }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Booking status doughnut
+    const sCtx = document.getElementById('statusChart');
+    if (sCtx) {
+        new Chart(sCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Confirmed', 'Pending', 'Cancelled'],
+                datasets: [{
+                    data: [<?= $confirmed_bookings ?>, <?= $pending_bookings_n ?>, <?= $cancelled_bookings ?>],
+                    backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                cutout: '68%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed } }
+                }
+            }
+        });
+    }
+})();
+</script>
+
+<?php require_once 'inc/footer.php'; ?>
