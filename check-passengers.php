@@ -119,6 +119,7 @@ $total_bookings   = count($bookings_list);
 $confirmed_n = count(array_filter($bookings_list, fn($b) => $b['booking_status'] === 'confirmed'));
 $pending_n   = count(array_filter($bookings_list, fn($b) => $b['booking_status'] === 'pending'));
 
+$hideMainNavbar = true;
 $pageTitle = 'Passenger Manifest – Employee';
 require_once 'inc/header.php';
 ?>

@@ -15,7 +15,7 @@ $citiesQuery = "SELECT DISTINCT departure_city AS city FROM routes UNION SELECT 
 $cities = $db->select($citiesQuery);
 
 $pageTitle = 'Railway Management System';
-require_once 'inc/header.php';
+// require_once 'inc/header.php';
 ?>
 
     <!-- Hero Section -->

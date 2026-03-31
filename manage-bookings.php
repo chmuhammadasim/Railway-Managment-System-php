@@ -129,6 +129,7 @@ function bUrl(array $overrides = []): string {
     return 'manage-bookings.php' . ($qs ? "?{$qs}" : '');
 }
 
+$hideMainNavbar = true;
 $pageTitle = 'Manage Bookings – Admin';
 require_once 'inc/header.php';
 ?>

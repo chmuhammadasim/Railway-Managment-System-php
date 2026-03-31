@@ -83,6 +83,7 @@ if (!$upcoming) $upcoming = [];
 $hour     = (int)date('H');
 $greeting = $hour < 12 ? 'Good Morning' : ($hour < 17 ? 'Good Afternoon' : 'Good Evening');
 
+$hideMainNavbar = true;
 $pageTitle = 'Employee Dashboard – Railway System';
 require_once 'inc/header.php';
 ?>

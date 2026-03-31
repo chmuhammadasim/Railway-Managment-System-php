@@ -84,6 +84,7 @@ $payment = $db->selectRow(
     "SELECT * FROM payments WHERE booking_id = {$booking_id} ORDER BY created_at DESC LIMIT 1"
 );
 
+$hideMainNavbar = true;
 $pageTitle = 'Booking ' . htmlspecialchars($booking['booking_reference']) . ' – Employee';
 require_once 'inc/header.php';
 ?>

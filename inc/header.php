@@ -7,6 +7,10 @@ if (!isset($pageTitle)) {
     $pageTitle = 'Railway Management System';
 }
 
+if (!isset($hideMainNavbar)) {
+    $hideMainNavbar = false;
+}
+
 // Ensure User class is available for nav state
 if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) {
     require_once __DIR__ . '/../src/classes/User.php';
@@ -28,9 +32,15 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
         .nav-links { list-style: none; margin: 0; padding: 0; }
         .nav-toggle { background: transparent; border: none; color: white; font-size: 1.25rem; display: none; }
         @media (max-width: 768px) { .nav-toggle { display: inline-block; } }
+        body.panel-layout > main { padding-top: 0; }
+        body.panel-layout .adm-wrap,
+        body.panel-layout .emp-wrap { min-height: 100vh !important; }
+        body.panel-layout .adm-sidebar,
+        body.panel-layout .emp-sidebar { top: 0 !important; height: 100vh !important; }
     </style>
 </head>
-<body class="page-transition">
+<body class="page-transition<?php echo $hideMainNavbar ? ' panel-layout' : ''; ?>">
+    <?php if (!$hideMainNavbar): ?>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
@@ -70,5 +80,6 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
             </div>
         </div>
     </nav>
+    <?php endif; ?>
 
     <main>

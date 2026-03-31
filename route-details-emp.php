@@ -109,6 +109,7 @@ foreach ($all_seats as $seat) {
 
 $search_pass = trim($_GET['search'] ?? '');
 
+$hideMainNavbar = true;
 $pageTitle = 'Route Details – ' . $route['departure_city'] . ' → ' . $route['arrival_city'];
 require_once 'inc/header.php';
 ?>

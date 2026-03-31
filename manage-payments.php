@@ -140,6 +140,7 @@ function pUrl(array $overrides = []): string {
     return 'manage-payments.php' . ($qs ? "?{$qs}" : '');
 }
 
+$hideMainNavbar = true;
 $pageTitle = 'Manage Payments – Admin';
 require_once 'inc/header.php';
 ?>

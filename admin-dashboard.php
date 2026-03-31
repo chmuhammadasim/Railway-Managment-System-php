@@ -24,6 +24,7 @@ $user     = $user_obj->getUserById($user_id);
 $total_users     = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE role='user'")['c']    ?? 0);
 $total_employees = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE role='employee'")['c'] ?? 0);
 $active_trains   = (int)($db->selectRow("SELECT COUNT(*) AS c FROM trains WHERE status='active'")['c'] ?? 0);
+$total_trains    = (int)($db->selectRow("SELECT COUNT(*) AS c FROM trains")['c'] ?? 0);
 $total_routes    = (int)($db->selectRow("SELECT COUNT(*) AS c FROM routes WHERE status='scheduled'")['c'] ?? 0);
 
 $confirmed_bookings  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE booking_status='confirmed'")['c']  ?? 0);
@@ -32,12 +33,58 @@ $cancelled_bookings  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings 
 $total_bookings      = $confirmed_bookings + $pending_bookings_n + $cancelled_bookings;
 
 $total_revenue       = (float)($db->selectRow("SELECT IFNULL(SUM(amount),0) AS s FROM payments WHERE payment_status='completed'")['s'] ?? 0);
-$pending_payments_n  = (int)($db->selectRow("SELECT COUNT(*) AS c FROM payments WHERE payment_status='pending'")['c'] ?? 0);
+$payment_overview    = $db->selectRow(
+    "SELECT
+        COUNT(*)                         AS total_txns,
+        SUM(payment_status='completed')  AS completed_txns,
+        SUM(payment_status='pending')    AS pending_txns,
+        SUM(payment_status='failed')     AS failed_txns,
+        SUM(payment_status='refunded')   AS refunded_txns
+     FROM payments"
+);
+$total_payment_txns  = (int)($payment_overview['total_txns'] ?? 0);
+$completed_payments_n = (int)($payment_overview['completed_txns'] ?? 0);
+$pending_payments_n  = (int)($payment_overview['pending_txns'] ?? 0);
+$failed_payments_n   = (int)($payment_overview['failed_txns'] ?? 0);
+$refunded_payments_n = (int)($payment_overview['refunded_txns'] ?? 0);
+
+$train_status_overview = $db->selectRow(
+    "SELECT
+        SUM(status='maintenance') AS maintenance_n,
+        SUM(status='inactive')    AS inactive_n
+     FROM trains"
+);
+$maintenance_trains_n = (int)($train_status_overview['maintenance_n'] ?? 0);
+$inactive_trains_n    = (int)($train_status_overview['inactive_n'] ?? 0);
 
 // Today's activity
 $today_bookings = (int)($db->selectRow("SELECT COUNT(*) AS c FROM bookings WHERE DATE(booking_date)=CURDATE()")['c']                            ?? 0);
 $today_revenue  = (float)($db->selectRow("SELECT IFNULL(SUM(amount),0) AS s FROM payments WHERE DATE(payment_date)=CURDATE() AND payment_status='completed'")['s'] ?? 0);
 $today_users    = (int)($db->selectRow("SELECT COUNT(*) AS c FROM users WHERE DATE(created_at)=CURDATE()")['c']                                 ?? 0);
+
+$today_route_ops = $db->selectRow(
+    "SELECT
+        COUNT(*)                    AS routes_today,
+        SUM(r.status='scheduled')   AS scheduled_today,
+        SUM(r.status='completed')   AS completed_today,
+        SUM(r.status='cancelled')   AS cancelled_today,
+        COALESCE(SUM(t.total_seats), 0)                     AS capacity_today,
+        COALESCE(SUM(t.total_seats - r.available_seats), 0) AS committed_seats_today
+     FROM routes r
+     JOIN trains t ON r.train_id = t.train_id
+     WHERE r.journey_date = CURDATE()"
+);
+$routes_today_n         = (int)($today_route_ops['routes_today'] ?? 0);
+$scheduled_routes_today = (int)($today_route_ops['scheduled_today'] ?? 0);
+$completed_routes_today = (int)($today_route_ops['completed_today'] ?? 0);
+$cancelled_routes_today = (int)($today_route_ops['cancelled_today'] ?? 0);
+$today_capacity         = (int)($today_route_ops['capacity_today'] ?? 0);
+$today_committed_seats  = (int)($today_route_ops['committed_seats_today'] ?? 0);
+
+$fleet_availability_pct   = $total_trains > 0 ? (int)round(($active_trains / $total_trains) * 100) : 0;
+$booking_confirmation_pct = $total_bookings > 0 ? (int)round(($confirmed_bookings / $total_bookings) * 100) : 0;
+$payment_clearance_pct    = $total_payment_txns > 0 ? (int)round(($completed_payments_n / $total_payment_txns) * 100) : 0;
+$today_load_pct           = $today_capacity > 0 ? (int)round(($today_committed_seats / $today_capacity) * 100) : 0;
 
 // Booking status breakdown for doughnut
 $status_counts = [
@@ -66,15 +113,62 @@ if (!$recent_bookings) $recent_bookings = [];
 $recent_users = $db->select("SELECT user_id, username, full_name, email, role, created_at FROM users WHERE role!='admin' ORDER BY created_at DESC LIMIT 8");
 if (!$recent_users) $recent_users = [];
 
+// Recent payments (6)
+$recent_payments = $db->select(
+    "SELECT p.payment_id, p.amount, p.payment_method, p.transaction_id,
+            p.payment_status, p.payment_date, p.created_at,
+            b.booking_reference,
+            u.full_name
+     FROM payments p
+     JOIN bookings b ON p.booking_id = b.booking_id
+     JOIN users u    ON p.user_id    = u.user_id
+     ORDER BY COALESCE(p.payment_date, p.created_at) DESC
+     LIMIT 6"
+);
+if (!$recent_payments) $recent_payments = [];
+
+// Today's live route watch
+$today_route_watch = $db->select(
+    "SELECT r.route_id, r.departure_city, r.arrival_city, r.departure_time, r.arrival_time,
+            r.status, r.available_seats,
+            t.train_name, t.train_number, t.total_seats,
+            COALESCE(SUM(CASE WHEN b.booking_status='confirmed' THEN b.number_of_seats ELSE 0 END), 0) AS confirmed_seats,
+            COALESCE(SUM(CASE WHEN b.booking_status='pending' THEN 1 ELSE 0 END), 0) AS pending_bookings
+     FROM routes r
+     JOIN trains t ON r.train_id = t.train_id
+     LEFT JOIN bookings b ON b.route_id = r.route_id
+     WHERE r.journey_date = CURDATE()
+     GROUP BY r.route_id, r.departure_city, r.arrival_city, r.departure_time, r.arrival_time,
+              r.status, r.available_seats, t.train_name, t.train_number, t.total_seats
+     ORDER BY CASE r.status WHEN 'scheduled' THEN 0 WHEN 'completed' THEN 1 ELSE 2 END, r.departure_time ASC
+     LIMIT 8"
+);
+if (!$today_route_watch) $today_route_watch = [];
+
+// Upcoming capacity alerts
+$capacity_alerts = $db->select(
+    "SELECT r.route_id, r.departure_city, r.arrival_city, r.journey_date, r.departure_time,
+            r.available_seats, r.status,
+            t.train_name, t.total_seats
+     FROM routes r
+     JOIN trains t ON r.train_id = t.train_id
+     WHERE r.status='scheduled' AND r.journey_date >= CURDATE()
+     ORDER BY (r.available_seats / NULLIF(t.total_seats, 0)) ASC, r.journey_date ASC, r.departure_time ASC
+     LIMIT 5"
+);
+if (!$capacity_alerts) $capacity_alerts = [];
+
 // Top 5 trains by revenue
 $top_trains = $db->select("SELECT t.train_name, IFNULL(SUM(b.total_fare),0) AS revenue, COUNT(b.booking_id) AS bookings FROM trains t LEFT JOIN routes r ON r.train_id=t.train_id LEFT JOIN bookings b ON b.route_id=r.route_id AND b.payment_status='completed' GROUP BY t.train_id ORDER BY revenue DESC LIMIT 5");
 if (!$top_trains) $top_trains = [];
 $max_revenue = $top_trains ? max(array_column($top_trains, 'revenue')) : 1;
 ?>
 <?php
+$hideMainNavbar = true;
 $pageTitle = 'Admin Dashboard';
 require_once 'inc/header.php';
 ?>
+
 
 <style>
 /* ── Dashboard shell ─────────────────────────────── */
@@ -192,6 +286,42 @@ require_once 'inc/header.php';
 }
 .chart-card h4 { font-size:.9rem; font-weight:700; color:#0f172a; margin:0 0 1rem; }
 
+/* ── Pulse cards ─────────────────────────────────── */
+.pulse-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.75rem;
+}
+.pulse-card {
+    background:#fff; border-radius:14px; padding:1.1rem 1.2rem;
+    box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.pulse-card .pc-head {
+    display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; margin-bottom:.85rem;
+}
+.pulse-card .pc-head i { font-size:1.2rem; color:#3b82f6; }
+.pulse-card .pc-title {
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:#64748b; font-weight:700;
+}
+.pulse-card .pc-value { font-size:1.5rem; font-weight:800; color:#0f172a; line-height:1.1; }
+.pulse-card .pc-meta {
+    display:flex; justify-content:space-between; align-items:center; gap:.75rem;
+    margin-top:.55rem; font-size:.75rem; color:#64748b;
+}
+
+/* ── Operations row ──────────────────────────────── */
+.ops-row { display:grid; grid-template-columns:1.4fr 1fr; gap:1rem; margin-bottom:1.75rem; }
+.stack-col { display:flex; flex-direction:column; gap:1rem; }
+.compact-list { display:flex; flex-direction:column; gap:.9rem; }
+.compact-item { padding-bottom:.9rem; border-bottom:1px solid #f1f5f9; }
+.compact-item:last-child { padding-bottom:0; border-bottom:none; }
+.meta-line { font-size:.75rem; color:#64748b; }
+.tiny-action {
+    font-size:.74rem; color:#3b82f6; text-decoration:none; font-weight:600;
+}
+.tiny-action:hover { text-decoration:underline; }
+
+/* ── Search card ─────────────────────────────────── */
+.lookup-note { font-size:.74rem; color:#64748b; margin-top:.7rem; }
+
 /* ── Content row ─────────────────────────────────── */
 .content-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.75rem; }
 
@@ -273,14 +403,19 @@ require_once 'inc/header.php';
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width:1100px) {
     .chart-row   { grid-template-columns:1fr; }
+    .ops-row     { grid-template-columns:1fr; }
     .content-row { grid-template-columns:1fr; }
 }
 @media (max-width:860px) {
     .adm-sidebar { display:none; }
     .alert-strip { grid-template-columns:1fr; }
     .today-strip { grid-template-columns:1fr 1fr; }
+    .pulse-grid  { grid-template-columns:1fr 1fr; }
     .kpi-grid    { grid-template-columns:repeat(2,1fr); }
     .qa-grid     { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:560px) {
+    .pulse-grid { grid-template-columns:1fr; }
 }
 </style>
 
@@ -386,7 +521,7 @@ require_once 'inc/header.php';
                 <div class="kpi-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
                 <div class="kpi-val"><?= number_format($total_bookings) ?></div>
                 <div class="kpi-lbl">Total Bookings</div>
-                <a class="kpi-link" href="booking-admin.php">View all <i class="bi bi-arrow-right"></i></a>
+                <a class="kpi-link" href="manage-bookings.php">View all <i class="bi bi-arrow-right"></i></a>
                 <div class="kpi-bg"><i class="bi bi-ticket-perforated-fill"></i></div>
             </div>
             <div class="kpi-card kpi-amber">
@@ -406,7 +541,7 @@ require_once 'inc/header.php';
                     <div class="ac-num"><?= $pending_bookings_n ?></div>
                     <div class="ac-lbl">Pending Bookings</div>
                 </div>
-                <a href="booking-admin.php?status=pending" class="ac-btn">Review</a>
+                <a href="manage-bookings.php?status=pending" class="ac-btn">Review</a>
             </div>
             <div class="alert-card info">
                 <div class="ac-icon"><i class="bi bi-credit-card"></i></div>
@@ -414,7 +549,67 @@ require_once 'inc/header.php';
                     <div class="ac-num"><?= $pending_payments_n ?></div>
                     <div class="ac-lbl">Pending Payments</div>
                 </div>
-                <a href="reports.php?tab=income_trains" class="ac-btn">View</a>
+                <a href="manage-payments.php?status=pending" class="ac-btn">View</a>
+            </div>
+        </div>
+
+        <!-- Operational Pulse -->
+        <div class="pulse-grid">
+            <div class="pulse-card">
+                <div class="pc-head">
+                    <div>
+                        <div class="pc-title">Fleet Availability</div>
+                        <div class="pc-value"><?= $fleet_availability_pct ?>%</div>
+                    </div>
+                    <i class="bi bi-train-front"></i>
+                </div>
+                <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $fleet_availability_pct ?>%;"></div></div>
+                <div class="pc-meta">
+                    <span><?= $active_trains ?> active of <?= $total_trains ?></span>
+                    <a class="tiny-action" href="manage-trains.php">Open</a>
+                </div>
+            </div>
+            <div class="pulse-card">
+                <div class="pc-head">
+                    <div>
+                        <div class="pc-title">Booking Confirmation</div>
+                        <div class="pc-value"><?= $booking_confirmation_pct ?>%</div>
+                    </div>
+                    <i class="bi bi-patch-check"></i>
+                </div>
+                <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $booking_confirmation_pct ?>%; background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div>
+                <div class="pc-meta">
+                    <span><?= $confirmed_bookings ?> confirmed of <?= $total_bookings ?></span>
+                    <a class="tiny-action" href="manage-bookings.php?status=pending">Review queue</a>
+                </div>
+            </div>
+            <div class="pulse-card">
+                <div class="pc-head">
+                    <div>
+                        <div class="pc-title">Payment Clearance</div>
+                        <div class="pc-value"><?= $payment_clearance_pct ?>%</div>
+                    </div>
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $payment_clearance_pct ?>%; background:linear-gradient(90deg,#f59e0b,#d97706);"></div></div>
+                <div class="pc-meta">
+                    <span><?= $completed_payments_n ?> settled of <?= $total_payment_txns ?></span>
+                    <a class="tiny-action" href="manage-payments.php">Open</a>
+                </div>
+            </div>
+            <div class="pulse-card">
+                <div class="pc-head">
+                    <div>
+                        <div class="pc-title">Today Seat Load</div>
+                        <div class="pc-value"><?= $today_load_pct ?>%</div>
+                    </div>
+                    <i class="bi bi-bar-chart-steps"></i>
+                </div>
+                <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $today_load_pct ?>%; background:linear-gradient(90deg,#8b5cf6,#6366f1);"></div></div>
+                <div class="pc-meta">
+                    <span><?= $today_committed_seats ?> of <?= $today_capacity ?> seats committed</span>
+                    <a class="tiny-action" href="manage-routes.php">Open</a>
+                </div>
             </div>
         </div>
 
@@ -451,6 +646,148 @@ require_once 'inc/header.php';
             </div>
         </div>
 
+        <!-- Operations Row -->
+        <div class="ops-row">
+
+            <div class="dash-section">
+                <div class="dash-section-header">
+                    <h4><i class="bi bi-broadcast-pin me-1" style="color:#3b82f6;"></i> Today Route Watch</h4>
+                    <a href="manage-routes.php">Manage routes →</a>
+                </div>
+
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <span class="pill pill-completed"><?= $routes_today_n ?> routes today</span>
+                    <span class="pill pill-confirmed"><?= $scheduled_routes_today ?> scheduled</span>
+                    <span class="pill pill-completed"><?= $completed_routes_today ?> completed</span>
+                    <span class="pill pill-cancelled"><?= $cancelled_routes_today ?> cancelled</span>
+                </div>
+
+                <?php if ($today_route_watch): ?>
+                <div style="overflow-x:auto;">
+                    <table class="mini-table">
+                        <thead>
+                            <tr>
+                                <th>Train</th>
+                                <th>Route</th>
+                                <th>Departure</th>
+                                <th>Load</th>
+                                <th>Available</th>
+                                <th>Pending</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($today_route_watch as $rt): ?>
+                            <?php
+                            $route_load_pct = (int)($rt['total_seats'] > 0 ? round(($rt['confirmed_seats'] / $rt['total_seats']) * 100) : 0);
+                            ?>
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;"><?= htmlspecialchars($rt['train_name']) ?></div>
+                                    <div class="meta-line"><?= htmlspecialchars($rt['train_number']) ?></div>
+                                </td>
+                                <td style="font-size:.78rem;"><?= htmlspecialchars($rt['departure_city']) ?> → <?= htmlspecialchars($rt['arrival_city']) ?></td>
+                                <td style="white-space:nowrap;">
+                                    <?= date('H:i', strtotime($rt['departure_time'])) ?>
+                                    <div class="meta-line">Arrive <?= date('H:i', strtotime($rt['arrival_time'])) ?></div>
+                                </td>
+                                <td style="min-width:120px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.2rem;">
+                                        <span><?= $rt['confirmed_seats'] ?> booked</span>
+                                        <span><?= $route_load_pct ?>%</span>
+                                    </div>
+                                    <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $route_load_pct ?>%; background:<?= $route_load_pct >= 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : 'linear-gradient(90deg,#3b82f6,#6366f1)' ?>;"></div></div>
+                                </td>
+                                <td><?= (int)$rt['available_seats'] ?></td>
+                                <td><?= (int)$rt['pending_bookings'] ?></td>
+                                <td><span class="pill pill-<?= strtolower($rt['status']) ?>"><?= ucfirst($rt['status']) ?></span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                    <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:1rem 0;">No routes scheduled for today.</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="stack-col">
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <h4><i class="bi bi-exclamation-triangle me-1" style="color:#f59e0b;"></i> Capacity Alerts</h4>
+                        <a href="manage-routes.php">Routes →</a>
+                    </div>
+                    <?php if ($capacity_alerts): ?>
+                    <div class="compact-list">
+                        <?php foreach ($capacity_alerts as $alert): ?>
+                        <?php
+                        $free_pct = (int)($alert['total_seats'] > 0 ? round(($alert['available_seats'] / $alert['total_seats']) * 100) : 0);
+                        $load_pct = 100 - $free_pct;
+                        $pill_class = $free_pct <= 15 ? 'pill-cancelled' : ($free_pct <= 35 ? 'pill-pending' : 'pill-completed');
+                        ?>
+                        <div class="compact-item">
+                            <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;">
+                                <div>
+                                    <div style="font-weight:700;color:#0f172a;"><?= htmlspecialchars($alert['train_name']) ?></div>
+                                    <div class="meta-line"><?= htmlspecialchars($alert['departure_city']) ?> → <?= htmlspecialchars($alert['arrival_city']) ?></div>
+                                </div>
+                                <span class="pill <?= $pill_class ?>"><?= (int)$alert['available_seats'] ?> free</span>
+                            </div>
+                            <div class="meta-line" style="margin:.35rem 0 .45rem;">
+                                <?= date('d M Y', strtotime($alert['journey_date'])) ?> at <?= date('H:i', strtotime($alert['departure_time'])) ?>
+                            </div>
+                            <div class="prog-bar"><div class="prog-bar-fill" style="width:<?= $load_pct ?>%; background:<?= $load_pct >= 85 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : 'linear-gradient(90deg,#f59e0b,#d97706)' ?>;"></div></div>
+                            <div class="pc-meta">
+                                <span><?= $free_pct ?>% seats still free</span>
+                                <a class="tiny-action" href="manage-routes.php">Review</a>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                        <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:1rem 0;">No capacity alerts right now.</p>
+                    <?php endif; ?>
+                </div>
+
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <h4><i class="bi bi-cash-coin me-1" style="color:#16a34a;"></i> Recent Payments</h4>
+                        <a href="manage-payments.php">Payments →</a>
+                    </div>
+                    <?php if ($recent_payments): ?>
+                    <div style="overflow-x:auto;">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Booking</th>
+                                    <th>Passenger</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recent_payments as $pay): ?>
+                                <tr>
+                                    <td><span class="ref"><?= htmlspecialchars($pay['booking_reference']) ?></span></td>
+                                    <td><?= htmlspecialchars($pay['full_name']) ?></td>
+                                    <td style="white-space:nowrap;">Rs.&nbsp;<?= number_format($pay['amount'], 0) ?></td>
+                                    <td><span class="pill pill-<?= strtolower($pay['payment_status']) ?>"><?= ucfirst($pay['payment_status']) ?></span></td>
+                                    <td>
+                                        <a class="tiny-action" href="manage-payments.php?q=<?= urlencode($pay['booking_reference']) ?>">Open</a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                        <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:1rem 0;">No payment activity recorded yet.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
         <!-- Content Row: Recent Bookings + Quick Actions -->
         <div class="content-row">
 
@@ -458,7 +795,7 @@ require_once 'inc/header.php';
             <div class="dash-section">
                 <div class="dash-section-header">
                     <h4><i class="bi bi-ticket-perforated me-1" style="color:#3b82f6;"></i> Recent Bookings</h4>
-                    <a href="booking-admin.php">View all →</a>
+                    <a href="manage-bookings.php">View all →</a>
                 </div>
                 <?php if ($recent_bookings): ?>
                 <div style="overflow-x:auto;">
@@ -471,6 +808,7 @@ require_once 'inc/header.php';
                             <th>Date</th>
                             <th>Fare</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -487,6 +825,9 @@ require_once 'inc/header.php';
                                 <span class="pill pill-<?= strtolower($bk['booking_status']) ?>">
                                     <?= ucfirst($bk['booking_status']) ?>
                                 </span>
+                            </td>
+                            <td>
+                                <a class="tiny-action" href="booking_details.php?id=<?= $bk['booking_id'] ?>">View</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -507,24 +848,47 @@ require_once 'inc/header.php';
                         <h4><i class="bi bi-lightning-charge me-1" style="color:#f59e0b;"></i> Quick Actions</h4>
                     </div>
                     <div class="qa-grid">
+                        <a href="manage-bookings.php" class="qa-btn">
+                            <i class="bi bi-ticket-perforated-fill"></i>Bookings
+                        </a>
+                        <a href="manage-bookings.php?status=pending" class="qa-btn">
+                            <i class="bi bi-hourglass-split"></i>Pending Queue
+                        </a>
+                        <a href="manage-payments.php" class="qa-btn">
+                            <i class="bi bi-cash-stack"></i>Payments
+                        </a>
                         <a href="manage-trains.php" class="qa-btn">
-                            <i class="bi bi-train-front-fill"></i>Add Train
+                            <i class="bi bi-train-front-fill"></i>Trains
                         </a>
                         <a href="manage-routes.php" class="qa-btn">
-                            <i class="bi bi-map-fill"></i>Add Route
+                            <i class="bi bi-map-fill"></i>Routes
                         </a>
                         <a href="manage-users.php" class="qa-btn">
-                            <i class="bi bi-person-plus-fill"></i>Add User
+                            <i class="bi bi-people-fill"></i>Users
                         </a>
-                        <a href="reports.php?tab=income_trains&period=monthly" class="qa-btn">
-                            <i class="bi bi-file-earmark-bar-graph-fill"></i>Monthly Report
-                        </a>
-                        <a href="reports.php?tab=trains" class="qa-btn">
-                            <i class="bi bi-list-ul"></i>Train List
-                        </a>
-                        <a href="reports.php?tab=routes" class="qa-btn">
-                            <i class="bi bi-signpost-2-fill"></i>Route List
-                        </a>
+                    </div>
+                </div>
+
+                <div class="dash-section">
+                    <div class="dash-section-header">
+                        <h4><i class="bi bi-search me-1" style="color:#3b82f6;"></i> Quick Lookup</h4>
+                    </div>
+                    <form id="adminLookupForm" class="row g-2">
+                        <div class="col-12">
+                            <select id="lookupTarget" class="form-select form-select-sm">
+                                <option value="manage-bookings.php">Booking reference</option>
+                                <option value="manage-payments.php">Payment / transaction</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <input id="lookupQuery" type="text" class="form-control form-control-sm" placeholder="Enter reference, name, or transaction ID">
+                        </div>
+                        <div class="col-12 d-grid">
+                            <button type="submit" class="btn btn-primary btn-sm">Search Now</button>
+                        </div>
+                    </form>
+                    <div class="lookup-note">
+                        Jump straight into booking or payment records without leaving the dashboard first.
                     </div>
                 </div>
 
@@ -674,6 +1038,20 @@ require_once 'inc/header.php';
                     tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed } }
                 }
             }
+        });
+    }
+
+    const lookupForm = document.getElementById('adminLookupForm');
+    if (lookupForm) {
+        lookupForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const target = document.getElementById('lookupTarget').value;
+            const query = document.getElementById('lookupQuery').value.trim();
+            if (!query) {
+                document.getElementById('lookupQuery').focus();
+                return;
+            }
+            window.location.href = target + '?q=' + encodeURIComponent(query);
         });
     }
 })();
