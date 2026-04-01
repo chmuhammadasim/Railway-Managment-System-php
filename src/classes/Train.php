@@ -106,25 +106,25 @@ class Train {
         return $this->db->selectRow($query);
     }
 
-    // Create seats for a route
+    // Create seats for a route (idempotent – uses INSERT IGNORE to skip duplicates)
     public function createSeats($train_id, $route_id, $total_seats) {
-        $seatTypes = array('economy', 'economy', 'premium', 'luxury'); // Ratio of seat types
-        
+        $seatTypes = array('economy', 'economy', 'premium', 'luxury');
+        $conn      = $this->db->getConnection();
+
         for ($i = 1; $i <= $total_seats; $i++) {
-            $seatType = $seatTypes[($i - 1) % count($seatTypes)];
-            $seatNumber = chr(65 + floor(($i - 1) / 6)) . (($i - 1) % 6 + 1);
-            
-            $data = array(
-                'train_id' => $train_id,
-                'route_id' => $route_id,
-                'seat_number' => $seatNumber,
-                'seat_type' => $seatType,
-                'status' => 'available'
+            $seatType   = $seatTypes[($i - 1) % count($seatTypes)];
+            $seatNumber = $conn->real_escape_string(
+                chr(65 + (int)floor(($i - 1) / 6)) . (($i - 1) % 6 + 1)
             );
-            
-            $this->db->insert('seats', $data);
+            $seatType_e = $conn->real_escape_string($seatType);
+
+            // INSERT IGNORE skips the row silently if the unique key already exists
+            $conn->query(
+                "INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status)
+                 VALUES ({$train_id}, {$route_id}, '{$seatNumber}', '{$seatType_e}', 'available')"
+            );
         }
-        
+
         return true;
     }
 }

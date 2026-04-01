@@ -134,6 +134,18 @@ $bookings    = $booking_obj->getUserBookings($user_id);
                             <i class="bi bi-ticket-perforated me-1"></i> E-Ticket
                         </a>
 
+                        <!-- Email Ticket (visible for confirmed bookings) -->
+                        <?php if ($booking['booking_status'] === 'confirmed'): ?>
+                        <button type="button" class="btn btn-success btn-sm"
+                                onclick="emailTicket(<?= $booking['booking_id'] ?>, this)">
+                            <i class="bi bi-envelope-fill me-1"></i> Email Ticket
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="window.open('booking_details.php?id=<?= $booking['booking_id'] ?>', '_blank')">
+                            <i class="bi bi-printer me-1"></i> Print
+                        </button>
+                        <?php endif; ?>
+
                         <?php if ($booking['booking_status'] === 'pending' && $booking['payment_status'] !== 'completed'): ?>
                             <a href="payment.php?booking_id=<?= $booking['booking_id'] ?>" class="btn btn-success btn-sm">
                                 <i class="bi bi-credit-card me-1"></i> Pay Now
@@ -166,7 +178,39 @@ $bookings    = $booking_obj->getUserBookings($user_id);
     </div>
      
 
+    <!-- Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+        <div id="bkToast" class="toast align-items-center border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold" id="bkToastMsg"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function emailTicket(bookingId, btn) {
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending…';
+        fetch('send_ticket_email.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'booking_id=' + encodeURIComponent(bookingId),
+        })
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById('bkToast');
+            document.getElementById('bkToastMsg').textContent = data.message;
+            el.classList.remove('bg-success','bg-danger','text-white');
+            el.classList.add(data.success ? 'bg-success' : 'bg-danger','text-white');
+            new bootstrap.Toast(el, {delay: 5000}).show();
+        })
+        .catch(() => alert('Network error. Try again.'))
+        .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
+    }
+    </script>
 </body>
 <?php require_once 'inc/footer.php'; ?>
 </html>

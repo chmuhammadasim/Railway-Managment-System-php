@@ -73,215 +73,448 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Complete Payment – Railway Management System';
-//require_once 'inc/header.php';
+require_once 'inc/header.php';
 ?>
 
 <style>
-/* ── Step Indicator ── */
-.pay-steps { display:flex; align-items:center; justify-content:center; flex-wrap:nowrap; gap:0; }
-.step-item  { display:flex; flex-direction:column; align-items:center; gap:.35rem; flex-shrink:0; }
+/* ═══════════════════════════════════════════
+   Payment page
+═══════════════════════════════════════════ */
+.pay-wrap { background:#f1f5f9; min-height:calc(100vh - 60px); padding-bottom:60px; }
+
+/* ── Hero band ──────────────────────────── */
+.pay-hero {
+    background: linear-gradient(135deg,#0b1728 0%,#0f2040 45%,#1a3a6e 100%);
+    color:#fff; padding:2rem 0 4rem; position:relative; overflow:hidden;
+}
+.pay-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:26px 26px; pointer-events:none;
+}
+.pay-hero-wave { position:absolute; bottom:-2px; left:0; right:0; line-height:0; }
+.pay-hero-wave svg { display:block; width:100%; height:60px; }
+.pay-hero-inner { max-width:960px; margin:0 auto; padding:0 1.25rem; position:relative; z-index:2; }
+
+/* Step bar */
+.pay-steps { display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+.step-item  { display:flex; flex-direction:column; align-items:center; gap:.3rem; flex-shrink:0; }
 .step-circle {
-    width:46px; height:46px; border-radius:50%;
-    border:3px solid #dee2e6; display:flex; align-items:center;
-    justify-content:center; font-size:1.1rem;
-    background:#fff; color:#adb5bd; transition:all .3s;
+    width:42px; height:42px; border-radius:50%;
+    border:2.5px solid rgba(255,255,255,.3); display:flex; align-items:center;
+    justify-content:center; font-size:1rem;
+    background:rgba(255,255,255,.08); color:rgba(255,255,255,.5);
+    backdrop-filter:blur(4px); transition:all .3s;
 }
-.step-item.active .step-circle { border-color:#2563eb; color:#2563eb; }
-.step-item.done   .step-circle { background:#2563eb; border-color:#2563eb; color:#fff; }
-.step-label { font-size:.77rem; font-weight:600; color:#9ca3af; white-space:nowrap; }
-.step-item.active .step-label,
-.step-item.done   .step-label  { color:#2563eb; }
-.step-connector { flex:0 0 70px; height:3px; background:#dee2e6; transition:background .3s; }
-.step-connector.done { background:#2563eb; }
+.step-item.done   .step-circle { background:#10b981; border-color:#10b981; color:#fff; }
+.step-item.active .step-circle { background:#2563eb; border-color:#60a5fa; color:#fff;
+    box-shadow:0 0 0 4px rgba(96,165,250,.25); }
+.step-label { font-size:.72rem; font-weight:700; color:rgba(255,255,255,.45); white-space:nowrap; letter-spacing:.04em; text-transform:uppercase; }
+.step-item.done .step-label, .step-item.active .step-label { color:rgba(255,255,255,.9); }
+.step-connector { flex:0 0 80px; height:2px; background:rgba(255,255,255,.15); margin:0 .25rem; position:relative; top:-10px; transition:background .3s; }
+.step-connector.done { background:#10b981; }
 
-/* ── Payment Method Cards ── */
-.pay-card {
-    display:block; cursor:pointer;
-    border:2px solid #e2e8f0; border-radius:12px;
-    transition:border-color .2s, box-shadow .2s, background .2s;
-    background:#fff; height:100%;
+/* Route pill */
+.route-pill {
+    display:inline-flex; align-items:center; gap:.6rem;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    border-radius:999px; padding:.55rem 1.25rem; font-weight:700;
+    font-size:clamp(.9rem,2.5vw,1.15rem); backdrop-filter:blur(6px);
+    letter-spacing:-.01em;
 }
-.pay-card:hover    { border-color:#2563eb; box-shadow:0 4px 14px rgba(37,99,235,.12); }
-.pay-card.selected { border-color:#2563eb; background:#eff6ff; box-shadow:0 4px 18px rgba(37,99,235,.18); }
-.pay-card-inner {
-    display:flex; flex-direction:column; align-items:center;
-    gap:.3rem; padding:1.25rem .75rem; text-align:center;
+.route-pill .arr { color:#fbbf24; font-size:1.1rem; }
+.pay-meta { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:.85rem; }
+.pay-meta-badge {
+    display:inline-flex; align-items:center; gap:.35rem;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
+    border-radius:999px; padding:.3rem .85rem; font-size:.78rem; font-weight:600;
+    backdrop-filter:blur(4px);
 }
-.pay-icon { font-size:2rem; line-height:1; }
-.pay-name { font-weight:700; font-size:.88rem; color:#1e293b; }
-.pay-desc { font-size:.72rem; color:#64748b; }
 
-/* ── Success animation ── */
-.success-check { animation:popIn .5s cubic-bezier(.175,.885,.32,1.275) forwards; }
+/* ── Content area ───────────────────────── */
+.pay-content { max-width:960px; margin:-50px auto 0; padding:0 1.25rem; position:relative; z-index:10; }
+
+/* ── Surface card ───────────────────────── */
+.surface-card {
+    background:#fff; border-radius:16px;
+    border:1px solid #e5e7eb; box-shadow:0 4px 16px rgba(0,0,0,.07);
+    overflow:hidden;
+}
+.sc-header {
+    padding:1rem 1.35rem; border-bottom:1px solid #f1f5f9;
+    display:flex; align-items:center; gap:.5rem;
+}
+.sc-header h2 { font-size:.9rem; font-weight:800; color:#0f172a; margin:0; }
+
+/* ── Booking summary ────────────────────── */
+.bk-detail-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.65rem 0; border-bottom:1px solid #f8fafc;
+    font-size:.84rem;
+}
+.bk-detail-row:last-child { border-bottom:none; }
+.bk-detail-row .lbl { color:#6b7280; display:flex; align-items:center; gap:.4rem; }
+.bk-detail-row .val { font-weight:700; color:#0f172a; text-align:right; }
+
+/* ── Fare box ───────────────────────────── */
+.fare-hero {
+    background:linear-gradient(135deg,#0f2040,#1e40af);
+    border-radius:14px; padding:1.25rem 1.5rem; color:#fff; margin-top:1rem;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+}
+.fare-hero .fh-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.55); margin-bottom:.2rem; font-weight:700; }
+.fare-hero .fh-amount { font-size:2rem; font-weight:900; color:#fbbf24; line-height:1; }
+.fare-hero .fh-ref    { font-size:.75rem; color:rgba(255,255,255,.5); margin-top:.25rem; }
+
+/* ── Trust badges ───────────────────────── */
+.trust-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; margin-top:1rem; }
+.trust-item { text-align:center; padding:.6rem .25rem; }
+.trust-item i { font-size:1.25rem; display:block; margin-bottom:.3rem; }
+.trust-item span { font-size:.65rem; color:#6b7280; font-weight:600; }
+
+/* ── Payment method tiles ───────────────── */
+.methods-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.65rem; }
+@media(max-width:500px) { .methods-grid { grid-template-columns:repeat(2,1fr); } }
+
+.method-tile {
+    position:relative; cursor:pointer; border-radius:14px;
+    border:2px solid #e5e7eb; background:#fafafa;
+    transition:border-color .2s, background .2s, box-shadow .2s, transform .15s;
+    overflow:hidden;
+}
+.method-tile:hover {
+    border-color:#93c5fd; background:#fff;
+    box-shadow:0 4px 14px rgba(37,99,235,.1); transform:translateY(-2px);
+}
+.method-tile.selected {
+    border-color:#2563eb; background:#eff6ff;
+    box-shadow:0 4px 20px rgba(37,99,235,.2);
+}
+.method-tile .mt-check {
+    position:absolute; top:.5rem; right:.5rem;
+    width:20px; height:20px; border-radius:50%; border:2px solid #cbd5e1;
+    background:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:.6rem; color:transparent; transition:all .2s;
+}
+.method-tile.selected .mt-check { background:#2563eb; border-color:#2563eb; color:#fff; }
+.method-tile-inner { padding:.9rem .75rem; text-align:center; }
+.mt-icon { font-size:1.6rem; margin-bottom:.35rem; display:block; }
+.mt-name { font-size:.8rem; font-weight:800; color:#0f172a; display:block; }
+.mt-desc { font-size:.67rem; color:#9ca3af; display:block; margin-top:.15rem; }
+
+/* ── Hint box ───────────────────────────── */
+.hint-box {
+    background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px;
+    padding:.75rem 1rem; font-size:.82rem; color:#1d4ed8;
+    display:flex; align-items:flex-start; gap:.6rem;
+    margin-top:.85rem; transition:all .3s;
+}
+.hint-box i { flex-shrink:0; font-size:1rem; margin-top:.05rem; }
+
+/* ── Pay button ─────────────────────────── */
+.btn-pay {
+    width:100%; padding:1rem; font-size:1rem; font-weight:800;
+    border-radius:14px; border:none; cursor:pointer;
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    color:#fff; display:flex; align-items:center; justify-content:center; gap:.6rem;
+    transition:opacity .2s, transform .15s, box-shadow .2s;
+    box-shadow:0 6px 20px rgba(37,99,235,.35);
+    margin-top:1rem;
+}
+.btn-pay:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 10px 28px rgba(37,99,235,.45); }
+.btn-pay:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+.btn-pay .lock-icon { font-size:1rem; }
+
+/* ── Success screen ─────────────────────── */
+.success-wrap {
+    text-align:center; padding:3.5rem 1rem 2.5rem;
+}
+.success-ring {
+    width:110px; height:110px; border-radius:50%; margin:0 auto 1.5rem;
+    background:linear-gradient(135deg,#10b981,#059669);
+    display:flex; align-items:center; justify-content:center;
+    animation:popIn .55s cubic-bezier(.175,.885,.32,1.275) forwards;
+    box-shadow:0 0 0 16px rgba(16,185,129,.12);
+}
+.success-ring i { font-size:3rem; color:#fff; }
 @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+
+.ref-badge {
+    display:inline-block; background:#f0fdf4; border:1.5px solid #86efac;
+    border-radius:10px; padding:.6rem 1.5rem; font-size:1rem; font-weight:800;
+    color:#065f46; letter-spacing:.08em; margin:1rem auto;
+}
+
+.confetti-line {
+    height:4px; border-radius:2px; margin:.35rem auto; width:60px;
+    background:linear-gradient(90deg,#10b981,#2563eb,#f59e0b);
+}
+
+.success-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; }
+.success-actions a {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.75rem 1.5rem; border-radius:12px; font-weight:700;
+    font-size:.88rem; text-decoration:none; transition:transform .15s, box-shadow .15s;
+}
+.success-actions a:hover { transform:translateY(-2px); }
+.sa-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,.3); }
+.sa-secondary { background:#f1f5f9; border:1.5px solid #e5e7eb; color:#374151; }
+
+/* ── Seat chip preview ──────────────────── */
+.seat-chips { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem; }
+.seat-chip {
+    display:inline-flex; align-items:center; gap:.3rem;
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:999px;
+    padding:.2em .65em; font-size:.72rem; font-weight:700; color:#1d4ed8;
+}
+
+/* countdown bar */
+.countdown-bar { height:4px; background:#e5e7eb; border-radius:2px; overflow:hidden; margin-top:.5rem; }
+.countdown-fill { height:100%; background:linear-gradient(90deg,#10b981,#2563eb); border-radius:2px;
+    animation:countdown 4.5s linear forwards; }
+@keyframes countdown { from{width:100%} to{width:0%} }
 </style>
 
-<div class="container py-4" style="max-width:960px;">
+<div class="pay-wrap">
 
-    <!-- Step Indicator -->
-    <div class="pay-steps mb-4">
-        <div class="step-item done">
-            <div class="step-circle"><i class="bi bi-check-lg"></i></div>
-            <span class="step-label">Booked</span>
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<div class="pay-hero">
+    <div class="pay-hero-inner">
+
+        <!-- Steps -->
+        <div class="pay-steps">
+            <div class="step-item done">
+                <div class="step-circle"><i class="bi bi-check-lg"></i></div>
+                <span class="step-label">Booked</span>
+            </div>
+            <div class="step-connector done"></div>
+            <div class="step-item <?= $payment_done ? 'done' : 'active' ?>">
+                <div class="step-circle"><i class="bi bi-credit-card<?= $payment_done ? '' : '' ?>"></i></div>
+                <span class="step-label">Payment</span>
+            </div>
+            <div class="step-connector <?= $payment_done ? 'done' : '' ?>"></div>
+            <div class="step-item <?= $payment_done ? 'done' : '' ?>">
+                <div class="step-circle"><i class="bi bi-patch-check<?= $payment_done ? '-fill' : '' ?>"></i></div>
+                <span class="step-label">Confirmed</span>
+            </div>
         </div>
-        <div class="step-connector <?= $payment_done ? 'done' : '' ?>"></div>
-        <div class="step-item <?= $payment_done ? 'done' : 'active' ?>">
-            <div class="step-circle"><i class="bi bi-credit-card"></i></div>
-            <span class="step-label">Payment</span>
+
+        <!-- Route display -->
+        <div class="text-center">
+            <div class="route-pill">
+                <?= htmlspecialchars($booking['departure_city']) ?>
+                <span class="arr"><i class="bi bi-arrow-right"></i></span>
+                <?= htmlspecialchars($booking['arrival_city']) ?>
+            </div>
+            <div class="pay-meta">
+                <span class="pay-meta-badge"><i class="bi bi-train-front"></i> <?= htmlspecialchars($booking['train_name']) ?></span>
+                <span class="pay-meta-badge"><i class="bi bi-calendar3"></i> <?= date('D, d M Y', strtotime($booking['journey_date'])) ?></span>
+                <span class="pay-meta-badge"><i class="bi bi-clock"></i> <?= date('H:i', strtotime($booking['departure_time'])) ?> → <?= date('H:i', strtotime($booking['arrival_time'])) ?></span>
+                <span class="pay-meta-badge"><i class="bi bi-ticket-perforated"></i> <?= (int)$booking['number_of_seats'] ?> seat<?= $booking['number_of_seats'] > 1 ? 's' : '' ?></span>
+            </div>
         </div>
-        <div class="step-connector <?= $payment_done ? 'done' : '' ?>"></div>
-        <div class="step-item <?= $payment_done ? 'done' : '' ?>">
-            <div class="step-circle"><i class="bi bi-patch-check<?= $payment_done ? '-fill' : '' ?>"></i></div>
-            <span class="step-label">Confirmed</span>
-        </div>
+
     </div>
+    <div class="pay-hero-wave">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#f1f5f9"/>
+        </svg>
+    </div>
+</div>
+
+<!-- ── Content ───────────────────────────────────────────── -->
+<div class="pay-content">
 
     <?php if ($payment_done): ?>
-    <!-- ── Success Screen ── -->
-    <div class="text-center py-5">
-        <div class="success-check d-inline-block mb-3">
-            <i class="bi bi-check-circle-fill text-success" style="font-size:5.5rem;"></i>
+    <!-- ══ SUCCESS ══════════════════════════════════════════ -->
+    <div class="surface-card">
+        <div class="success-wrap">
+            <div class="success-ring"><i class="bi bi-check-lg"></i></div>
+
+            <h2 class="fw-black" style="font-size:1.8rem;color:#065f46;">Payment Successful!</h2>
+            <p class="text-muted mb-1" style="font-size:.95rem;">Your booking is confirmed. Your e-ticket is ready.</p>
+            <div class="confetti-line mx-auto"></div>
+
+            <div class="ref-badge">
+                <i class="bi bi-hash"></i> <?= htmlspecialchars($booking['booking_reference']) ?>
+            </div>
+
+            <p class="text-muted" style="font-size:.82rem;">Redirecting to your bookings in a moment…</p>
+            <div class="countdown-bar" style="max-width:220px;margin:0 auto;">
+                <div class="countdown-fill"></div>
+            </div>
+
+            <div class="success-actions">
+                <a href="booking_details.php?id=<?= $booking_id ?>" class="sa-primary">
+                    <i class="bi bi-ticket-detailed"></i> View E-Ticket &amp; Print
+                </a>
+                <a href="bookings.php" class="sa-secondary">
+                    <i class="bi bi-list-ul"></i> My Bookings
+                </a>
+            </div>
         </div>
-        <h2 class="fw-bold text-success">Payment Successful!</h2>
-        <p class="text-muted fs-5 mb-4">Your booking is confirmed. Redirecting in a moment…</p>
-        <a href="booking_details.php?id=<?= $booking_id ?>" class="btn btn-primary btn-lg me-2">
-            <i class="bi bi-ticket-detailed me-1"></i> View E-Ticket
-        </a>
-        <a href="bookings.php" class="btn btn-outline-secondary btn-lg">
-            <i class="bi bi-list-ul me-1"></i> My Bookings
-        </a>
     </div>
     <script>setTimeout(function(){ window.location='bookings.php'; }, 4500);</script>
 
     <?php else: ?>
-    <!-- ── Payment Layout ── -->
-    <div class="row g-4 align-items-start">
+    <!-- ══ PAYMENT FORM ═════════════════════════════════════ -->
 
-        <!-- Left: Booking Summary -->
+    <?php if ($error_message): ?>
+    <div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-3 border-0"
+         style="background:#fee2e2;color:#7f1d1d;">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div><?= htmlspecialchars($error_message) ?></div>
+    </div>
+    <?php endif; ?>
+
+    <div class="row g-3 align-items-start">
+
+        <!-- ── Left: Summary ─────────────────────────── -->
         <div class="col-lg-5">
-            <div class="card border-0 shadow-sm overflow-hidden">
-                <div class="card-header border-0 text-white py-3"
-                     style="background:linear-gradient(135deg,#1a3c6e 0%,#2d6a9f 100%);">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Booking Summary</h6>
+            <div class="surface-card">
+                <div class="sc-header">
+                    <i class="bi bi-receipt" style="color:#2563eb;font-size:1rem;"></i>
+                    <h2>Booking Summary</h2>
                 </div>
-                <div class="card-body">
-                    <!-- Route display -->
-                    <div class="d-flex align-items-center justify-content-between p-3 rounded-3 mb-3"
-                         style="background:#f0f4ff;">
-                        <div class="text-center">
-                            <div class="fw-bold fs-5 text-primary"><?= htmlspecialchars($booking['departure_city']) ?></div>
-                            <small class="text-muted"><?= date('H:i', strtotime($booking['departure_time'])) ?></small>
-                        </div>
-                        <div class="text-center px-2">
-                            <i class="bi bi-arrow-right fs-3 text-secondary"></i>
-                            <div class="text-muted" style="font-size:.72rem;">Direct</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="fw-bold fs-5 text-primary"><?= htmlspecialchars($booking['arrival_city']) ?></div>
-                            <small class="text-muted"><?= date('H:i', strtotime($booking['arrival_time'])) ?></small>
-                        </div>
+                <div style="padding:1rem 1.35rem;">
+
+                    <?php
+                    $seats = $db->select(
+                        "SELECT s.seat_number, s.seat_type, bs.passenger_name
+                         FROM booking_seats bs
+                         JOIN seats s ON bs.seat_id = s.seat_id
+                         WHERE bs.booking_id = {$booking_id}
+                         ORDER BY bs.booking_seat_id ASC"
+                    );
+                    ?>
+
+                    <!-- Details -->
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-train-front"></i>Train</span>
+                        <span class="val"><?= htmlspecialchars($booking['train_name']) ?> · <?= htmlspecialchars($booking['train_number']) ?></span>
+                    </div>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-calendar3"></i>Journey Date</span>
+                        <span class="val"><?= date('d M Y, D', strtotime($booking['journey_date'])) ?></span>
+                    </div>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-clock"></i>Departure</span>
+                        <span class="val"><?= date('H:i', strtotime($booking['departure_time'])) ?></span>
+                    </div>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-people"></i>Seats</span>
+                        <span class="val"><?= (int)$booking['number_of_seats'] ?></span>
+                    </div>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-bookmark"></i>Booking Ref</span>
+                        <span class="val" style="color:#2563eb;"><?= htmlspecialchars($booking['booking_reference']) ?></span>
                     </div>
 
-                    <ul class="list-group list-group-flush mb-3">
-                        <li class="list-group-item px-0 d-flex justify-content-between py-2">
-                            <span class="text-muted small"><i class="bi bi-train-front me-1"></i>Train</span>
-                            <strong class="small text-end"><?= htmlspecialchars($booking['train_name']) ?></strong>
-                        </li>
-                        <li class="list-group-item px-0 d-flex justify-content-between py-2">
-                            <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Journey Date</span>
-                            <strong class="small"><?= date('d M Y, D', strtotime($booking['journey_date'])) ?></strong>
-                        </li>
-                        <li class="list-group-item px-0 d-flex justify-content-between py-2">
-                            <span class="text-muted small"><i class="bi bi-people me-1"></i>Seats</span>
-                            <strong class="small"><?= (int)$booking['number_of_seats'] ?></strong>
-                        </li>
-                        <li class="list-group-item px-0 d-flex justify-content-between py-2">
-                            <span class="text-muted small"><i class="bi bi-bookmark me-1"></i>Booking Ref</span>
-                            <strong class="small text-primary"><?= htmlspecialchars($booking['booking_reference']) ?></strong>
-                        </li>
-                    </ul>
+                    <?php if ($seats): ?>
+                    <div style="margin-top:.5rem;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:.4rem;">Selected Seats</div>
+                        <div class="seat-chips">
+                            <?php foreach ($seats as $s): ?>
+                            <span class="seat-chip">
+                                <i class="bi bi-grid-1x2-fill" style="font-size:.6rem;"></i>
+                                <?= htmlspecialchars($s['seat_number']) ?> · <?= ucfirst($s['seat_type']) ?>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
-                    <!-- Amount -->
-                    <div class="text-center text-white p-3 rounded-3"
-                         style="background:linear-gradient(135deg,#1a3c6e,#2d6a9f);">
-                        <div class="small opacity-75">Total Amount Due</div>
-                        <div class="fs-2 fw-bold">Rs. <?= number_format($booking['total_fare'], 2) ?></div>
+                    <!-- Fare -->
+                    <div class="fare-hero">
+                        <div>
+                            <div class="fh-label">Total Amount Due</div>
+                            <div class="fh-amount">Rs <?= number_format($booking['total_fare'], 0) ?></div>
+                            <div class="fh-ref">Ref: <?= htmlspecialchars($booking['booking_reference']) ?></div>
+                        </div>
+                        <i class="bi bi-shield-check" style="font-size:2.5rem;color:rgba(255,255,255,.2);"></i>
                     </div>
 
-                    <!-- Trust badges -->
-                    <div class="row row-cols-4 g-0 mt-3 pt-3 border-top text-center">
+                    <!-- Trust grid -->
+                    <div class="trust-grid">
                         <?php foreach ([
-                            ['bi-shield-lock','success','Secure'],
-                            ['bi-credit-card','success','Encrypted'],
-                            ['bi-patch-check','success','Verified'],
-                            ['bi-arrow-counterclockwise','primary','Refundable'],
-                        ] as [$ic, $col, $lbl]): ?>
-                        <div class="col">
-                            <i class="bi <?= $ic ?> text-<?= $col ?> fs-5"></i>
-                            <div style="font-size:.68rem;color:#6c757d;"><?= $lbl ?></div>
+                            ['bi-shield-lock-fill','text-success','Secure'],
+                            ['bi-credit-card-fill','text-success','Encrypted'],
+                            ['bi-patch-check-fill','text-success','Verified'],
+                            ['bi-arrow-counterclockwise','text-primary','Refundable'],
+                        ] as [$ic,$col,$lbl]): ?>
+                        <div class="trust-item">
+                            <i class="bi <?= $ic ?> <?= $col ?>"></i>
+                            <span><?= $lbl ?></span>
                         </div>
                         <?php endforeach; ?>
                     </div>
+
                 </div>
             </div>
         </div>
 
-        <!-- Right: Payment Form -->
+        <!-- ── Right: Payment Form ───────────────────── -->
         <div class="col-lg-7">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header border-0 bg-white border-bottom">
-                    <h6 class="mb-0 fw-bold text-primary">
-                        <i class="bi bi-credit-card me-2"></i>Select Payment Method
-                    </h6>
+            <div class="surface-card">
+                <div class="sc-header">
+                    <i class="bi bi-credit-card-2-front" style="color:#2563eb;font-size:1rem;"></i>
+                    <h2>Select Payment Method</h2>
                 </div>
-                <div class="card-body">
-                    <?php if ($error_message): ?>
-                    <div class="alert alert-danger border-0 rounded-3 py-2">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($error_message) ?>
-                    </div>
-                    <?php endif; ?>
+                <div style="padding:1.25rem 1.35rem;">
 
-                    <form method="POST" id="paymentForm">
-                        <div class="row g-3">
-                            <?php foreach ([
-                                ['credit_card',   '💳', 'Credit Card',       'Visa / Mastercard'],
-                                ['debit_card',    '💳', 'Debit Card',        'ATM / Bank Card'],
-                                ['easypaisa',     '📱', 'EasyPaisa',         'Mobile Wallet'],
-                                ['jazzcash',      '📲', 'JazzCash',          'Mobile Wallet'],
-                                ['bank_transfer', '🏦', 'Bank Transfer',     'IBFT / Online'],
-                                ['cash',          '💵', 'Cash at Station',   'Pay on Arrival'],
-                            ] as [$val, $icon, $name, $desc]): ?>
-                            <div class="col-6">
-                                <label class="pay-card w-100" data-method="<?= $val ?>">
-                                    <input type="radio" name="payment_method" value="<?= $val ?>" class="d-none" required>
-                                    <div class="pay-card-inner">
-                                        <span class="pay-icon"><?= $icon ?></span>
-                                        <span class="pay-name"><?= $name ?></span>
-                                        <span class="pay-desc"><?= $desc ?></span>
-                                    </div>
-                                </label>
-                            </div>
+                    <form method="POST" id="paymentForm" novalidate>
+
+                        <div class="methods-grid" id="methodsGrid">
+                            <?php
+                            $methods = [
+                                ['credit_card',   'bi-credit-card-2-front', '#2563eb', '#eff6ff', 'Credit Card',    'Visa / Mastercard'],
+                                ['debit_card',    'bi-bank',                '#0891b2', '#ecfeff', 'Debit Card',     'ATM / Bank Card'],
+                                ['easypaisa',     'bi-phone-fill',          '#059669', '#f0fdf4', 'EasyPaisa',      'Mobile Wallet'],
+                                ['jazzcash',      'bi-phone-vibrate-fill',  '#d97706', '#fffbeb', 'JazzCash',       'Mobile Wallet'],
+                                ['bank_transfer', 'bi-building-fill',       '#7c3aed', '#f5f3ff', 'Bank Transfer',  'IBFT / Online'],
+                                ['cash',          'bi-cash-coin',           '#0f172a', '#f8fafc', 'Cash at Counter','Pay at Station'],
+                            ];
+                            foreach ($methods as [$val, $icon, $clr, $bg, $name, $desc]):
+                            ?>
+                            <label class="method-tile" data-method="<?= $val ?>"
+                                   data-color="<?= $clr ?>" data-bg="<?= $bg ?>">
+                                <input type="radio" name="payment_method" value="<?= $val ?>" class="d-none" required>
+                                <div class="mt-check"><i class="bi bi-check-lg"></i></div>
+                                <div class="method-tile-inner">
+                                    <span class="mt-icon">
+                                        <i class="bi <?= $icon ?>" style="color:<?= $clr ?>;"></i>
+                                    </span>
+                                    <span class="mt-name"><?= $name ?></span>
+                                    <span class="mt-desc"><?= $desc ?></span>
+                                </div>
+                            </label>
                             <?php endforeach; ?>
                         </div>
 
-                        <div id="methodHintBox" class="alert alert-info border-0 rounded-3 py-2 mt-3 d-none">
-                            <i class="bi bi-info-circle me-2"></i><span id="methodHintText"></span>
+                        <!-- Hint box -->
+                        <div class="hint-box" id="hintBox" style="display:none;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span id="hintText"></span>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3 py-3" id="payBtn" disabled>
-                            <i class="bi bi-lock-fill me-2"></i>
-                            Pay Rs. <?= number_format($booking['total_fare'], 2) ?> Securely
+                        <!-- Pay button -->
+                        <button type="submit" class="btn-pay" id="payBtn" disabled>
+                            <span class="lock-icon"><i class="bi bi-lock-fill"></i></span>
+                            <span id="payBtnLabel">Pay Rs <?= number_format($booking['total_fare'], 0) ?> Securely</span>
                         </button>
 
-                        <p class="text-muted text-center mt-2 mb-0" style="font-size:.78rem;">
+                        <div class="text-center mt-2" style="font-size:.73rem;color:#9ca3af;">
                             <i class="bi bi-shield-check me-1 text-success"></i>
-                            Your payment is secured with 256-bit SSL encryption
-                        </p>
+                            Protected by 256-bit SSL encryption &nbsp;·&nbsp;
+                            <i class="bi bi-lock me-1"></i>PCI DSS Compliant
+                        </div>
+
                     </form>
 
-                    <div class="mt-3 pt-3 border-top text-center">
-                        <a href="bookings.php" class="text-secondary text-decoration-none small">
-                            <i class="bi bi-arrow-left me-1"></i>Back to My Bookings
+                    <div class="text-center mt-3 pt-3" style="border-top:1px solid #f1f5f9;">
+                        <a href="bookings.php" class="text-secondary text-decoration-none"
+                           style="font-size:.82rem;font-weight:600;">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel &amp; go back
                         </a>
                     </div>
                 </div>
@@ -291,35 +524,50 @@ $pageTitle = 'Complete Payment – Railway Management System';
     </div><!-- /row -->
     <?php endif; ?>
 
-</div><!-- /container -->
+</div><!-- /pay-content -->
+</div><!-- /pay-wrap -->
 
 <script>
 (function () {
     var hints = {
-        credit_card:   'Enter your Visa or Mastercard details to complete the payment.',
-        debit_card:    'Use your ATM or bank debit card for payment.',
-        easypaisa:     'Pay via EasyPaisa mobile account or any authorized retailer.',
-        jazzcash:      'Pay via JazzCash mobile account or any JazzCash retailer.',
-        bank_transfer: 'Transfer the exact amount via IBFT and include your booking reference as the note.',
-        cash:          'Your booking will be held. Pay at the station ticket counter before departure.'
+        credit_card:   'Enter your Visa or Mastercard card number and CVV at the next step.',
+        debit_card:    'Use your ATM or bank debit card. You will be redirected to your bank\'s 3D-Secure page.',
+        easypaisa:     'You will receive a payment request on your EasyPaisa-registered mobile number.',
+        jazzcash:      'Pay instantly via your JazzCash mobile account. Ensure you have sufficient balance.',
+        bank_transfer: 'Transfer the exact amount via IBFT and mention your booking reference as the note.',
+        cash:          'Your booking is held for 2 hours. Pay at the station ticket counter before departure.'
     };
 
-    document.querySelectorAll('.pay-card').forEach(function (card) {
-        card.addEventListener('click', function () {
-            document.querySelectorAll('.pay-card').forEach(function (c) { c.classList.remove('selected'); });
-            card.classList.add('selected');
-            card.querySelector('input[type=radio]').checked = true;
-            var method = card.dataset.method;
-            document.getElementById('methodHintText').textContent = hints[method] || '';
-            document.getElementById('methodHintBox').classList.remove('d-none');
-            document.getElementById('payBtn').disabled = false;
+    var tiles   = document.querySelectorAll('.method-tile');
+    var payBtn  = document.getElementById('payBtn');
+    var hintBox = document.getElementById('hintBox');
+    var hintTxt = document.getElementById('hintText');
+
+    tiles.forEach(function (tile) {
+        tile.addEventListener('click', function () {
+            tiles.forEach(function (t) {
+                t.classList.remove('selected');
+                t.style.borderColor = '';
+                t.style.background  = '';
+            });
+
+            tile.classList.add('selected');
+            tile.style.borderColor = tile.dataset.color;
+            tile.style.background  = tile.dataset.bg;
+
+            tile.querySelector('input').checked = true;
+
+            hintTxt.textContent = hints[tile.dataset.method] || '';
+            hintBox.style.display = 'flex';
+
+            payBtn.disabled = false;
         });
     });
 
     document.getElementById('paymentForm').addEventListener('submit', function () {
-        var btn = document.getElementById('payBtn');
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing Payment…';
-        btn.disabled = true;
+        payBtn.disabled = true;
+        payBtn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
     });
 }());
 </script>
