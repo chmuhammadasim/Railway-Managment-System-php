@@ -121,51 +121,131 @@ class Booking {
         return array('success' => true, 'message' => 'Booking cancelled successfully!');
     }
 
-    // Request cancellation with 24-hour time restriction (Passenger use)
-    public function requestCancellation($booking_id, $user_id = null) {
+    /**
+     * Calculate refund tier based on hours until journey.
+     * Returns array:
+     *   allowed        bool    – whether cancellation is permitted
+     *   hours          float   – hours until journey
+     *   refund_pct     int     – percentage of fare refunded (0–100)
+     *   fee_pct        int     – percentage charged as cancellation fee
+     *   refund_amount  float   – Rs amount to refund
+     *   cancel_fee     float   – Rs cancellation fee
+     *   tier_label     string  – human-readable tier name
+     *   message        string  – user-facing description
+     */
+    public function getRefundPreview($booking_id, $user_id = null) {
         $booking = $this->getBookingById($booking_id);
 
         if (!$booking) {
-            return array('success' => false, 'message' => 'Booking not found!');
+            return array('allowed' => false, 'message' => 'Booking not found.');
         }
-
         if ($user_id !== null && $booking['user_id'] != $user_id) {
-            return array('success' => false, 'message' => 'Unauthorised.');
+            return array('allowed' => false, 'message' => 'Unauthorised.');
         }
-
         if ($booking['booking_status'] === BOOKING_CANCELLED) {
-            return array('success' => false, 'message' => 'Booking is already cancelled.');
+            return array('allowed' => false, 'message' => 'This booking is already cancelled.');
+        }
+        if (!in_array($booking['booking_status'], [BOOKING_CONFIRMED, BOOKING_PENDING])) {
+            return array('allowed' => false, 'message' => 'Only confirmed or pending bookings can be cancelled.');
         }
 
-        // Enforce 24-hour cancellation window
-        $journey_datetime = strtotime($booking['journey_date'] . ' 00:00:00');
-        $hours_until_journey = ($journey_datetime - time()) / 3600;
+        $fare         = (float)$booking['total_fare'];
+        $journey_dt   = strtotime($booking['journey_date'] . ' 00:00:00');
+        $hours        = ($journey_dt - time()) / 3600;
 
-        if ($hours_until_journey < 24) {
-            return array('success' => false, 'message' => 'Cancellations are only allowed up to 24 hours before the journey date.');
+        if ($hours < 24) {
+            return array(
+                'allowed'       => false,
+                'hours'         => $hours,
+                'refund_pct'    => 0,
+                'fee_pct'       => 100,
+                'refund_amount' => 0,
+                'cancel_fee'    => $fare,
+                'tier_label'    => 'No Refund',
+                'message'       => 'Cancellations are not allowed within 24 hours of the journey.',
+            );
+        } elseif ($hours < 48) {
+            $fee_pct = 50; $refund_pct = 50;
+            $tier_label = '24–48 hrs (50% refund)';
+        } elseif ($hours < 72) {
+            $fee_pct = 25; $refund_pct = 75;
+            $tier_label = '48–72 hrs (75% refund)';
+        } else {
+            $fee_pct = 0; $refund_pct = 100;
+            $tier_label = 'More than 72 hrs (100% refund)';
         }
 
-        // Cancel booking and release seats
-        $this->db->update('bookings', 'booking_id', $booking_id,
-                          array('booking_status' => BOOKING_CANCELLED));
+        $cancel_fee    = round($fare * $fee_pct / 100, 2);
+        $refund_amount = round($fare - $cancel_fee, 2);
 
-        $query = "SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}";
-        $seats = $this->db->select($query);
+        return array(
+            'allowed'       => true,
+            'hours'         => $hours,
+            'refund_pct'    => $refund_pct,
+            'fee_pct'       => $fee_pct,
+            'refund_amount' => $refund_amount,
+            'cancel_fee'    => $cancel_fee,
+            'tier_label'    => $tier_label,
+            'message'       => "You will receive a {$refund_pct}% refund (Rs " . number_format($refund_amount, 2) . "). Cancellation fee: Rs " . number_format($cancel_fee, 2) . ".",
+            'booking'       => $booking,
+        );
+    }
+
+    /**
+     * Cancel a booking and apply time-based refund rules.
+     * Stores cancellation_fee, refund_amount, cancellation_reason, cancelled_at
+     * in the bookings row and marks payment as refunded.
+     */
+    public function requestCancellation($booking_id, $user_id = null, $reason = '') {
+        $preview = $this->getRefundPreview($booking_id, $user_id);
+
+        if (!$preview['allowed']) {
+            return array('success' => false, 'message' => $preview['message']);
+        }
+
+        $booking       = $preview['booking'];
+        $refund_amount = $preview['refund_amount'];
+        $cancel_fee    = $preview['cancel_fee'];
+        $safe_reason   = addslashes($reason ?: 'Passenger cancellation');
+
+        // Update booking row with cancellation details
+        $this->db->query(
+            "UPDATE bookings SET
+                booking_status      = '" . BOOKING_CANCELLED . "',
+                cancellation_reason = '{$safe_reason}',
+                cancellation_fee    = {$cancel_fee},
+                refund_amount       = {$refund_amount},
+                cancelled_at        = NOW()
+            WHERE booking_id = {$booking_id}"
+        );
+
+        // Release seats
+        $seats = $this->db->select("SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}");
         if ($seats) {
             foreach ($seats as $seat) {
-                $this->db->update('seats', 'seat_id', $seat['seat_id'],
-                                  array('status' => 'available'));
+                $this->db->update('seats', 'seat_id', $seat['seat_id'], array('status' => 'available'));
             }
         }
 
-        // Restore available_seats on the route
+        // Restore route availability
         $this->db->query("UPDATE routes SET available_seats = available_seats + {$booking['number_of_seats']} WHERE route_id = {$booking['route_id']}");
 
-        // Mark payment as refunded if it was completed
-        $this->db->query("UPDATE payments SET payment_status = 'refunded', refund_date = NOW(), refund_reason = 'Passenger cancellation' WHERE booking_id = {$booking_id} AND payment_status = 'completed'");
-        $this->db->query("UPDATE bookings SET payment_status = 'refunded' WHERE booking_id = {$booking_id} AND payment_status = 'completed'");
+        // Mark payment as refunded (partial or full based on refund_amount)
+        $refund_note   = addslashes("Passenger cancellation – {$preview['tier_label']}");
+        $payment_status = $refund_amount > 0 ? 'refunded' : 'forfeited';
+        $this->db->query("UPDATE payments SET payment_status = '{$payment_status}', refund_date = NOW(), refund_reason = '{$refund_note}' WHERE booking_id = {$booking_id} AND payment_status = 'completed'");
+        if ($refund_amount > 0) {
+            $this->db->query("UPDATE bookings SET payment_status = 'refunded' WHERE booking_id = {$booking_id} AND payment_status IN ('completed','paid')");
+        }
 
-        return array('success' => true, 'message' => 'Booking cancelled successfully. A refund will be processed if applicable.');
+        return array(
+            'success'       => true,
+            'message'       => 'Booking cancelled. ' . $preview['message'],
+            'refund_amount' => $refund_amount,
+            'cancel_fee'    => $cancel_fee,
+            'refund_pct'    => $preview['refund_pct'],
+            'tier_label'    => $preview['tier_label'],
+        );
     }
 
     // Update booking journey date (change journey to another available route for the same origin/destination)

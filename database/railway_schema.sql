@@ -174,6 +174,65 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_notif_user (user_id, is_read)
 );
 
+-- Audit Logs Table (comprehensive action trail)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    log_id       INT PRIMARY KEY AUTO_INCREMENT,
+    user_id      INT,
+    user_role    VARCHAR(20),
+    action       VARCHAR(100) NOT NULL,
+    module       VARCHAR(50)  NOT NULL,
+    description  TEXT,
+    old_value    TEXT,
+    new_value    TEXT,
+    record_id    INT,
+    ip_address   VARCHAR(45),
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_audit_user   (user_id, created_at),
+    INDEX idx_audit_module (module, created_at),
+    INDEX idx_audit_action (action, created_at)
+);
+
+-- Cargo Shipments Table
+CREATE TABLE IF NOT EXISTS cargo_shipments (
+    shipment_id        INT PRIMARY KEY AUTO_INCREMENT,
+    tracking_number    VARCHAR(30) UNIQUE NOT NULL,
+    sender_name        VARCHAR(100) NOT NULL,
+    sender_phone       VARCHAR(20),
+    sender_address     TEXT,
+    receiver_name      VARCHAR(100) NOT NULL,
+    receiver_phone     VARCHAR(20),
+    receiver_address   TEXT,
+    origin_city        VARCHAR(100) NOT NULL,
+    destination_city   VARCHAR(100) NOT NULL,
+    route_id           INT,
+    weight_kg          DECIMAL(8,2) NOT NULL,
+    cargo_type         ENUM('general','fragile','perishable','livestock','hazardous') DEFAULT 'general',
+    declared_value     DECIMAL(12,2) DEFAULT 0.00,
+    shipping_fee       DECIMAL(10,2) NOT NULL,
+    shipment_status    ENUM('pending','in_transit','arrived','delivered','cancelled') DEFAULT 'pending',
+    payment_status     ENUM('pending','paid','refunded') DEFAULT 'pending',
+    special_instructions TEXT,
+    booked_by          INT,
+    handled_by         INT,
+    booking_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estimated_delivery DATE,
+    actual_delivery    DATETIME,
+    updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (route_id)   REFERENCES routes(route_id)  ON DELETE SET NULL,
+    FOREIGN KEY (booked_by)  REFERENCES users(user_id)    ON DELETE SET NULL,
+    FOREIGN KEY (handled_by) REFERENCES users(user_id)    ON DELETE SET NULL,
+    INDEX idx_cargo_status  (shipment_status),
+    INDEX idx_cargo_route   (route_id),
+    INDEX idx_cargo_track   (tracking_number)
+);
+
+-- Cancellation columns on bookings
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(255) DEFAULT NULL   AFTER payment_status,
+    ADD COLUMN IF NOT EXISTS cancellation_fee    DECIMAL(10,2) DEFAULT 0.00  AFTER cancellation_reason,
+    ADD COLUMN IF NOT EXISTS refund_amount       DECIMAL(10,2) DEFAULT 0.00  AFTER cancellation_fee,
+    ADD COLUMN IF NOT EXISTS cancelled_at        DATETIME DEFAULT NULL        AFTER refund_amount;
+
 -- OTP Verification Table
 CREATE TABLE IF NOT EXISTS otp_verifications (
     otp_id       INT PRIMARY KEY AUTO_INCREMENT,

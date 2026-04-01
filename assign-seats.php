@@ -336,11 +336,11 @@ require_once 'inc/header.php';
 
     <?php if ($route && !empty($seat_map)): ?>
 
-    <!-- Route Info Banner -->
+    <!-- Route Info Banner with Real-time Availability -->
     <?php $booked_n = $seat_stats['booked'] + $seat_stats['reserved'];
     $occ_pct = $seat_stats['total'] > 0 ? round($booked_n / $seat_stats['total'] * 100) : 0;
     ?>
-    <div class="route-info-band mb-4">
+    <div class="route-info-band mb-4" id="routeBand">
         <div style="flex:1;">
             <div class="ri-route">
                 <i class="bi bi-geo-alt-fill me-1" style="color:#10b981;"></i>
@@ -353,23 +353,46 @@ require_once 'inc/header.php';
                 <?= date('D, d M Y', strtotime($route['journey_date'])) ?> &nbsp;&middot;&nbsp;
                 <?= date('H:i', strtotime($route['departure_time'])) ?> &rarr; <?= date('H:i', strtotime($route['arrival_time'])) ?>
             </div>
-            <div class="ri-stats">
-                <span class="sp sp-available"><i class="bi bi-check-circle me-1"></i><?= $seat_stats['available'] ?> Available</span>
-                <span class="sp sp-booked"><i class="bi bi-x-circle me-1"></i><?= $seat_stats['booked'] ?> Booked</span>
-                <span class="sp sp-reserved"><i class="bi bi-lock me-1"></i><?= $seat_stats['reserved'] ?> Reserved</span>
+            <div class="ri-stats" id="seatStats">
+                <span class="sp sp-available"><i class="bi bi-check-circle me-1"></i><span id="cntAvailable"><?= $seat_stats['available'] ?></span> Available</span>
+                <span class="sp sp-booked"><i class="bi bi-x-circle me-1"></i><span id="cntBooked"><?= $seat_stats['booked'] ?></span> Booked</span>
+                <span class="sp sp-reserved"><i class="bi bi-lock me-1"></i><span id="cntReserved"><?= $seat_stats['reserved'] ?></span> Reserved</span>
+                <span id="liveIndicator" style="display:none;" class="badge bg-success ms-2" style="font-size:.7rem;">● LIVE</span>
+            </div>
+            <!-- Per-class inventory -->
+            <div class="d-flex gap-3 mt-2 flex-wrap" id="classBars">
+                <?php
+                $class_colors = ['economy'=>['#6b7280','#e5e7eb'],'premium'=>['#7c3aed','#ede9fe'],'luxury'=>['#d97706','#fef3c7']];
+                foreach (['economy','premium','luxury'] as $cls):
+                    $ct = $seat_stats['total'] > 0 ? $db->selectRow("SELECT COUNT(*) AS n FROM seats WHERE route_id={$route_id} AND seat_type='{$cls}'")['n'] ?? 0 : 0;
+                    $ca = $ct > 0 ? $db->selectRow("SELECT COUNT(*) AS n FROM seats WHERE route_id={$route_id} AND seat_type='{$cls}' AND status='available'")['n'] ?? 0 : 0;
+                    if (!$ct) continue;
+                    $cp = $ct > 0 ? round(($ct-$ca)/$ct*100) : 0;
+                    [$clr,$bg] = $class_colors[$cls];
+                ?>
+                <div id="classBar-<?= $cls ?>" style="min-width:120px;">
+                    <div style="font-size:.7rem;font-weight:700;color:<?= $clr ?>;text-transform:uppercase;letter-spacing:.06em;"><?= $cls ?></div>
+                    <div style="height:6px;background:<?= $bg ?>;border-radius:3px;margin:.2rem 0;overflow:hidden;">
+                        <div data-occ="<?= $cp ?>" style="height:100%;width:<?= $cp ?>%;background:<?= $clr ?>;border-radius:3px;transition:width .5s;"></div>
+                    </div>
+                    <div style="font-size:.68rem;color:#6b7280;"><span data-avail="<?= $cls ?>"><?= $ca ?></span>/<?= $ct ?> free</div>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
         <div style="min-width:200px;">
             <div style="font-size:.78rem;font-weight:600;color:#374151;margin-bottom:.4rem;">
-                Occupancy &mdash; <?= $occ_pct ?>% (<?= $booked_n ?> / <?= $seat_stats['total'] ?>)
+                Occupancy — <span id="occPct"><?= $occ_pct ?></span>% (<span id="occNum"><?= $booked_n ?></span> / <?= $seat_stats['total'] ?>)
             </div>
             <div class="occ-bar">
-                <div class="occ-fill" style="width:<?= $occ_pct ?>%;background:<?= $occ_pct > 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : ($occ_pct > 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' : 'linear-gradient(90deg,#10b981,#059669)') ?>;"></div>
+                <div class="occ-fill" id="occBar" style="width:<?= $occ_pct ?>%;background:<?= $occ_pct > 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : ($occ_pct > 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' : 'linear-gradient(90deg,#10b981,#059669)') ?>;"></div>
             </div>
             <div style="font-size:.7rem;color:#6b7280;margin-top:.35rem;">
                 <a href="route-details-emp.php?id=<?= $route_id ?>" class="text-success text-decoration-none">
                     <i class="bi bi-map me-1"></i>View Route Details
                 </a>
+                &nbsp;·&nbsp;
+                <span id="lastUpdated" style="color:#9ca3af;">Live</span>
             </div>
         </div>
     </div>
@@ -578,6 +601,117 @@ function clearSelection() {
     });
     updateBulkBar();
 }
+</script>
+
+<!-- Real-time seat availability polling -->
+<script>
+(function () {
+    var routeId = <?= (int)$route_id ?>;
+    if (!routeId) return;
+
+    var pollInterval = 15000; // 15 seconds
+    var liveEl = document.getElementById('liveIndicator');
+    var lastUpdEl = document.getElementById('lastUpdated');
+
+    function setColor(pct) {
+        if (pct > 80) return 'linear-gradient(90deg,#ef4444,#dc2626)';
+        if (pct > 60) return 'linear-gradient(90deg,#f59e0b,#d97706)';
+        return 'linear-gradient(90deg,#10b981,#059669)';
+    }
+
+    function refreshSeats() {
+        fetch('api/seat-availability.php?route_id=' + routeId, { credentials: 'same-origin' })
+            .then(function (r) {
+                if (!r.ok) return null;
+                return r.json();
+            })
+            .then(function (data) {
+                if (!data || data.error) return;
+
+                // Update counter spans
+                var avEl = document.getElementById('cntAvailable');
+                var bkEl = document.getElementById('cntBooked');
+                var rsEl = document.getElementById('cntReserved');
+                if (avEl) avEl.textContent = data.stats.available;
+                if (bkEl) bkEl.textContent = data.stats.booked;
+                if (rsEl) rsEl.textContent = data.stats.reserved;
+
+                // Update occupancy bar
+                var booked_n = data.stats.booked + data.stats.reserved;
+                var total = data.stats.total;
+                var pct = total > 0 ? Math.round(booked_n / total * 100) : 0;
+                var occBar = document.getElementById('occBar');
+                var occPct = document.getElementById('occPct');
+                var occNum = document.getElementById('occNum');
+                if (occBar) { occBar.style.width = pct + '%'; occBar.style.background = setColor(pct); }
+                if (occPct) occPct.textContent = pct;
+                if (occNum) occNum.textContent = booked_n;
+
+                // Update per-class inventory bars
+                var classes = ['economy', 'premium', 'luxury'];
+                classes.forEach(function (cls) {
+                    var info = data.by_class[cls];
+                    if (!info) return;
+                    var bar = document.querySelector('#classBar-' + cls);
+                    if (!bar) return;
+                    var clsPct = info.total > 0 ? Math.round((info.total - info.available) / info.total * 100) : 0;
+                    var fill = bar.querySelector('[data-occ]');
+                    if (fill) { fill.style.width = clsPct + '%'; fill.dataset.occ = clsPct; }
+                    var availSpan = bar.querySelector('[data-avail="' + cls + '"]');
+                    if (availSpan) availSpan.textContent = info.available;
+                });
+
+                // Update individual seat tile statuses (without disrupting selection)
+                if (data.seats && data.seats.length) {
+                    data.seats.forEach(function (s) {
+                        var tile = document.querySelector('.seat[data-seat-id="' + s.seat_id + '"]');
+                        if (!tile) return;
+                        var oldStatus = tile.dataset.status;
+                        if (oldStatus === s.status) return; // no change
+                        // Preserve selected class
+                        var wasSelected = tile.classList.contains('selected');
+                        tile.classList.remove('seat-available', 'seat-booked', 'seat-reserved', 'seat-maintenance');
+                        tile.classList.add('seat-' + s.status);
+                        tile.dataset.status = s.status;
+                        if (wasSelected && s.status !== 'available') {
+                            tile.classList.remove('selected');
+                            selectedSeats.delete(parseInt(s.seat_id));
+                            updateBulkBar();
+                        }
+                        // Update tooltip
+                        var label = s.seat_number + ': ' + s.status.charAt(0).toUpperCase() + s.status.slice(1);
+                        if (s.passenger_name) label += ' \u2013 ' + s.passenger_name;
+                        tile.title = label;
+                        // Update passenger name inside tile
+                        var nameEl = tile.querySelector('.seat-name');
+                        if (s.passenger_name) {
+                            if (!nameEl) {
+                                nameEl = document.createElement('span');
+                                nameEl.className = 'seat-name';
+                                tile.appendChild(nameEl);
+                            }
+                            nameEl.textContent = s.passenger_name.split(' ')[0];
+                        } else if (nameEl) {
+                            nameEl.remove();
+                        }
+                    });
+                }
+
+                // Show live badge and timestamp
+                if (liveEl) liveEl.style.display = '';
+                if (lastUpdEl) lastUpdEl.textContent = 'Updated ' + new Date().toLocaleTimeString();
+            })
+            .catch(function () {
+                // silently ignore network errors; badge fades if offline
+                if (liveEl) liveEl.style.display = 'none';
+            });
+    }
+
+    // Kick off polling
+    setInterval(refreshSeats, pollInterval);
+    // Show live badge immediately to indicate polling is active
+    if (liveEl) liveEl.style.display = '';
+}());
 </script>
 
 <?php require_once 'inc/footer.php'; ?>
