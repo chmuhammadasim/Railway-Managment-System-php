@@ -11,10 +11,10 @@ if (!User::isLoggedIn()) {
 
 $db = new Database();
 $db->connect();
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
-// Example: Fetch notifications from a notifications table (implement as needed)
-$notifications = $db->select("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC", [$user_id]);
+// Fetch notifications for this user
+$notifications = $db->select("SELECT * FROM notifications WHERE user_id = {$user_id} ORDER BY created_at DESC");
 
 ?>
 <!DOCTYPE html>

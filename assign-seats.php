@@ -127,7 +127,7 @@ $filter_type = $_GET['type'] ?? 'all'; // all, available, booked, reserved
 
 $hideMainNavbar = true;
 $pageTitle = 'Seat Management – Employee';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
 <style>

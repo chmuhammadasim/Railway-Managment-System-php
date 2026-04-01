@@ -68,7 +68,7 @@ $kpi = $db->selectRow(
 
 $hideMainNavbar = true;
 $pageTitle = 'My Trains – Employee Panel';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
 <style>

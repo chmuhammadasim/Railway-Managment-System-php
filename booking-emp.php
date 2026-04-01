@@ -86,7 +86,7 @@ $payment = $db->selectRow(
 
 $hideMainNavbar = true;
 $pageTitle = 'Booking ' . htmlspecialchars($booking['booking_reference']) . ' – Employee';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
 <style>

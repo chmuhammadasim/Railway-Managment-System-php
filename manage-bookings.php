@@ -131,47 +131,54 @@ function bUrl(array $overrides = []): string {
 
 $hideMainNavbar = true;
 $pageTitle = 'Manage Bookings – Admin';
+
+// Load current admin user for sidebar avatar
+$userObj_ = new User($db);
+$adminUser_ = $userObj_->getUserById($_SESSION['user_id']);
+
 require_once 'inc/header.php';
 ?>
 
 <style>
-/* ── Admin sidebar layout ── */
-.adm-wrap    { display:flex; min-height:calc(100vh - 60px); }
+/* ── Shared admin layout ── */
+.adm-wrap { display:flex; min-height:100vh; }
 .adm-sidebar {
-    width: 230px; flex-shrink: 0;
-    background: linear-gradient(180deg, #7c2d12 0%, #991b1b 100%);
-    padding: 1.5rem 0; position: sticky; top: 60px;
-    height: calc(100vh - 60px); overflow-y: auto;
+    width:240px; flex-shrink:0;
+    background:linear-gradient(180deg,#1a2e4a 0%,#0f1e32 100%);
+    color:#c8d6e8; display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
 }
-.adm-sidebar .sb-brand {
-    padding: .5rem 1.25rem 1.25rem;
-    font-weight: 800; font-size: 1.05rem; color: #fef2f2;
-    border-bottom: 1px solid rgba(255,255,255,.15);
-    margin-bottom: .75rem;
+.adm-sidebar .sb-brand { padding:1.4rem 1.5rem 1rem; border-bottom:1px solid rgba(255,255,255,.08); }
+.adm-sidebar .sb-brand span { display:block; font-size:.7rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.5; margin-bottom:.3rem; }
+.adm-sidebar .sb-brand strong { font-size:1rem; color:#fff; }
+.adm-sidebar nav { flex:1; padding:.75rem 0; }
+.adm-sidebar nav a {
+    display:flex; align-items:center; gap:.75rem; padding:.65rem 1.5rem;
+    color:#c8d6e8; text-decoration:none; font-size:.875rem; font-weight:500;
+    transition:all .2s; border-left:3px solid transparent;
 }
-.adm-sidebar a {
-    display: flex; align-items: center; gap: .65rem;
-    padding: .55rem 1.25rem; color: rgba(255,255,255,.8);
-    text-decoration: none; font-size: .88rem; border-radius: 0;
-    transition: background .2s, color .2s;
+.adm-sidebar nav a:hover,
+.adm-sidebar nav a.active { background:rgba(255,255,255,.07); color:#fff; border-left-color:#3b82f6; }
+.adm-sidebar nav a i { font-size:1rem; width:1.1rem; text-align:center; }
+.adm-sidebar .sb-sep { padding:.5rem 1.5rem .25rem; font-size:.68rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.4; margin-top:.5rem; }
+.adm-sidebar .sb-user { padding:1rem 1.5rem; border-top:1px solid rgba(255,255,255,.08); display:flex; align-items:center; gap:.75rem; }
+.adm-sidebar .sb-user .avatar {
+    width:34px; height:34px; border-radius:50%;
+    background:linear-gradient(135deg,#3b82f6,#6366f1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.875rem; font-weight:700; color:#fff; flex-shrink:0;
 }
-.adm-sidebar a:hover,
-.adm-sidebar a.active {
-    background: rgba(255,255,255,.15); color: #fff;
-}
-.adm-sidebar .sb-section {
-    font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-    color: rgba(255,255,255,.45); padding: .9rem 1.25rem .3rem;
-    font-weight: 700;
-}
-.adm-main { flex: 1; padding: 1.75rem; overflow: hidden; }
+.adm-sidebar .sb-user .info small { display:block; font-size:.7rem; opacity:.5; }
+.adm-sidebar .sb-user .info strong { font-size:.8rem; color:#fff; }
+
+.adm-main { flex:1; padding:2rem; overflow-x:hidden; }
 
 /* ── KPI cards ── */
-.kpi-card   { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
-.kpi-icon   { width: 46px; height: 46px; border-radius: 10px; display:flex; align-items:center; justify-content:center; font-size: 1.3rem; }
+.kpi-card { border-radius:14px; border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+.kpi-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
 
 /* ── Status pills ── */
-.sp { display:inline-block; padding:.25em .75em; border-radius:20px; font-size:.77rem; font-weight:600; }
+.sp { display:inline-block; padding:.25em .75em; border-radius:999px; font-size:.77rem; font-weight:600; }
 .sp-confirmed { background:#d1fae5; color:#065f46; }
 .sp-pending   { background:#fef3c7; color:#92400e; }
 .sp-cancelled { background:#fee2e2; color:#7f1d1d; }
@@ -180,45 +187,67 @@ require_once 'inc/header.php';
 .sp-failed    { background:#fee2e2; color:#7f1d1d; }
 
 /* ── Table tweaks ── */
-.bk-table thead th { background: #1e3a5f; color: #fff; font-weight: 600; font-size: .82rem; white-space: nowrap; }
-.bk-table tbody tr:hover { background: #f0f4ff; }
-.bk-table td { font-size: .84rem; vertical-align: middle; }
+.bk-table thead th { background:#0f1e32; color:#fff; font-weight:600; font-size:.82rem; white-space:nowrap; }
+.bk-table tbody tr:hover { background:#f8fafc; }
+.bk-table td { font-size:.84rem; vertical-align:middle; }
 
 /* ── Filter bar ── */
-.filter-bar { background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.07); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.filter-bar { background:#fff; border-radius:14px; box-shadow:0 1px 6px rgba(0,0,0,.07); padding:1.25rem; margin-bottom:1.25rem; }
 
-@media (max-width: 768px) {
-    .adm-sidebar { display: none; }
-    .adm-main    { padding: 1rem; }
+/* ── Page header ── */
+.adm-page-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+.adm-page-header h2 { margin:0; font-size:1.6rem; font-weight:800; color:#0f172a; }
+.adm-page-header p { margin:.2rem 0 0; color:#64748b; font-size:.9rem; }
+
+@media (max-width:900px) {
+    .adm-sidebar { display:none; }
+    .adm-main    { padding:1rem; }
 }
 </style>
 
 <div class="adm-wrap">
 <!-- ── Sidebar ── -->
 <aside class="adm-sidebar">
-    <div class="sb-brand"><i class="bi bi-train-front-fill me-2"></i>Admin Panel</div>
-    <div class="sb-section">Main</div>
-    <a href="admin-dashboard.php"><i class="bi bi-speedometer2"></i>Dashboard</a>
-    <div class="sb-section">Bookings</div>
-    <a href="manage-bookings.php" class="active"><i class="bi bi-journal-text"></i>All Bookings</a>
-    <a href="manage-payments.php"><i class="bi bi-cash-stack"></i>Payments</a>
-    <div class="sb-section">Operations</div>
-    <a href="manage-trains.php"><i class="bi bi-train-front"></i>Trains</a>
-    <a href="manage-routes.php"><i class="bi bi-map"></i>Routes</a>
-    <div class="sb-section">Users</div>
-    <a href="manage-users.php"><i class="bi bi-people"></i>Users</a>
-    <div class="sb-section">Reports</div>
-    <a href="reports.php"><i class="bi bi-bar-chart-line"></i>Reports</a>
+    <div class="sb-brand">
+        <span>Management Panel</span>
+        <strong><i class="bi bi-train-front-fill me-1"></i> Railway Admin</strong>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="admin-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="reports.php"><i class="bi bi-bar-chart-line"></i> Reports</a>
+
+        <div class="sb-sep">Operations</div>
+        <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
+        <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
+        <a href="manage-bookings.php" class="active"><i class="bi bi-ticket-perforated"></i> Bookings</a>
+        <a href="manage-payments.php"><i class="bi bi-cash-stack"></i> Payments</a>
+
+        <div class="sb-sep">Users</div>
+        <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>
+
+        <div class="sb-sep">System</div>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        <a href="profile.php"><i class="bi bi-person-gear"></i> My Profile</a>
+        <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="sb-user">
+        <div class="avatar"><?= strtoupper(substr($adminUser_['full_name'] ?? 'A', 0, 1)) ?></div>
+        <div class="info">
+            <strong><?= htmlspecialchars($adminUser_['full_name'] ?? 'Admin') ?></strong>
+            <small>Administrator</small>
+        </div>
+    </div>
 </aside>
 
 <!-- ── Main Content ── -->
-<main class="adm-main">
+<section class="adm-main">
 
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="adm-page-header mb-4">
         <div>
-            <h4 class="fw-bold mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Manage Bookings</h4>
-            <small class="text-muted"><?= number_format($total_rows) ?> bookings match current filters</small>
+            <h2><i class="bi bi-ticket-perforated me-2 text-primary"></i>Manage Bookings</h2>
+            <p><?= number_format($total_rows) ?> bookings match current filters</p>
         </div>
         <a href="reports.php" class="btn btn-outline-primary btn-sm">
             <i class="bi bi-bar-chart-line me-1"></i>View Reports
@@ -422,7 +451,7 @@ require_once 'inc/header.php';
         <?php endif; ?>
     </div>
 
-</main>
+</section>
 </div><!-- /adm-wrap -->
 
 <?php require_once 'inc/footer.php'; ?>

@@ -407,7 +407,8 @@ require_once 'inc/header.php';
     .content-row { grid-template-columns:1fr; }
 }
 @media (max-width:860px) {
-    .adm-sidebar { display:none; }
+    .adm-sidebar { display:none; position:fixed; z-index:1050; }
+    .adm-sidebar.open { display:flex !important; flex-direction:column; }
     .alert-strip { grid-template-columns:1fr; }
     .today-strip { grid-template-columns:1fr 1fr; }
     .pulse-grid  { grid-template-columns:1fr 1fr; }
@@ -417,12 +418,28 @@ require_once 'inc/header.php';
 @media (max-width:560px) {
     .pulse-grid { grid-template-columns:1fr; }
 }
+.adm-mobile-bar {
+    display:none; background:linear-gradient(90deg,#1a2e4a,#0f1e32); color:#fff;
+    padding:.6rem 1rem; align-items:center; gap:.75rem;
+    position:sticky; top:0; z-index:100;
+}
+@media (max-width:860px) { .adm-mobile-bar { display:flex; } }
 </style>
+
+<div class="adm-mobile-bar">
+    <button id="admSidebarToggle" class="btn btn-sm btn-outline-light" style="border-color:rgba(255,255,255,.4);">
+        <i class="bi bi-list"></i>
+    </button>
+    <span class="fw-bold"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</span>
+    <?php if ($pending_bookings_n + $pending_payments_n > 0): ?>
+    <span class="ms-auto badge" style="background:#ef4444;"><?= $pending_bookings_n + $pending_payments_n ?> pending</span>
+    <?php endif; ?>
+</div>
 
 <div class="adm-wrap">
 
     <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
-    <aside class="adm-sidebar">
+    <aside class="adm-sidebar" id="admSidebar">
         <div class="sb-brand">
             <span>Management Panel</span>
             <strong>🚂 Railway Admin</strong>
@@ -436,7 +453,20 @@ require_once 'inc/header.php';
             <div class="sb-sep">Operations</div>
             <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
             <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
-            <a href="booking-admin.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
+            <a href="booking-admin.php" style="justify-content:space-between;">
+                <span><i class="bi bi-ticket-perforated"></i> Bookings</span>
+                <?php if ($pending_bookings_n > 0): ?>
+                <span style="background:#f59e0b;color:#fff;border-radius:999px;padding:.1em .45em;font-size:.67rem;font-weight:700;"><?= $pending_bookings_n ?></span>
+                <?php endif; ?>
+            </a>
+
+            <div class="sb-sep">Finance</div>
+            <a href="manage-payments.php" style="justify-content:space-between;">
+                <span><i class="bi bi-credit-card"></i> Payments</span>
+                <?php if ($pending_payments_n > 0): ?>
+                <span style="background:#ef4444;color:#fff;border-radius:999px;padding:.1em .45em;font-size:.67rem;font-weight:700;"><?= $pending_payments_n ?></span>
+                <?php endif; ?>
+            </a>
 
             <div class="sb-sep">Users</div>
             <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>
@@ -866,6 +896,15 @@ require_once 'inc/header.php';
                         <a href="manage-users.php" class="qa-btn">
                             <i class="bi bi-people-fill"></i>Users
                         </a>
+                        <a href="manage-users.php?action=add&role=employee" class="qa-btn">
+                            <i class="bi bi-person-plus-fill" style="color:#0d9488;"></i>New Employee
+                        </a>
+                        <a href="reports.php" class="qa-btn">
+                            <i class="bi bi-bar-chart-line-fill" style="color:#7c3aed;"></i>Reports
+                        </a>
+                        <a href="notifications.php" class="qa-btn">
+                            <i class="bi bi-bell-fill" style="color:#dc2626;"></i>Notifications
+                        </a>
                     </div>
                 </div>
 
@@ -1055,6 +1094,30 @@ require_once 'inc/header.php';
         });
     }
 })();
+</script>
+
+<!-- Mobile sidebar overlay -->
+<div id="admOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1040;" onclick="closeAdmSidebar()"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var toggle  = document.getElementById('admSidebarToggle');
+    var sidebar = document.getElementById('admSidebar');
+    var overlay = document.getElementById('admOverlay');
+
+    function openAdmSidebar() {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeAdmSidebar = function () {
+        sidebar.classList.remove('open');
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    if (toggle) toggle.addEventListener('click', openAdmSidebar);
+});
 </script>
 
 <?php require_once 'inc/footer.php'; ?>

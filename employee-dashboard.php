@@ -152,15 +152,29 @@ require_once 'inc/header.php';
 .qa-card:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,.14); color:inherit; }
 
 @media (max-width:768px) {
-    .emp-sidebar { display:none; }
+    .emp-sidebar { display:none; position:fixed; z-index:1050; }
+    .emp-sidebar.open { display:flex !important; flex-direction:column; }
     .emp-main    { padding:1rem; }
 }
+.emp-mobile-bar {
+    display:none; background:#064e3b; color:#fff;
+    padding:.6rem 1rem; align-items:center; gap:.75rem;
+    position:sticky; top:0; z-index:100;
+}
+@media (max-width:768px) { .emp-mobile-bar { display:flex; } }
 </style>
+
+<div class="emp-mobile-bar">
+    <button id="empSidebarToggle" class="btn btn-sm btn-outline-light" style="border-color:rgba(255,255,255,.4);">
+        <i class="bi bi-list"></i>
+    </button>
+    <span class="fw-bold"><i class="bi bi-train-front-fill me-1"></i>Employee Panel</span>
+</div>
 
 <div class="emp-wrap">
 
 <!-- ── Sidebar ── -->
-<aside class="emp-sidebar">
+<aside class="emp-sidebar" id="empSidebar">
     <div class="sb-brand"><i class="bi bi-train-front-fill me-2"></i>Employee Panel</div>
     <div class="sb-section">Main</div>
     <a href="employee-dashboard.php" class="active"><i class="bi bi-speedometer2"></i>Dashboard</a>
@@ -171,6 +185,12 @@ require_once 'inc/header.php';
     <div class="sb-section">Bookings</div>
     <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i>Today's Bookings</a>
     <div class="sb-section">Account</div>
+    <a href="notifications.php" style="justify-content:space-between;">
+        <span><i class="bi bi-bell"></i>Notifications</span>
+        <?php if (($kpi['pending_bookings'] ?? 0) > 0): ?>
+        <span style="background:#ef4444;color:#fff;border-radius:999px;padding:.1em .5em;font-size:.68rem;font-weight:700;"><?= (int)$kpi['pending_bookings'] ?></span>
+        <?php endif; ?>
+    </a>
     <a href="profile.php"><i class="bi bi-person-circle"></i>My Profile</a>
     <a href="logout.php"><i class="bi bi-box-arrow-right"></i>Logout</a>
 </aside>
@@ -179,7 +199,7 @@ require_once 'inc/header.php';
 <main class="emp-main">
 
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-3">
         <div>
             <h4 class="fw-bold mb-0">
                 <?= $greeting ?>, <?= htmlspecialchars($user['full_name'] ?? 'Employee') ?>! 👋
@@ -198,6 +218,26 @@ require_once 'inc/header.php';
                 <i class="bi bi-grid-3x3-gap me-1"></i>Seat Management
             </a>
         </div>
+    </div>
+
+    <!-- Pending bookings alert banner -->
+    <?php if (($kpi['pending_bookings'] ?? 0) > 0): ?>
+    <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" style="background:#fef3c7;border:1px solid #fde68a;">
+        <i class="bi bi-hourglass-split fs-5" style="color:#d97706;"></i>
+        <div class="flex-grow-1">
+            <span class="fw-semibold" style="color:#92400e;"><?= (int)$kpi['pending_bookings'] ?> pending booking<?= $kpi['pending_bookings'] != 1 ? 's' : '' ?> awaiting action.</span>
+            <span class="text-muted small ms-1">Review and confirm or cancel them to keep the schedule accurate.</span>
+        </div>
+        <a href="check-passengers.php?view=bookings&status=pending" class="btn btn-sm btn-warning fw-semibold">Review Now</a>
+    </div>
+    <?php endif; ?>
+
+    <!-- Quick Passenger Search -->
+    <div class="mb-4">
+        <form method="GET" action="check-passengers.php" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search passenger by name, phone or booking ref…" style="max-width:360px;">
+            <button type="submit" class="btn btn-success btn-sm px-3"><i class="bi bi-search me-1"></i>Search</button>
+        </form>
     </div>
 
     <!-- Today Strip -->
@@ -438,19 +478,39 @@ require_once 'inc/header.php';
 </main>
 </div><!-- /emp-wrap -->
 
+<!-- Mobile sidebar overlay -->
+<div id="empOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1040;" onclick="closeSidebar()"></div>
+
 <script src="public/js/employee-status.js" defer></script>
 <script>
-// Toast feedback on status change
-if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.status-select').forEach(function (sel) {
-            sel.addEventListener('change', function () {
-                var orig = this.dataset.original || this.value;
-                this.dataset.original = orig;
-            });
+document.addEventListener('DOMContentLoaded', function () {
+    // Mobile sidebar toggle
+    var toggle  = document.getElementById('empSidebarToggle');
+    var sidebar = document.getElementById('empSidebar');
+    var overlay = document.getElementById('empOverlay');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeSidebar = function () {
+        sidebar.classList.remove('open');
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    if (toggle) toggle.addEventListener('click', openSidebar);
+
+    // Status-select toast feedback
+    document.querySelectorAll('.status-select').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            var orig = this.dataset.original || this.value;
+            this.dataset.original = orig;
         });
     });
-}
+});
 </script>
 
 <?php require_once 'inc/footer.php'; ?>

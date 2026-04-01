@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Complete Payment – Railway Management System';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
 <style>

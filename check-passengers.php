@@ -121,7 +121,7 @@ $pending_n   = count(array_filter($bookings_list, fn($b) => $b['booking_status']
 
 $hideMainNavbar = true;
 $pageTitle = 'Passenger Manifest – Employee';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
 <style>

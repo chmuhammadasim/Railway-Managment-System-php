@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $extraScripts = ['public/js/signup.js'];
 $pageTitle = 'Sign Up - Railway Management System';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
     <!-- Signup Section -->

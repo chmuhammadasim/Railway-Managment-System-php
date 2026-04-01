@@ -58,7 +58,7 @@ if ($bookings) {
 
 <?php
 $pageTitle = 'User Dashboard - Railway Management System';
-require_once 'inc/header.php';
+//require_once 'inc/header.php';
 ?>
 
     <!-- Dashboard Section -->
