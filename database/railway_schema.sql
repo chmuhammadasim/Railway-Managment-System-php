@@ -163,6 +163,17 @@ CREATE TABLE IF NOT EXISTS booking_discounts (
     FOREIGN KEY (discount_id) REFERENCES discounts(discount_id) ON DELETE CASCADE
 );
 
+-- Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id         INT NOT NULL,
+    message         TEXT NOT NULL,
+    is_read         TINYINT(1) DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_notif_user (user_id, is_read)
+);
+
 -- OTP Verification Table
 CREATE TABLE IF NOT EXISTS otp_verifications (
     otp_id       INT PRIMARY KEY AUTO_INCREMENT,
