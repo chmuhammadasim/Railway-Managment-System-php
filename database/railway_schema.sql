@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
     otp_id       INT PRIMARY KEY AUTO_INCREMENT,
     identifier   VARCHAR(150) NOT NULL COMMENT 'email or user_id as string',
     purpose      ENUM('signup','reset_password','booking_confirm','profile_update') NOT NULL,
-    otp_code     VARCHAR(6) NOT NULL,
+    otp_code     VARCHAR(255) NOT NULL COMMENT 'bcrypt hash of the 6-digit code',
     expires_at   DATETIME NOT NULL,
     used         TINYINT(1) DEFAULT 0,
     attempts     TINYINT(1) DEFAULT 0,
@@ -190,6 +190,9 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0 AFTER is_active;
 
+-- Mark all pre-existing admin/employee accounts as email-verified
+-- (they were created manually and don't go through the OTP signup flow)
+UPDATE users SET email_verified = 1 WHERE role IN ('admin', 'employee') AND email_verified = 0;
 -- Create Indexes for Better Performance
 CREATE INDEX IF NOT EXISTS idx_user_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_user_role ON users(role);

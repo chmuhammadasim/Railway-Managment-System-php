@@ -539,13 +539,12 @@ require_once 'inc/header.php';
                                    placeholder="6-digit OTP" maxlength="6" inputmode="numeric"
                                    style="flex:1;padding:.725rem 1rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:1.3rem;font-weight:800;letter-spacing:.5rem;text-align:center;background:#f9fafb;"
                                    autocomplete="one-time-code" required>
-                            <form method="POST" style="margin:0;">
-                                <input type="hidden" name="action" value="resend_otp">
-                                <button type="submit" style="height:100%;padding:.7rem .9rem;background:#f1f5f9;border:1.5px solid #d1d5db;border-radius:10px;font-size:.8rem;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap;">
-                                    <i class="bi bi-arrow-repeat"></i> Resend
-                                </button>
-                            </form>
+                            <button type="button" id="resendOtpBtn"
+                                    style="padding:.7rem .9rem;background:#f1f5f9;border:1.5px solid #d1d5db;border-radius:10px;font-size:.8rem;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap;">
+                                <i class="bi bi-arrow-repeat"></i> Resend
+                            </button>
                         </div>
+                        <div id="resendMsg" style="font-size:.8rem;margin-top:.3rem;min-height:1.1em;"></div>
                         <input type="hidden" name="action" value="pay">
 
                         <!-- Pay button -->
@@ -637,6 +636,31 @@ require_once 'inc/header.php';
         payBtn.innerHTML =
             '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
     });
+
+    // Resend OTP via fetch (avoids nested-form bug)
+    var resendBtn = document.getElementById('resendOtpBtn');
+    var resendMsg = document.getElementById('resendMsg');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', function () {
+            resendBtn.disabled = true;
+            resendMsg.textContent = 'Sending…';
+            resendMsg.style.color = '#6b7280';
+            var fd = new FormData();
+            fd.append('action', 'resend_otp');
+            fetch(window.location.href, { method: 'POST', body: fd })
+                .then(function (r) { return r.text(); })
+                .then(function () {
+                    resendMsg.textContent = 'OTP resent! Check your email.';
+                    resendMsg.style.color = '#15803d';
+                    setTimeout(function () { resendBtn.disabled = false; resendMsg.textContent = ''; }, 30000);
+                })
+                .catch(function () {
+                    resendMsg.textContent = 'Failed to resend. Try again.';
+                    resendMsg.style.color = '#b91c1c';
+                    resendBtn.disabled = false;
+                });
+        });
+    }
 }());
 </script>
 
