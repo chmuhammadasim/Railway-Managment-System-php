@@ -7,8 +7,26 @@ require_once 'src/classes/Train.php';
 $db = new Database();
 $db->connect();
 
-$train  = new Train($db);
-$routes = $train->getAllRoutes();
+$train = new Train($db);
+
+// Build filtered route query from search params
+$search_from = isset($_GET['departure_city']) ? trim($_GET['departure_city']) : '';
+$search_to   = isset($_GET['arrival_city'])   ? trim($_GET['arrival_city'])   : '';
+$search_date = isset($_GET['journey_date'])   ? trim($_GET['journey_date'])   : '';
+$has_search  = $search_from !== '' || $search_to !== '' || $search_date !== '';
+$show_all    = isset($_GET['show_all']);
+
+if ($has_search) {
+    $conn  = $db->getConnection();
+    $where = ["r.status = 'scheduled'", "r.journey_date >= CURDATE()"];
+    if ($search_from) $where[] = "r.departure_city = '" . $conn->real_escape_string($search_from) . "'";
+    if ($search_to)   $where[] = "r.arrival_city   = '" . $conn->real_escape_string($search_to)   . "'";
+    if ($search_date) $where[] = "r.journey_date   = '" . $conn->real_escape_string($search_date)  . "'";
+    $sql    = "SELECT r.*, t.train_name, t.train_number FROM routes r JOIN trains t ON r.train_id = t.train_id WHERE " . implode(' AND ', $where) . " ORDER BY r.journey_date, r.departure_time";
+    $routes = $db->select($sql) ?: [];
+} else {
+    $routes = $train->getAllRoutes() ?: [];
+}
 
 $citiesQuery = "SELECT DISTINCT departure_city AS city FROM routes UNION SELECT DISTINCT arrival_city AS city FROM routes ORDER BY city";
 $cities = $db->select($citiesQuery);
@@ -588,13 +606,16 @@ require_once 'inc/header.php';
             Find Your Train
             <span>Instant Search</span>
         </div>
-        <form method="GET" action="book.php" class="ix-search-form" id="searchForm">
+        <form method="GET" action="index.php" class="ix-search-form" id="searchForm">
             <div class="sf-group">
                 <label><i class="bi bi-geo-alt"></i> From</label>
-                <select name="departure_city" id="fromCity" required>
-                    <option value="">Select departure city</option>
+                <select name="departure_city" id="fromCity">
+                    <option value="">Any city</option>
                     <?php foreach ($cities as $c): ?>
-                    <option value="<?= htmlspecialchars($c['city']) ?>"><?= htmlspecialchars($c['city']) ?></option>
+                    <option value="<?= htmlspecialchars($c['city']) ?>"
+                        <?= ($search_from === $c['city']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['city']) ?>
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -605,18 +626,22 @@ require_once 'inc/header.php';
 
             <div class="sf-group">
                 <label><i class="bi bi-geo-alt-fill"></i> To</label>
-                <select name="arrival_city" id="toCity" required>
-                    <option value="">Select arrival city</option>
+                <select name="arrival_city" id="toCity">
+                    <option value="">Any city</option>
                     <?php foreach ($cities as $c): ?>
-                    <option value="<?= htmlspecialchars($c['city']) ?>"><?= htmlspecialchars($c['city']) ?></option>
+                    <option value="<?= htmlspecialchars($c['city']) ?>"
+                        <?= ($search_to === $c['city']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['city']) ?>
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div class="sf-group">
                 <label><i class="bi bi-calendar3"></i> Travel Date</label>
-                <input type="date" name="journey_date" required
-                       min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>">
+                <input type="date" name="journey_date"
+                       min="<?= date('Y-m-d') ?>"
+                       value="<?= htmlspecialchars($search_date ?: date('Y-m-d')) ?>">
             </div>
 
             <button type="submit" class="btn-search-ix">
@@ -660,15 +685,39 @@ require_once 'inc/header.php';
 <!-- ═══════════════════════════════════════════════
      ROUTES
 ════════════════════════════════════════════════ -->
-<div class="ix-routes-band">
+<div class="ix-routes-band" id="routes">
     <div class="ix-section-head">
+        <?php if ($has_search): ?>
+        <div class="ix-section-badge"><i class="bi bi-search"></i> Search Results</div>
+        <h2>
+            <?= count($routes) ?> route<?= count($routes) !== 1 ? 's' : '' ?> found
+        </h2>
+        <p>
+            <?php
+            $parts = [];
+            if ($search_from) $parts[] = 'from <strong>' . htmlspecialchars($search_from) . '</strong>';
+            if ($search_to)   $parts[] = 'to <strong>'   . htmlspecialchars($search_to)   . '</strong>';
+            if ($search_date) $parts[] = 'on <strong>'   . date('D, d M Y', strtotime($search_date)) . '</strong>';
+            echo implode(' ', $parts);
+            ?>
+            &nbsp;·&nbsp; <a href="index.php" style="font-size:.85rem;">Clear search</a>
+        </p>
+        <?php else: ?>
         <div class="ix-section-badge"><i class="bi bi-map"></i> Upcoming Trips</div>
-        <h2>Popular Routes</h2>
-        <p>Browse upcoming departures — click any card to book a seat instantly.</p>
+        <h2><?= $show_all ? 'All Available Routes' : 'Popular Routes' ?></h2>
+        <p>
+            <?php if ($show_all): ?>
+            Showing all <?= count($routes) ?> upcoming routes — click any card to book a seat instantly.
+            &nbsp;·&nbsp; <a href="index.php#routes" style="font-size:.85rem;">Show less</a>
+            <?php else: ?>
+            Browse upcoming departures — click any card to book a seat instantly.
+            <?php endif; ?>
+        </p>
+        <?php endif; ?>
     </div>
     <div class="ix-routes-grid">
         <?php if ($routes): ?>
-            <?php foreach (array_slice($routes, 0, 6) as $route): ?>
+            <?php foreach (($has_search || $show_all) ? $routes : array_slice($routes, 0, 6) as $route): ?>
             <?php
                 $seats = (int)$route['available_seats'];
                 if ($seats > 20)      { $seatClass = 'high'; $seatIcon = 'bi-check-circle'; }
@@ -733,9 +782,9 @@ require_once 'inc/header.php';
             </div>
         <?php endif; ?>
     </div>
-    <?php if ($routes && count($routes) > 6): ?>
+    <?php if (!$show_all && !$has_search && $routes && count($routes) > 6): ?>
     <div class="ix-routes-more">
-        <a href="book.php" class="btn-routes-all">
+        <a href="index.php?show_all=1#routes" class="btn-routes-all">
             View All <?= count($routes) ?> Routes <i class="bi bi-arrow-right ms-1"></i>
         </a>
     </div>
@@ -823,6 +872,14 @@ require_once 'inc/header.php';
 <?php endif; ?>
 
 <script>
+// Auto-scroll to results after a search
+<?php if ($has_search): ?>
+document.addEventListener('DOMContentLoaded', function () {
+    const el = document.getElementById('routes');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+<?php endif; ?>
+
 // Swap cities
 document.getElementById('swapCities')?.addEventListener('click', function () {
     const from = document.getElementById('fromCity');

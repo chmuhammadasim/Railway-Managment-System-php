@@ -343,7 +343,7 @@ require_once 'inc/header.php';
             </p>
         </div>
         <div class="ud-hero-actions">
-            <a href="book.php" class="btn-book">
+            <a href="index.php" class="btn-book">
                 <i class="bi bi-search"></i> Book a Train
             </a>
             <a href="bookings.php" class="btn-ghost">
@@ -411,7 +411,7 @@ require_once 'inc/header.php';
             <div class="ud-empty">
                 <i class="bi bi-ticket-perforated"></i>
                 <p>No bookings yet.<br>
-                <a href="book.php" style="color:#2563eb;font-weight:600;">Search trains and book your first trip</a></p>
+                <a href="index.php" style="color:#2563eb;font-weight:600;">Search trains and book your first trip</a></p>
             </div>
             <?php else: ?>
             <div style="overflow-x:auto;">
@@ -514,7 +514,7 @@ require_once 'inc/header.php';
                 <div class="ud-empty" style="padding:1.75rem 1rem;">
                     <i class="bi bi-train-front" style="opacity:.2;font-size:2rem;display:block;margin-bottom:.6rem;"></i>
                     <p style="font-size:.83rem;margin:0;color:#9ca3af;">No upcoming trips.<br>
-                    <a href="book.php" style="color:#2563eb;font-weight:600;">Book one now →</a></p>
+                    <a href="index.php" style="color:#2563eb;font-weight:600;">Book one now →</a></p>
                 </div>
             </div>
             <?php endif; ?>
@@ -526,7 +526,7 @@ require_once 'inc/header.php';
                 </div>
                 <div class="sc-body" style="padding:.85rem 1rem;">
                     <div class="qa-grid">
-                        <a href="book.php" class="qa-btn">
+                        <a href="index.php" class="qa-btn">
                             <div class="qa-ico" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-search"></i></div>
                             Search Trains
                         </a>

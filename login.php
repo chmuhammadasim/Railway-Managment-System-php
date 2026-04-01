@@ -19,7 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $user->login($username, $password);
 
     if ($result['success']) {
-        header('Location: dashboard.php');
+        $redirect = $_SESSION['redirect_after_login'] ?? 'dashboard.php';
+        unset($_SESSION['redirect_after_login']);
+        header('Location: ' . $redirect);
         exit();
     } else {
         $error_message = $result['message'];
