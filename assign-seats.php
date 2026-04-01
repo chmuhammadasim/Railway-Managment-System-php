@@ -127,114 +127,193 @@ $filter_type = $_GET['type'] ?? 'all'; // all, available, booked, reserved
 
 $hideMainNavbar = true;
 $pageTitle = 'Seat Management – Employee';
-//require_once 'inc/header.php';
+require_once 'inc/header.php';
 ?>
 
 <style>
-.emp-wrap { display:flex; min-height:calc(100vh - 60px); }
+/* ─── Layout ─────────────────────────────────────────── */
+.emp-wrap  { display:flex; height:100vh; overflow:hidden; }
 .emp-sidebar {
-    width:230px; flex-shrink:0;
-    background:linear-gradient(180deg,#064e3b 0%,#065f46 100%);
-    padding:1.5rem 0; position:sticky; top:60px;
-    height:calc(100vh - 60px); overflow-y:auto;
+    width:240px; flex-shrink:0;
+    background:linear-gradient(180deg,#012117 0%,#064e3b 100%);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
 }
-.emp-sidebar .sb-brand { padding:.5rem 1.25rem 1.25rem; font-weight:800; font-size:1.05rem; color:#d1fae5; border-bottom:1px solid rgba(255,255,255,.15); margin-bottom:.75rem; }
-.emp-sidebar a { display:flex; align-items:center; gap:.65rem; padding:.55rem 1.25rem; color:rgba(255,255,255,.82); text-decoration:none; font-size:.88rem; transition:background .2s,color .2s; }
-.emp-sidebar a:hover, .emp-sidebar a.active { background:rgba(255,255,255,.16); color:#fff; }
-.emp-sidebar .sb-section { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.42); padding:.9rem 1.25rem .3rem; font-weight:700; }
-.emp-main { flex:1; padding:1.75rem; overflow:hidden; }
+.emp-sb-brand { padding:1.4rem 1.25rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.1); }
+.emp-sb-brand .brand-icon {
+    width:38px; height:38px; border-radius:10px;
+    background:rgba(16,185,129,.2); color:#34d399;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; margin-bottom:.55rem;
+}
+.emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
+.emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
+.sb-sep {
+    font-size:.65rem; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; color:rgba(255,255,255,.28);
+    padding:.9rem 1.25rem .3rem;
+}
+.emp-sidebar nav a {
+    display:flex; align-items:center; gap:.7rem;
+    padding:.62rem 1.25rem; color:rgba(255,255,255,.65);
+    text-decoration:none; font-size:.875rem; font-weight:500;
+    transition:background .15s,color .15s,border-color .15s;
+    border-left:3px solid transparent;
+}
+.emp-sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; border-left-color:rgba(52,211,153,.4); }
+.emp-sidebar nav a.active { background:rgba(16,185,129,.15); color:#fff; border-left-color:#10b981; font-weight:600; }
+.emp-sidebar nav a i { font-size:.95rem; width:18px; text-align:center; }
+.emp-sb-footer {
+    margin-top:auto; padding:1rem 1.25rem;
+    border-top:1px solid rgba(255,255,255,.08);
+    font-size:.71rem; color:rgba(255,255,255,.3); text-align:center;
+}
+.emp-main { flex:1; overflow-y:auto; background:#f8fafc; }
+.emp-page-header {
+    background:#fff; border-bottom:1px solid #e5e7eb;
+    padding:1.1rem 1.75rem;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    position:sticky; top:0; z-index:100;
+}
+.emp-page-header .ph-title { font-size:1.05rem; font-weight:700; color:#0f172a; margin:0; }
+.emp-page-header .ph-sub   { font-size:.78rem; color:#6b7280; margin:0; }
+.emp-content { padding:1.5rem 1.75rem; }
 
-/* ── Seat grid ── */
-.seat-container { overflow-x:auto; }
-.seat-grid { display:inline-grid; gap:.45rem; }
-.seat-row-wrap { display:flex; align-items:center; gap:.45rem; }
-.row-label { width:24px; text-align:center; font-size:.72rem; font-weight:700; color:#6b7280; }
+/* ─── Surface cards ───────────────────────────────────── */
+.surface-card {
+    background:#fff; border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 6px rgba(0,0,0,.06);
+    overflow:hidden;
+}
+.surface-card .sc-head {
+    padding:.9rem 1.25rem; border-bottom:1px solid #f1f5f9;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+}
+.surface-card .sc-head h6 { font-weight:700; margin:0; font-size:.9rem; color:#0f172a; }
+.sc-body { padding:1.25rem; }
+
+/* ─── Seat grid ───────────────────────────────────────── */
+.seat-container { overflow-x:auto; padding-bottom:.5rem; }
+.seat-row-wrap { display:flex; align-items:center; gap:.45rem; margin-bottom:.35rem; }
+.row-label { width:24px; text-align:center; font-size:.72rem; font-weight:700; color:#9ca3af; }
 .seat {
-    width:52px; height:42px; border-radius:8px; font-size:.7rem; font-weight:700;
+    width:54px; height:44px; border-radius:10px; font-size:.7rem; font-weight:700;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     border:2px solid transparent; cursor:pointer; transition:all .15s;
     position:relative; user-select:none;
 }
-.seat .seat-num  { font-size:.72rem; font-weight:700; line-height:1; }
-.seat .seat-name { font-size:.58rem; line-height:1.2; text-align:center; max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.seat-available { background:#d1fae5; border-color:#6ee7b7; color:#065f46; }
-.seat-available:hover { background:#a7f3d0; border-color:#34d399; transform:scale(1.08); box-shadow:0 3px 10px rgba(6,95,70,.2); }
-.seat-booked    { background:#fee2e2; border-color:#fca5a5; color:#7f1d1d; cursor:default; }
+.seat .seat-num  { font-size:.73rem; font-weight:700; line-height:1; }
+.seat .seat-name { font-size:.58rem; line-height:1.2; text-align:center; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:.1rem; }
+.seat-available { background:#dcfce7; border-color:#86efac; color:#15803d; }
+.seat-available:hover { background:#bbf7d0; border-color:#4ade80; transform:scale(1.1); box-shadow:0 4px 12px rgba(21,128,61,.2); }
+.seat-booked    { background:#fee2e2; border-color:#fca5a5; color:#991b1b; cursor:default; }
 .seat-reserved  { background:#fef9c3; border-color:#fde047; color:#78350f; }
-.seat-reserved:hover { background:#fde68a; border-color:#facc15; transform:scale(1.08); }
-.seat.selected  { outline:3px solid #2563eb; outline-offset:2px; }
-
-/* seat type dot */
-.type-dot {
-    width:5px; height:5px; border-radius:50%; position:absolute; top:4px; right:4px;
-}
-.type-economy { background:#6b7280; }
+.seat-reserved:hover { background:#fde68a; border-color:#facc15; transform:scale(1.1); }
+.seat.selected  { outline:3px solid #2563eb; outline-offset:2px; box-shadow:0 0 0 5px rgba(37,99,235,.15); }
+/* Type dot */
+.type-dot { width:5px; height:5px; border-radius:50%; position:absolute; top:4px; right:4px; }
+.type-economy { background:#9ca3af; }
 .type-premium { background:#7c3aed; }
 .type-luxury  { background:#d97706; }
-
-/* ── Legend ── */
-.legend-item { display:flex; align-items:center; gap:.4rem; font-size:.8rem; }
-.legend-box  { width:18px; height:14px; border-radius:3px; border:2px solid transparent; }
-
-/* ── Stats ── */
-.occ-bar { height:8px; border-radius:4px; background:#e5e7eb; overflow:hidden; }
-.occ-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#10b981,#059669); }
-.sp { display:inline-block; padding:.25em .7em; border-radius:20px; font-size:.77rem; font-weight:600; }
-.sp-available { background:#d1fae5; color:#065f46; }
-.sp-booked    { background:#fee2e2; color:#7f1d1d; }
+/* Legend */
+.legend-item { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:#374151; }
+.legend-box  { width:20px; height:15px; border-radius:4px; border:2px solid transparent; }
+/* Status badges */
+.sp { display:inline-block; padding:.22em .72em; border-radius:20px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.sp-available { background:#dcfce7; color:#15803d; }
+.sp-booked    { background:#fee2e2; color:#991b1b; }
 .sp-reserved  { background:#fef9c3; color:#78350f; }
-
-@media (max-width:768px) { .emp-sidebar { display:none; } .emp-main { padding:1rem; } }
+/* Occupancy bar */
+.occ-bar { height:8px; border-radius:4px; background:#e5e7eb; overflow:hidden; }
+.occ-fill { height:100%; border-radius:4px; }
+/* Bulk bar */
+.bulk-bar {
+    background:linear-gradient(135deg,#eff6ff,#dbeafe);
+    border:1.5px solid #bfdbfe; border-radius:12px;
+    padding:.75rem 1.1rem;
+    display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+}
+/* Route selector panel */
+.route-selector-card {
+    background:#fff; border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);
+    padding:1.1rem 1.25rem;
+}
+.route-selector-card label { font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#374151; }
+/* Route info banner */
+.route-info-band {
+    background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+    border:1.5px solid #bbf7d0; border-radius:14px;
+    padding:1.1rem 1.4rem;
+    display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;
+    margin-bottom:1.25rem;
+}
+.ri-route { font-size:1.15rem; font-weight:800; color:#0f172a; }
+.ri-route .arrow { color:#10b981; margin:0 .4rem; }
+.ri-meta { font-size:.78rem; color:#6b7280; margin-top:.2rem; }
+.ri-stats { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
+@media(max-width:768px){ .emp-sidebar{display:none;} .emp-content{padding:1rem;} }
 </style>
 
 <div class="emp-wrap">
+<!-- ─── Sidebar ──────────────────────────────────────── -->
 <aside class="emp-sidebar">
-    <div class="sb-brand"><i class="bi bi-train-front-fill me-2"></i>Employee Panel</div>
-    <div class="sb-section">Main</div>
-    <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i>Dashboard</a>
-    <div class="sb-section">Operations</div>
-    <a href="my-trains.php"><i class="bi bi-train-front"></i>My Trains</a>
-    <a href="check-passengers.php"><i class="bi bi-people"></i>Passengers</a>
-    <a href="assign-seats.php" class="active"><i class="bi bi-grid-3x3-gap"></i>Seat Management</a>
-    <div class="sb-section">Account</div>
-    <a href="profile.php"><i class="bi bi-person-circle"></i>My Profile</a>
-    <a href="logout.php"><i class="bi bi-box-arrow-right"></i>Logout</a>
+    <div class="emp-sb-brand">
+        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
+        <div class="brand-name">Employee Panel</div>
+        <div class="brand-role">Operations &amp; Management</div>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sb-sep">Operations</div>
+        <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
+        <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
+        <a href="assign-seats.php" class="active"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <div class="sb-sep">Account</div>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="emp-sb-footer">Railway Management System</div>
 </aside>
 
 <main class="emp-main">
-
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <!-- Page Header -->
+    <div class="emp-page-header">
         <div>
-            <h4 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-2 text-success"></i>Seat Management</h4>
-            <small class="text-muted">Reserve, unreserve, and view seat assignments by route</small>
+            <p class="ph-title"><i class="bi bi-grid-3x3-gap me-2" style="color:#10b981;"></i>Seat Management</p>
+            <p class="ph-sub">Reserve, unreserve, and view seat assignments by route</p>
         </div>
         <a href="employee-dashboard.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Dashboard
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
         </a>
     </div>
 
+    <div class="emp-content">
     <?php if ($success_message): ?>
-    <div class="alert alert-success border-0 rounded-3 py-2 mb-3">
-        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($success_message) ?>
+    <div class="alert alert-success border-0 rounded-3 py-2 mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-check-circle-fill text-success"></i><?= htmlspecialchars($success_message) ?>
     </div>
     <?php endif; ?>
     <?php if ($error_message): ?>
-    <div class="alert alert-danger border-0 rounded-3 py-2 mb-3">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($error_message) ?>
+    <div class="alert alert-danger border-0 rounded-3 py-2 mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill text-danger"></i><?= htmlspecialchars($error_message) ?>
     </div>
     <?php endif; ?>
 
     <!-- Route Selector -->
-    <div class="card border-0 shadow-sm p-3 mb-4">
+    <div class="route-selector-card mb-4">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-12 col-md-7">
-                <label class="form-label small fw-semibold mb-1">Select Route</label>
+                <label class="form-label mb-1"><i class="bi bi-map me-1"></i>Select Route</label>
                 <select name="route_id" class="form-select" onchange="this.form.submit()">
                     <option value="">— Choose a route —</option>
                     <?php foreach ($all_routes as $r): ?>
                     <option value="<?= $r['route_id'] ?>" <?= $route_id === (int)$r['route_id'] ? 'selected':'' ?>>
-                        <?= htmlspecialchars($r['train_name']) ?> &nbsp;|&nbsp;
-                        <?= htmlspecialchars($r['departure_city']) ?> → <?= htmlspecialchars($r['arrival_city']) ?> &nbsp;|&nbsp;
+                        <?= htmlspecialchars($r['train_name']) ?> –
+                        <?= htmlspecialchars($r['departure_city']) ?> → <?= htmlspecialchars($r['arrival_city']) ?> –
                         <?= date('d M Y', strtotime($r['journey_date'])) ?>
                         (<?= $r['available_seats'] ?> free)
                     </option>
@@ -242,96 +321,96 @@ $pageTitle = 'Seat Management – Employee';
                 </select>
             </div>
             <div class="col-6 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Show</label>
+                <label class="form-label mb-1"><i class="bi bi-funnel me-1"></i>Show Seats</label>
                 <select name="type" class="form-select" onchange="this.form.submit()">
-                    <?php foreach (['all'=>'All Seats','available'=>'Available','booked'=>'Booked','reserved'=>'Reserved'] as $v=>$l): ?>
+                    <?php foreach (['all'=>'All Seats','available'=>'Available Only','booked'=>'Booked Only','reserved'=>'Reserved Only'] as $v=>$l): ?>
                     <option value="<?= $v ?>" <?= $filter_type === $v ? 'selected':'' ?>><?= $l ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <button type="submit" class="btn btn-success w-100"><i class="bi bi-funnel me-1"></i>Apply</button>
+                <button type="submit" class="btn btn-success w-100"><i class="bi bi-arrow-right me-1"></i>Go</button>
             </div>
         </form>
     </div>
 
     <?php if ($route && !empty($seat_map)): ?>
 
-    <!-- Route summary + Occupancy -->
-    <div class="row g-3 mb-4 align-items-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-3">
-                <div class="fw-bold mb-1">
-                    <?= htmlspecialchars($route['departure_city']) ?> → <?= htmlspecialchars($route['arrival_city']) ?>
-                    &nbsp;<span class="badge bg-success bg-opacity-15 text-success"><?= htmlspecialchars($route['train_name']) ?></span>
-                </div>
-                <div class="text-muted small mb-2">
-                    <?= date('D, d M Y', strtotime($route['journey_date'])) ?> &nbsp;·&nbsp;
-                    <?= date('H:i', strtotime($route['departure_time'])) ?> → <?= date('H:i', strtotime($route['arrival_time'])) ?>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <span class="sp sp-available"><?= $seat_stats['available'] ?> Available</span>
-                    <span class="sp sp-booked"><?= $seat_stats['booked'] ?> Booked</span>
-                    <span class="sp sp-reserved"><?= $seat_stats['reserved'] ?> Reserved</span>
-                </div>
+    <!-- Route Info Banner -->
+    <?php $booked_n = $seat_stats['booked'] + $seat_stats['reserved'];
+    $occ_pct = $seat_stats['total'] > 0 ? round($booked_n / $seat_stats['total'] * 100) : 0;
+    ?>
+    <div class="route-info-band mb-4">
+        <div style="flex:1;">
+            <div class="ri-route">
+                <i class="bi bi-geo-alt-fill me-1" style="color:#10b981;"></i>
+                <?= htmlspecialchars($route['departure_city']) ?>
+                <span class="arrow">→</span>
+                <?= htmlspecialchars($route['arrival_city']) ?>
+            </div>
+            <div class="ri-meta">
+                <i class="bi bi-train-front me-1"></i><?= htmlspecialchars($route['train_name']) ?> &nbsp;&middot;&nbsp;
+                <?= date('D, d M Y', strtotime($route['journey_date'])) ?> &nbsp;&middot;&nbsp;
+                <?= date('H:i', strtotime($route['departure_time'])) ?> &rarr; <?= date('H:i', strtotime($route['arrival_time'])) ?>
+            </div>
+            <div class="ri-stats">
+                <span class="sp sp-available"><i class="bi bi-check-circle me-1"></i><?= $seat_stats['available'] ?> Available</span>
+                <span class="sp sp-booked"><i class="bi bi-x-circle me-1"></i><?= $seat_stats['booked'] ?> Booked</span>
+                <span class="sp sp-reserved"><i class="bi bi-lock me-1"></i><?= $seat_stats['reserved'] ?> Reserved</span>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-3">
-                <?php $booked_n = $seat_stats['booked'] + $seat_stats['reserved']; ?>
-                <div class="d-flex justify-content-between small fw-semibold mb-2">
-                    <span>Occupancy</span>
-                    <span><?= $booked_n ?> / <?= $seat_stats['total'] ?></span>
-                </div>
-                <div class="occ-bar">
-                    <div class="occ-fill" style="width:<?= $seat_stats['total'] > 0 ? round($booked_n / $seat_stats['total'] * 100) : 0 ?>%;"></div>
-                </div>
-                <div class="d-flex justify-content-between text-muted mt-1" style="font-size:.72rem;">
-                    <span><?= $seat_stats['available'] ?> seats still free</span>
-                    <a href="route-details-emp.php?id=<?= $route_id ?>" class="text-success text-decoration-none">
-                        <i class="bi bi-map me-1"></i>Route Details
-                    </a>
-                </div>
+        <div style="min-width:200px;">
+            <div style="font-size:.78rem;font-weight:600;color:#374151;margin-bottom:.4rem;">
+                Occupancy &mdash; <?= $occ_pct ?>% (<?= $booked_n ?> / <?= $seat_stats['total'] ?>)
+            </div>
+            <div class="occ-bar">
+                <div class="occ-fill" style="width:<?= $occ_pct ?>%;background:<?= $occ_pct > 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : ($occ_pct > 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' : 'linear-gradient(90deg,#10b981,#059669)') ?>;"></div>
+            </div>
+            <div style="font-size:.7rem;color:#6b7280;margin-top:.35rem;">
+                <a href="route-details-emp.php?id=<?= $route_id ?>" class="text-success text-decoration-none">
+                    <i class="bi bi-map me-1"></i>View Route Details
+                </a>
             </div>
         </div>
     </div>
 
     <!-- Seat Map -->
-    <div class="card border-0 shadow-sm p-4">
-        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-            <h6 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Seat Map</h6>
+    <div class="surface-card mb-4">
+        <div class="sc-head">
+            <h6><i class="bi bi-grid-3x3-gap me-2"></i>Seat Map</h6>
             <!-- Legend -->
-            <div class="d-flex gap-3 flex-wrap ms-auto">
+            <div class="d-flex gap-3 flex-wrap">
                 <div class="legend-item">
-                    <div class="legend-box" style="background:#d1fae5; border-color:#6ee7b7;"></div> Available
+                    <div class="legend-box" style="background:#dcfce7;border-color:#86efac;"></div> Available
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box" style="background:#fee2e2; border-color:#fca5a5;"></div> Booked
+                    <div class="legend-box" style="background:#fee2e2;border-color:#fca5a5;"></div> Booked
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box" style="background:#fef9c3; border-color:#fde047;"></div> Reserved
+                    <div class="legend-box" style="background:#fef9c3;border-color:#fde047;"></div> Reserved
                 </div>
                 <div class="legend-item">
-                    <span class="type-dot type-economy d-inline-block"></span> Economy
-                    <span class="type-dot type-premium d-inline-block ms-2"></span> Premium
-                    <span class="type-dot type-luxury  d-inline-block ms-2"></span> Luxury
+                    <span class="type-dot type-economy d-inline-block" style="position:relative;"></span> Economy
+                    <span class="type-dot type-premium d-inline-block ms-2" style="position:relative;"></span> Premium
+                    <span class="type-dot type-luxury d-inline-block ms-2" style="position:relative;"></span> Luxury
                 </div>
             </div>
         </div>
-
+        <div class="sc-body">
         <!-- Bulk reserve form -->
         <form method="POST" id="bulkForm">
             <input type="hidden" name="post_action" value="bulk_reserve">
             <input type="hidden" name="route_id"    value="<?= $route_id ?>">
             <input type="hidden" name="seat_ids"    id="selectedSeatIds">
 
-            <div id="bulkBar" class="d-none mb-3 p-2 bg-primary bg-opacity-10 rounded-3 d-flex align-items-center gap-3">
+            <div id="bulkBar" class="bulk-bar d-none mb-3">
+                <i class="bi bi-cursor-fill text-primary"></i>
                 <span id="selectedCount" class="fw-semibold small text-primary">0 seats selected</span>
                 <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Reserve selected seats?')">
                     <i class="bi bi-lock me-1"></i>Reserve Selected
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
-                    Clear
+                    <i class="bi bi-x me-1"></i>Clear
                 </button>
             </div>
 
@@ -375,9 +454,11 @@ $pageTitle = 'Seat Management – Employee';
                 <?php endforeach; ?>
             </div>
         </form>
-    </div>
+        </form>
+        </div><!-- /sc-body -->
+    </div><!-- /surface-card seat map -->
 
-    <!-- Seat Details Table (reserved seats management) -->
+    <!-- Reserved Seats Management Table -->
     <?php
     $reserved_seats = $db->select(
         "SELECT s.seat_id, s.seat_number, s.seat_type
@@ -387,17 +468,18 @@ $pageTitle = 'Seat Management – Employee';
     );
     if ($reserved_seats && count($reserved_seats) > 0):
     ?>
-    <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-white border-bottom">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-lock me-2 text-warning"></i>Reserved Seats (<?= count($reserved_seats) ?>)</h6>
+    <div class="surface-card">
+        <div class="sc-head">
+            <h6><i class="bi bi-lock me-2" style="color:#d97706;"></i>Reserved Seats (<?= count($reserved_seats) ?>)</h6>
+            <span style="font-size:.75rem;color:#6b7280;">Click Unreserve to free a seat</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0" style="font-size:.84rem;">
                 <thead style="background:#fffbeb;">
                     <tr>
-                        <th>Seat No.</th>
-                        <th>Type</th>
-                        <th>Action</th>
+                        <th style="padding:.75rem;">Seat No.</th>
+                        <th style="padding:.75rem;">Type</th>
+                        <th style="padding:.75rem;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -425,17 +507,19 @@ $pageTitle = 'Seat Management – Employee';
     <?php endif; ?>
 
     <?php elseif ($route_id && $route): ?>
-    <div class="alert alert-info border-0 rounded-3">
-        <i class="bi bi-info-circle me-2"></i>No seat records found for this route.
-        Seats are created when the route is set up.
+    <div class="alert alert-info border-0 rounded-3 d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle-fill text-info"></i>
+        No seat records found for this route. Seats are created when the route is set up.
     </div>
     <?php elseif (empty($all_routes)): ?>
     <div class="text-center py-5 text-muted">
-        <i class="bi bi-calendar-x d-block fs-1 mb-3"></i>
-        No upcoming scheduled routes found.
+        <i class="bi bi-calendar-x d-block fs-1 mb-3 opacity-25"></i>
+        <strong>No upcoming scheduled routes found.</strong><br>
+        <small>Routes must be scheduled and active to appear here.</small>
     </div>
     <?php endif; ?>
 
+    </div><!-- /emp-content -->
 </main>
 </div>
 

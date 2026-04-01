@@ -121,81 +121,175 @@ $pending_n   = count(array_filter($bookings_list, fn($b) => $b['booking_status']
 
 $hideMainNavbar = true;
 $pageTitle = 'Passenger Manifest – Employee';
-//require_once 'inc/header.php';
+require_once 'inc/header.php';
 ?>
 
 <style>
-.emp-wrap { display:flex; min-height:calc(100vh - 60px); }
+/* ─── Layout ─────────────────────────────────────────── */
+.emp-wrap  { display:flex; height:100vh; overflow:hidden; }
 .emp-sidebar {
-    width:230px; flex-shrink:0;
-    background:linear-gradient(180deg,#064e3b 0%,#065f46 100%);
-    padding:1.5rem 0; position:sticky; top:60px;
-    height:calc(100vh - 60px); overflow-y:auto;
+    width:240px; flex-shrink:0;
+    background:linear-gradient(180deg,#012117 0%,#064e3b 100%);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
 }
-.emp-sidebar .sb-brand { padding:.5rem 1.25rem 1.25rem; font-weight:800; font-size:1.05rem; color:#d1fae5; border-bottom:1px solid rgba(255,255,255,.15); margin-bottom:.75rem; }
-.emp-sidebar a { display:flex; align-items:center; gap:.65rem; padding:.55rem 1.25rem; color:rgba(255,255,255,.82); text-decoration:none; font-size:.88rem; transition:background .2s,color .2s; }
-.emp-sidebar a:hover, .emp-sidebar a.active { background:rgba(255,255,255,.16); color:#fff; }
-.emp-sidebar .sb-section { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.42); padding:.9rem 1.25rem .3rem; font-weight:700; }
-.emp-main { flex:1; padding:1.75rem; overflow:hidden; }
+.emp-sb-brand { padding:1.4rem 1.25rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.1); }
+.emp-sb-brand .brand-icon {
+    width:38px; height:38px; border-radius:10px;
+    background:rgba(16,185,129,.2); color:#34d399;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; margin-bottom:.55rem;
+}
+.emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
+.emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
+.sb-sep {
+    font-size:.65rem; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; color:rgba(255,255,255,.28);
+    padding:.9rem 1.25rem .3rem;
+}
+.emp-sidebar nav a {
+    display:flex; align-items:center; gap:.7rem;
+    padding:.62rem 1.25rem; color:rgba(255,255,255,.65);
+    text-decoration:none; font-size:.875rem; font-weight:500;
+    transition:background .15s,color .15s,border-color .15s;
+    border-left:3px solid transparent;
+}
+.emp-sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; border-left-color:rgba(52,211,153,.4); }
+.emp-sidebar nav a.active { background:rgba(16,185,129,.15); color:#fff; border-left-color:#10b981; font-weight:600; }
+.emp-sidebar nav a i { font-size:.95rem; width:18px; text-align:center; }
+.emp-sb-footer {
+    margin-top:auto; padding:1rem 1.25rem;
+    border-top:1px solid rgba(255,255,255,.08);
+    font-size:.71rem; color:rgba(255,255,255,.3); text-align:center;
+}
+.emp-main { flex:1; overflow-y:auto; background:#f8fafc; }
+.emp-page-header {
+    background:#fff; border-bottom:1px solid #e5e7eb;
+    padding:1.1rem 1.75rem;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    position:sticky; top:0; z-index:100;
+}
+.emp-page-header .ph-title { font-size:1.05rem; font-weight:700; color:#0f172a; margin:0; }
+.emp-page-header .ph-sub   { font-size:.78rem; color:#6b7280; margin:0; }
+.emp-content { padding:1.5rem 1.75rem; }
 
-.kpi-card { border-radius:12px; border:none; box-shadow:0 2px 8px rgba(0,0,0,.07); }
-.kpi-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+/* ─── Metric cards ───────────────────────────────────── */
+.metric-card {
+    background:#fff; border-radius:14px; padding:1.25rem;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 4px rgba(0,0,0,.06);
+    transition:box-shadow .2s,transform .2s; height:100%;
+}
+.metric-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.09); transform:translateY(-2px); }
+.mc-ico {
+    width:46px; height:46px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.25rem; margin-bottom:.9rem;
+}
+.mc-val { font-size:2rem; font-weight:900; color:#0f172a; line-height:1; }
+.mc-lbl { font-size:.76rem; color:#6b7280; font-weight:500; margin-top:.25rem; }
 
-.sp { display:inline-block; padding:.25em .7em; border-radius:20px; font-size:.77rem; font-weight:600; white-space:nowrap; }
-.sp-confirmed { background:#d1fae5; color:#065f46; }
+/* ─── Status badges ──────────────────────────────────── */
+.sp { display:inline-block; padding:.22em .72em; border-radius:20px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.sp-confirmed { background:#dcfce7; color:#15803d; }
 .sp-pending   { background:#fef3c7; color:#92400e; }
 .sp-cancelled { background:#fee2e2; color:#7f1d1d; }
-.sp-completed { background:#d1fae5; color:#065f46; }
+.sp-completed { background:#dcfce7; color:#15803d; }
 .sp-refunded  { background:#ede9fe; color:#4c1d95; }
 .sp-failed    { background:#fee2e2; color:#7f1d1d; }
 
-.pax-table thead th { background:#064e3b; color:#fff; font-weight:600; font-size:.82rem; white-space:nowrap; }
+/* ─── Table ───────────────────────────────────────────── */
+.pax-table thead th {
+    background:linear-gradient(135deg,#012117,#064e3b);
+    color:#fff; font-weight:600; font-size:.8rem;
+    white-space:nowrap; padding:.85rem .75rem;
+    border:none;
+}
 .pax-table tbody tr:hover { background:#f0fdf4; }
-.pax-table td { font-size:.84rem; vertical-align:middle; }
+.pax-table td { font-size:.84rem; vertical-align:middle; padding:.7rem .75rem; }
+.pax-table { border-radius:0 0 14px 14px; overflow:hidden; }
+.surface-card {
+    background:#fff; border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 6px rgba(0,0,0,.06);
+    overflow:hidden;
+}
+.surface-card .sc-head {
+    padding:.9rem 1.25rem; border-bottom:1px solid #f1f5f9;
+    display:flex; align-items:center; justify-content:space-between;
+}
+.surface-card .sc-head h6 { font-weight:700; margin:0; font-size:.9rem; color:#0f172a; }
 
-.filter-bar { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.07); padding:1rem 1.25rem; margin-bottom:1.25rem; }
+/* ─── Filter panel ───────────────────────────────────── */
+.filter-bar {
+    background:#fff; border-radius:14px; border:1px solid #e5e7eb;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);
+    padding:1.1rem 1.25rem; margin-bottom:1.25rem;
+}
+.filter-bar label { font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#374151; }
 
-/* Print-friendly */
+/* ─── View toggle ─────────────────────────────────────── */
+.view-toggle {
+    display:inline-flex; border-radius:10px; overflow:hidden;
+    border:1.5px solid #d1fae5; background:#f0fdf4;
+}
+.view-toggle a {
+    padding:.42rem 1rem; font-size:.82rem; font-weight:600;
+    color:#065f46; text-decoration:none;
+    transition:background .15s,color .15s;
+}
+.view-toggle a.active { background:#10b981; color:#fff; }
+.view-toggle a:not(.active):hover { background:#dcfce7; }
+
+/* Print */
 @media print {
     .no-print { display:none !important; }
     .emp-sidebar { display:none; }
-    .emp-main    { padding:0; }
+    .emp-main    { overflow:visible; }
     .pax-table thead th { background:#064e3b !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
-@media (max-width:768px) { .emp-sidebar { display:none; } .emp-main { padding:1rem; } }
+@media(max-width:768px){ .emp-sidebar{display:none;} .emp-content{padding:1rem;} }
 </style>
 
 <div class="emp-wrap">
+<!-- ─── Sidebar ──────────────────────────────────────── -->
 <aside class="emp-sidebar no-print">
-    <div class="sb-brand"><i class="bi bi-train-front-fill me-2"></i>Employee Panel</div>
-    <div class="sb-section">Main</div>
-    <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i>Dashboard</a>
-    <div class="sb-section">Operations</div>
-    <a href="my-trains.php"><i class="bi bi-train-front"></i>My Trains</a>
-    <a href="check-passengers.php" class="active"><i class="bi bi-people"></i>Passengers</a>
-    <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i>Seat Management</a>
-    <div class="sb-section">Account</div>
-    <a href="profile.php"><i class="bi bi-person-circle"></i>My Profile</a>
-    <a href="logout.php"><i class="bi bi-box-arrow-right"></i>Logout</a>
+    <div class="emp-sb-brand">
+        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
+        <div class="brand-name">Employee Panel</div>
+        <div class="brand-role">Operations &amp; Management</div>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sb-sep">Operations</div>
+        <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
+        <a href="check-passengers.php" class="active"><i class="bi bi-people"></i> Passengers</a>
+        <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <div class="sb-sep">Account</div>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="emp-sb-footer">Railway Management System</div>
 </aside>
 
 <main class="emp-main">
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print flex-wrap gap-2">
+    <!-- Page Header -->
+    <div class="emp-page-header no-print">
         <div>
-            <h4 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-success"></i>Passenger Manifest</h4>
-            <small class="text-muted">
+            <p class="ph-title"><i class="bi bi-people-fill me-2" style="color:#10b981;"></i>Passenger Manifest</p>
+            <p class="ph-sub">
                 <?= $filter_date ? date('D, d M Y', strtotime($filter_date)) : 'All dates' ?>
                 <?php if ($route_id && !empty($routes_for_date)):
                     $sel_route = array_values(array_filter($routes_for_date, fn($r) => (int)$r['route_id'] === $route_id));
                     if (!empty($sel_route)):
                         $sr = $sel_route[0]; ?>
-                    &nbsp;·&nbsp;
-                    <?= htmlspecialchars($sr['departure_city']) ?> → <?= htmlspecialchars($sr['arrival_city']) ?>
+                    &nbsp;&middot;&nbsp;
+                    <?= htmlspecialchars($sr['departure_city']) ?> &rarr; <?= htmlspecialchars($sr['arrival_city']) ?>
                     (<?= htmlspecialchars($sr['train_name']) ?>)
                 <?php endif; endif; ?>
-            </small>
+            </p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <button onclick="window.print()" class="btn btn-outline-success btn-sm">
@@ -207,42 +301,51 @@ $pageTitle = 'Passenger Manifest – Employee';
         </div>
     </div>
 
-    <!-- KPIs -->
+    <div class="emp-content">
+    <!-- KPI Cards -->
     <div class="row g-3 mb-4 no-print">
-        <?php foreach ([
-            [$total_passengers, 'Total Passengers', 'bi-person-fill', 'bg-success text-white', '#f0fdf4'],
-            [$total_bookings,   'Bookings',         'bi-journal-text','bg-primary text-white', '#eff6ff'],
-            [$confirmed_n,      'Confirmed',        'bi-check-circle','bg-success text-white', '#f0fdf4'],
-            [$pending_n,        'Pending',          'bi-hourglass',   'bg-warning text-dark',  '#fffbeb'],
-        ] as [$v, $l, $ic, $ibg, $bg]): ?>
         <div class="col-6 col-md-3">
-            <div class="kpi-card card p-3" style="background:<?= $bg ?>;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="kpi-icon <?= $ibg ?>" style="width:38px;height:38px;font-size:1rem;">
-                        <i class="bi <?= $ic ?>"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-5"><?= number_format((int)$v) ?></div>
-                        <div class="text-muted small"><?= $l ?></div>
-                    </div>
-                </div>
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#dcfce7;"><i class="bi bi-person-fill" style="color:#16a34a;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= number_format($total_passengers) ?></div>
+                <div class="mc-lbl">Total Passengers</div>
             </div>
         </div>
-        <?php endforeach; ?>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#dbeafe;"><i class="bi bi-journal-text" style="color:#2563eb;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= number_format($total_bookings) ?></div>
+                <div class="mc-lbl">Bookings</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#dcfce7;"><i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= number_format($confirmed_n) ?></div>
+                <div class="mc-lbl">Confirmed</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#fef3c7;"><i class="bi bi-hourglass-split" style="color:#d97706;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= number_format($pending_n) ?></div>
+                <div class="mc-lbl">Pending</div>
+            </div>
+        </div>
     </div>
 
     <!-- Filter bar -->
     <form method="GET" class="filter-bar no-print">
         <div class="row g-2 align-items-end">
             <!-- View toggle -->
-            <div class="col-12">
-                <div class="btn-group btn-group-sm mb-2" role="group">
+            <div class="col-12 mb-1">
+                <div class="view-toggle">
                     <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'passengers'])) ?>"
-                       class="btn <?= $view === 'passengers' ? 'btn-success' : 'btn-outline-success' ?>">
+                       class="<?= $view === 'passengers' ? 'active' : '' ?>">
                        <i class="bi bi-person-lines-fill me-1"></i>Passengers
                     </a>
                     <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'bookings'])) ?>"
-                       class="btn <?= $view === 'bookings' ? 'btn-success' : 'btn-outline-success' ?>">
+                       class="<?= $view === 'bookings' ? 'active' : '' ?>">
                        <i class="bi bi-journal-check me-1"></i>Bookings
                     </a>
                 </div>
@@ -303,11 +406,9 @@ $pageTitle = 'Passenger Manifest – Employee';
 
     <!-- ── PASSENGERS VIEW ── -->
     <?php if ($view === 'passengers'): ?>
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center no-print">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-person-lines-fill me-2"></i>
-                Passenger List (<?= $total_passengers ?>)
-            </h6>
+    <div class="surface-card">
+        <div class="sc-head no-print">
+            <h6><i class="bi bi-person-lines-fill me-2 text-success"></i>Passenger List (<?= $total_passengers ?>)</h6>
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0 pax-table">
@@ -387,11 +488,9 @@ $pageTitle = 'Passenger Manifest – Employee';
 
     <!-- ── BOOKINGS VIEW ── -->
     <?php else: ?>
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center no-print">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2"></i>
-                Bookings (<?= $total_bookings ?>)
-            </h6>
+    <div class="surface-card">
+        <div class="sc-head no-print">
+            <h6><i class="bi bi-journal-check me-2 text-success"></i>Bookings (<?= $total_bookings ?>)</h6>
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0 pax-table">
@@ -471,6 +570,7 @@ $pageTitle = 'Passenger Manifest – Employee';
     </div>
     <?php endif; ?>
 
+    </div><!-- /emp-content -->
 </main>
 </div>
 

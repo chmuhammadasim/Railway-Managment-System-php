@@ -68,109 +68,198 @@ $kpi = $db->selectRow(
 
 $hideMainNavbar = true;
 $pageTitle = 'My Trains – Employee Panel';
-//require_once 'inc/header.php';
+require_once 'inc/header.php';
 ?>
 
 <style>
-.emp-wrap { display:flex; min-height:calc(100vh - 60px); }
+/* ─── Layout ─────────────────────────────────────────── */
+.emp-wrap  { display:flex; height:100vh; overflow:hidden; }
 .emp-sidebar {
-    width:230px; flex-shrink:0;
-    background:linear-gradient(180deg,#064e3b 0%,#065f46 100%);
-    padding:1.5rem 0; position:sticky; top:60px;
-    height:calc(100vh - 60px); overflow-y:auto;
+    width:240px; flex-shrink:0;
+    background:linear-gradient(180deg,#012117 0%,#064e3b 100%);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
 }
-.emp-sidebar .sb-brand { padding:.5rem 1.25rem 1.25rem; font-weight:800; font-size:1.05rem; color:#d1fae5; border-bottom:1px solid rgba(255,255,255,.15); margin-bottom:.75rem; }
-.emp-sidebar a { display:flex; align-items:center; gap:.65rem; padding:.55rem 1.25rem; color:rgba(255,255,255,.82); text-decoration:none; font-size:.88rem; transition:background .2s,color .2s; }
-.emp-sidebar a:hover, .emp-sidebar a.active { background:rgba(255,255,255,.16); color:#fff; }
-.emp-sidebar .sb-section { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.42); padding:.9rem 1.25rem .3rem; font-weight:700; }
-.emp-main { flex:1; padding:1.75rem; overflow:hidden; }
+.emp-sb-brand {
+    padding:1.4rem 1.25rem 1.2rem;
+    border-bottom:1px solid rgba(255,255,255,.1);
+}
+.emp-sb-brand .brand-icon {
+    width:38px; height:38px; border-radius:10px;
+    background:rgba(16,185,129,.2); color:#34d399;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; margin-bottom:.55rem;
+}
+.emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
+.emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
+.sb-sep {
+    font-size:.65rem; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; color:rgba(255,255,255,.28);
+    padding:.9rem 1.25rem .3rem;
+}
+.emp-sidebar nav a {
+    display:flex; align-items:center; gap:.7rem;
+    padding:.62rem 1.25rem; color:rgba(255,255,255,.65);
+    text-decoration:none; font-size:.875rem; font-weight:500;
+    transition:background .15s,color .15s,border-color .15s;
+    border-left:3px solid transparent;
+}
+.emp-sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; border-left-color:rgba(52,211,153,.4); }
+.emp-sidebar nav a.active { background:rgba(16,185,129,.15); color:#fff; border-left-color:#10b981; font-weight:600; }
+.emp-sidebar nav a i { font-size:.95rem; width:18px; text-align:center; }
+.emp-sb-footer {
+    margin-top:auto; padding:1rem 1.25rem;
+    border-top:1px solid rgba(255,255,255,.08);
+    font-size:.71rem; color:rgba(255,255,255,.3); text-align:center;
+}
+.emp-main { flex:1; overflow-y:auto; background:#f8fafc; }
+.emp-page-header {
+    background:#fff; border-bottom:1px solid #e5e7eb;
+    padding:1.1rem 1.75rem;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    position:sticky; top:0; z-index:100;
+}
+.emp-page-header .ph-title { font-size:1.05rem; font-weight:700; color:#0f172a; margin:0; }
+.emp-page-header .ph-sub   { font-size:.78rem; color:#6b7280; margin:0; }
+.emp-content { padding:1.5rem 1.75rem; }
 
-.kpi-card { border-radius:12px; border:none; box-shadow:0 2px 8px rgba(0,0,0,.07); }
-.kpi-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
-.sp { display:inline-block; padding:.25em .7em; border-radius:20px; font-size:.77rem; font-weight:600; white-space:nowrap; }
-.sp-active      { background:#d1fae5; color:#065f46; }
+/* ─── Metric cards ───────────────────────────────────── */
+.metric-card {
+    background:#fff; border-radius:14px; padding:1.25rem;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 4px rgba(0,0,0,.06);
+    transition:box-shadow .2s,transform .2s;
+    height:100%;
+}
+.metric-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.09); transform:translateY(-2px); }
+.mc-ico {
+    width:46px; height:46px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.25rem; margin-bottom:.9rem;
+}
+.mc-val { font-size:2rem; font-weight:900; color:#0f172a; line-height:1; }
+.mc-lbl { font-size:.76rem; color:#6b7280; font-weight:500; margin-top:.25rem; }
+
+/* ─── Status badges ──────────────────────────────────── */
+.sp { display:inline-block; padding:.22em .72em; border-radius:20px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.sp-active      { background:#dcfce7; color:#15803d; }
 .sp-inactive    { background:#f1f5f9; color:#475569; }
 .sp-maintenance { background:#ffedd5; color:#9a3412; }
 .sp-scheduled   { background:#dbeafe; color:#1d4ed8; }
 
-/* Train card grid */
-.train-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.25rem; }
-.train-card { border-radius:14px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; }
-.train-card-top { padding:1.1rem 1.25rem 0; }
-.train-card-mid { padding:.75rem 1.25rem; background:#fafafa; border-top:1px solid #f1f5f9; }
-.train-stat { text-align:center; }
-.train-stat strong { display:block; font-size:1.25rem; font-weight:800; }
-.train-stat small  { font-size:.72rem; color:#9ca3af; }
-.occ-bar { height:6px; border-radius:4px; background:#e5e7eb; overflow:hidden; margin-top:.3rem; }
-.occ-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#10b981,#059669); }
-
-/* Upcoming routes inside card */
-.route-chip {
-    display:inline-flex; align-items:center; gap:.3rem;
-    background:#f0fdf4; color:#065f46; border-radius:6px;
-    padding:.25rem .6rem; font-size:.74rem; margin:.15rem;
+/* ─── Train cards ────────────────────────────────────── */
+.train-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:1.25rem; }
+.train-card {
+    background:#fff; border-radius:16px;
+    border:1.5px solid #e2e8f0;
+    box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden;
+    transition:box-shadow .25s,border-color .25s,transform .25s;
+    display:flex; flex-direction:column;
 }
+.train-card:hover { box-shadow:0 10px 32px rgba(0,0,0,.1); border-color:#10b981; transform:translateY(-3px); }
+.tc-header { padding:1.2rem 1.25rem .8rem; }
+.tc-stats  { padding:.8rem 1.25rem; background:#f8faf9; border-top:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; }
+.tc-routes { padding:.75rem 1.25rem; background:#fafafa; flex:1; }
+.tc-actions { padding:.85rem 1.25rem; display:flex; gap:.5rem; flex-wrap:wrap; border-top:1px solid #f1f5f9; }
+.train-stat { text-align:center; padding:.3rem .5rem; }
+.train-stat .ts-val { font-size:1.2rem; font-weight:800; color:#0f172a; line-height:1; display:block; }
+.train-stat .ts-lbl { font-size:.65rem; color:#9ca3af; margin-top:.15rem; letter-spacing:.02em; display:block; }
+.occ-bar { height:6px; border-radius:4px; background:#e5e7eb; overflow:hidden; }
+.occ-fill { height:100%; border-radius:4px; }
+.route-chip {
+    display:inline-flex; align-items:center; gap:.35rem;
+    background:#f0fdf4; color:#065f46; border:1px solid #bbf7d0;
+    border-radius:8px; padding:.3rem .7rem; font-size:.72rem; font-weight:600;
+    text-decoration:none; margin:.15rem; transition:background .2s;
+}
+.route-chip:hover { background:#dcfce7; color:#065f46; }
 
-@media (max-width:768px) { .emp-sidebar { display:none; } .emp-main { padding:1rem; } }
+/* ─── Filter card ────────────────────────────────────── */
+.filter-card {
+    background:#fff; border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);
+    padding:1.1rem 1.25rem;
+}
+.filter-card label { font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#374151; }
+
+@media(max-width:768px){ .emp-sidebar{display:none;} .emp-content{padding:1rem;} }
 </style>
 
 <div class="emp-wrap">
-<!-- Sidebar -->
+<!-- ─── Sidebar ──────────────────────────────────────── -->
 <aside class="emp-sidebar">
-    <div class="sb-brand"><i class="bi bi-train-front-fill me-2"></i>Employee Panel</div>
-    <div class="sb-section">Main</div>
-    <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i>Dashboard</a>
-    <div class="sb-section">Operations</div>
-    <a href="my-trains.php" class="active"><i class="bi bi-train-front"></i>My Trains</a>
-    <a href="check-passengers.php"><i class="bi bi-people"></i>Passengers</a>
-    <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i>Seat Management</a>
-    <div class="sb-section">Bookings</div>
-    <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i>Today's Bookings</a>
-    <div class="sb-section">Account</div>
-    <a href="profile.php"><i class="bi bi-person-circle"></i>My Profile</a>
-    <a href="logout.php"><i class="bi bi-box-arrow-right"></i>Logout</a>
+    <div class="emp-sb-brand">
+        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
+        <div class="brand-name">Employee Panel</div>
+        <div class="brand-role">Operations &amp; Management</div>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sb-sep">Operations</div>
+        <a href="my-trains.php" class="active"><i class="bi bi-train-front"></i> My Trains</a>
+        <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
+        <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <div class="sb-sep">Bookings</div>
+        <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
+        <div class="sb-sep">Account</div>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="emp-sb-footer">Railway Management System</div>
 </aside>
 
 <main class="emp-main">
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <!-- Page Header -->
+    <div class="emp-page-header">
         <div>
-            <h4 class="fw-bold mb-0"><i class="bi bi-train-front me-2 text-success"></i>My Trains</h4>
-            <small class="text-muted"><?= count($trains) ?> train(s) found</small>
+            <p class="ph-title"><i class="bi bi-train-front me-2" style="color:#10b981;"></i>My Trains</p>
+            <p class="ph-sub"><?= count($trains) ?> train(s) found &nbsp;·&nbsp; <?= date('D, d M Y') ?></p>
         </div>
         <a href="employee-dashboard.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Dashboard
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
         </a>
     </div>
 
-    <!-- KPI strip -->
+    <div class="emp-content">
+    <!-- KPI Cards -->
     <div class="row g-3 mb-4">
-        <?php foreach ([
-            ['Total Trains',   $kpi['total']       ?? 0, 'bi-train-front',   'bg-primary text-white', '#eff6ff'],
-            ['Active',         $kpi['active']       ?? 0, 'bi-check-circle',  'bg-success text-white', '#f0fdf4'],
-            ['Inactive',       $kpi['inactive']     ?? 0, 'bi-dash-circle',   'bg-secondary text-white','#f8fafc'],
-            ['Maintenance',    $kpi['maintenance']  ?? 0, 'bi-tools',         'bg-warning text-dark',  '#fffbeb'],
-        ] as [$lbl, $val, $icon, $ibg, $bg]): ?>
         <div class="col-6 col-md-3">
-            <div class="kpi-card card p-3" style="background:<?= $bg ?>;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="kpi-icon <?= $ibg ?>"><i class="bi <?= $icon ?>"></i></div>
-                    <div>
-                        <div class="fw-bold fs-4"><?= (int)$val ?></div>
-                        <div class="text-muted small"><?= $lbl ?></div>
-                    </div>
-                </div>
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#dbeafe;"><i class="bi bi-train-front" style="color:#2563eb;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= (int)($kpi['total'] ?? 0) ?></div>
+                <div class="mc-lbl">Total Trains</div>
             </div>
         </div>
-        <?php endforeach; ?>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#dcfce7;"><i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= (int)($kpi['active'] ?? 0) ?></div>
+                <div class="mc-lbl">Active</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#f1f5f9;"><i class="bi bi-dash-circle" style="color:#64748b;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= (int)($kpi['inactive'] ?? 0) ?></div>
+                <div class="mc-lbl">Inactive</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="metric-card">
+                <div class="mc-ico" style="background:#ffedd5;"><i class="bi bi-tools" style="color:#ea580c;font-size:1.3rem;"></i></div>
+                <div class="mc-val"><?= (int)($kpi['maintenance'] ?? 0) ?></div>
+                <div class="mc-lbl">Maintenance</div>
+            </div>
+        </div>
     </div>
 
     <!-- Filter bar -->
-    <form method="GET" class="card border-0 shadow-sm p-3 mb-4">
+    <form method="GET" class="filter-card mb-4">
         <div class="row g-2 align-items-end">
             <div class="col-12 col-sm-5">
-                <label class="form-label mb-1 small fw-semibold">Search</label>
+                <label class="form-label mb-1"><i class="bi bi-search me-1"></i>Search</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" name="q" class="form-control"
@@ -200,8 +289,9 @@ $pageTitle = 'My Trains – Employee Panel';
     <!-- Train cards grid -->
     <?php if (empty($trains)): ?>
     <div class="text-center py-5 text-muted">
-        <i class="bi bi-train-front d-block fs-1 mb-3"></i>
-        No trains found matching your criteria.
+        <i class="bi bi-train-front d-block fs-1 mb-3 opacity-25"></i>
+        <strong>No trains found matching your criteria.</strong><br>
+        <small>Try adjusting the filters above.</small>
     </div>
     <?php else: ?>
     <div class="train-grid">
@@ -210,97 +300,105 @@ $pageTitle = 'My Trains – Employee Panel';
         $occ_pct = $t['total_seats'] > 0
             ? round(($t['total_seats'] - $t['available_seats']) / $t['total_seats'] * 100) : 0;
         ?>
-        <div class="train-card card">
-            <div class="train-card-top">
-                <!-- Top row -->
+        <div class="train-card">
+            <!-- Card header -->
+            <div class="tc-header">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h6 class="fw-bold mb-0"><?= htmlspecialchars($t['train_name']) ?></h6>
-                        <div class="text-muted small"><?= htmlspecialchars($t['train_number']) ?> &nbsp;·&nbsp; <?= htmlspecialchars($t['train_type']) ?></div>
+                        <div class="text-muted small mt-1">
+                            <i class="bi bi-hash me-1"></i><?= htmlspecialchars($t['train_number']) ?>
+                            &nbsp;·&nbsp;
+                            <i class="bi bi-tag me-1"></i><?= htmlspecialchars($t['train_type']) ?>
+                        </div>
                     </div>
                     <span class="sp sp-<?= $t['status'] ?>"><?= ucfirst($t['status']) ?></span>
                 </div>
-
-                <!-- Seat occupancy -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between small text-muted mb-1">
+                <!-- Occupancy bar -->
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.75rem;color:#6b7280;">
                         <span>Seat Occupancy</span>
-                        <span><?= $t['total_seats'] - $t['available_seats'] ?> / <?= $t['total_seats'] ?></span>
+                        <span class="fw-600"><?= $t['total_seats'] - $t['available_seats'] ?> / <?= $t['total_seats'] ?> &nbsp;<span style="color:<?= $occ_pct > 80 ? '#dc2626' : '#10b981' ?>"><?= $occ_pct ?>%</span></span>
                     </div>
                     <div class="occ-bar">
-                        <div class="occ-fill" style="width:<?= $occ_pct ?>%;
-                            background:<?= $occ_pct > 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : 'linear-gradient(90deg,#10b981,#059669)' ?>;"></div>
+                        <div class="occ-fill" style="width:<?= $occ_pct ?>%;background:<?= $occ_pct > 80 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : ($occ_pct > 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' : 'linear-gradient(90deg,#10b981,#059669)') ?>;"></div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Stats row -->
-                <div class="row g-0 text-center mb-3">
-                    <?php foreach ([
-                        [$t['total_routes'],    'Total Routes'],
-                        [$t['today_routes'],    'Today'],
-                        [$t['upcoming_routes'], 'Upcoming'],
-                        [$t['today_confirmed'], 'Today Bkgs'],
-                    ] as [$v, $l]): ?>
+            <!-- Stat cells -->
+            <div class="tc-stats">
+                <div class="row g-0 text-center">
                     <div class="col-3 train-stat">
-                        <strong><?= (int)$v ?></strong>
-                        <small><?= $l ?></small>
+                        <span class="ts-val"><?= (int)$t['total_routes'] ?></span>
+                        <span class="ts-lbl">Total Routes</span>
                     </div>
-                    <?php endforeach; ?>
+                    <div class="col-3 train-stat" style="border-left:1px solid #e5e7eb;">
+                        <span class="ts-val text-success"><?= (int)$t['today_routes'] ?></span>
+                        <span class="ts-lbl">Today</span>
+                    </div>
+                    <div class="col-3 train-stat" style="border-left:1px solid #e5e7eb;">
+                        <span class="ts-val text-primary"><?= (int)$t['upcoming_routes'] ?></span>
+                        <span class="ts-lbl">Upcoming</span>
+                    </div>
+                    <div class="col-3 train-stat" style="border-left:1px solid #e5e7eb;">
+                        <span class="ts-val"><?= (int)$t['today_confirmed'] ?></span>
+                        <span class="ts-lbl">Bkgs Today</span>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Status update form -->
-                <form method="POST" class="d-flex gap-2 align-items-center mb-3">
+            <!-- Status form + upcoming routes -->
+            <div class="tc-routes">
+                <form method="POST" class="d-flex gap-2 align-items-center mb-2">
                     <input type="hidden" name="train_id" value="<?= $t['train_id'] ?>">
                     <select name="train_status" class="form-select form-select-sm"
-                            onchange="this.form.submit()" title="Update train status">
+                            onchange="this.form.submit()" title="Update train status" style="font-size:.82rem;">
                         <?php foreach (['active','inactive','maintenance'] as $st): ?>
-                        <option value="<?= $st ?>" <?= $t['status'] === $st ? 'selected':'' ?>>
-                            <?= ucfirst($st) ?>
-                        </option>
+                        <option value="<?= $st ?>" <?= $t['status'] === $st ? 'selected':'' ?>><?= ucfirst($st) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <button type="submit" class="btn btn-secondary btn-sm text-nowrap" style="font-size:.77rem;">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm text-nowrap" style="font-size:.78rem;">
                         <i class="bi bi-check2"></i> Save
                     </button>
                 </form>
-            </div>
-
-            <div class="train-card-mid d-flex gap-2 flex-wrap">
-                <!-- Today's route(s) links -->
                 <?php
                 $t_routes = $db->select(
-                    "SELECT route_id, departure_city, arrival_city, departure_time, status
+                    "SELECT route_id, departure_city, arrival_city, departure_time
                      FROM routes WHERE train_id = {$t['train_id']}
                      AND journey_date >= CURDATE()
                      ORDER BY journey_date ASC, departure_time ASC
                      LIMIT 3"
                 );
                 if ($t_routes): ?>
+                <div class="d-flex flex-wrap gap-1 mt-1">
                 <?php foreach ($t_routes as $tr): ?>
                 <a href="route-details-emp.php?id=<?= $tr['route_id'] ?>" class="route-chip">
                     <i class="bi bi-map"></i>
                     <?= htmlspecialchars($tr['departure_city']) ?> → <?= htmlspecialchars($tr['arrival_city']) ?>
-                    (<?= date('H:i', strtotime($tr['departure_time'])) ?>)
+                    <span style="color:#94a3b8;"><?= date('H:i', strtotime($tr['departure_time'])) ?></span>
                 </a>
                 <?php endforeach; ?>
+                </div>
                 <?php else: ?>
-                <span class="text-muted small">No upcoming routes</span>
+                <p class="text-muted small mb-0"><i class="bi bi-calendar-x me-1"></i>No upcoming routes</p>
                 <?php endif; ?>
             </div>
 
-            <div class="p-3 pt-0 d-flex gap-2 mt-2">
+            <!-- Action buttons -->
+            <div class="tc-actions">
                 <?php if ($t['today_routes'] > 0): ?>
                 <a href="route-details-emp.php?train_id=<?= $t['train_id'] ?>"
-                   class="btn btn-success btn-sm flex-fill">
+                   class="btn btn-success btn-sm flex-fill" style="font-size:.82rem;">
                     <i class="bi bi-calendar-day me-1"></i>Today's Route
                 </a>
                 <?php endif; ?>
                 <a href="check-passengers.php?train_id=<?= $t['train_id'] ?>"
-                   class="btn btn-outline-primary btn-sm flex-fill">
+                   class="btn btn-outline-primary btn-sm flex-fill" style="font-size:.82rem;">
                     <i class="bi bi-people me-1"></i>Passengers
                 </a>
                 <a href="assign-seats.php?train_id=<?= $t['train_id'] ?>"
-                   class="btn btn-outline-secondary btn-sm px-2" title="Seat Map">
+                   class="btn btn-outline-secondary btn-sm px-2" title="Seat Map" style="font-size:.82rem;">
                     <i class="bi bi-grid-3x3-gap"></i>
                 </a>
             </div>
@@ -309,6 +407,7 @@ $pageTitle = 'My Trains – Employee Panel';
     </div>
     <?php endif; ?>
 
+    </div><!-- /emp-content -->
 </main>
 </div>
 
