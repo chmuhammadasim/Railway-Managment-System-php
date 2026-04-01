@@ -1,6 +1,6 @@
     </main>
 
-    <footer class="footer">
+    <footer class="footer" style="margin-top: 0;">
         <div class="container">
             <p>&copy; <?php echo date("Y"); ?> Railway Management System. All rights reserved.</p>
         </div>
@@ -41,7 +41,7 @@
     // Load extra scripts defined by pages (e.g., Chart.js + admin-charts)
     if (!empty($extraScripts) && is_array($extraScripts)) {
         foreach ($extraScripts as $src) {
-            echo '<script src="' . htmlspecialchars($src) . '" defer></script>\n';
+            echo '<script src="' . htmlspecialchars($src) . '" defer></script>';
         }
     }
     ?>
