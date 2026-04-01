@@ -10,52 +10,112 @@ class User {
 
     // Register New User
     public function register($username, $email, $password, $full_name, $phone = '', $address = '') {
-        // Check if user already exists
-        $query = "SELECT user_id FROM users WHERE username = '{$username}' OR email = '{$email}'";
+        $conn   = $this->db->getConnection();
+        $user_e = $conn->real_escape_string($username);
+        $eml_e  = $conn->real_escape_string($email);
+
+        $query = "SELECT user_id FROM users WHERE username = '{$user_e}' OR email = '{$eml_e}'";
         if ($this->db->countRows($query) > 0) {
-            return array('success' => false, 'message' => 'Username or Email already exists!');
+            return ['success' => false, 'message' => 'Username or Email already exists!'];
         }
 
-        // Hash password
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-        // Insert user
-        $data = array(
-            'username' => $username,
-            'email' => $email,
-            'password' => $hashed_password,
-            'full_name' => $full_name,
-            'phone' => $phone,
-            'address' => $address,
-            'role' => 'user'
-        );
+        $data = [
+            'username'       => $username,
+            'email'          => $email,
+            'password'       => $hashed_password,
+            'full_name'      => $full_name,
+            'phone'          => $phone,
+            'address'        => $address,
+            'role'           => 'user',
+            'email_verified' => 0,   // requires OTP verification
+        ];
 
         $user_id = $this->db->insert('users', $data);
 
         if ($user_id) {
-            return array('success' => true, 'message' => 'Registration successful!', 'user_id' => $user_id);
-        } else {
-            return array('success' => false, 'message' => 'Registration failed!');
+            return ['success' => true, 'message' => 'Registration successful!', 'user_id' => $user_id];
         }
+        return ['success' => false, 'message' => 'Registration failed!'];
+    }
+
+    // Mark email as verified after OTP check
+    public function verifyEmail($user_id): bool {
+        $conn = $this->db->getConnection();
+        return (bool) $conn->query("UPDATE users SET email_verified=1 WHERE user_id=" . (int)$user_id);
+    }
+
+    // Reset password directly (used after OTP verification)
+    public function resetPassword(string $email, string $new_password): array {
+        $conn  = $this->db->getConnection();
+        $eml_e = $conn->real_escape_string($email);
+        $hash  = $conn->real_escape_string(password_hash($new_password, PASSWORD_BCRYPT));
+        $ok    = $conn->query("UPDATE users SET password='{$hash}' WHERE email='{$eml_e}'");
+        if ($ok && $conn->affected_rows > 0) {
+            return ['success' => true,  'message' => 'Password reset successfully.'];
+        }
+        return ['success' => false, 'message' => 'Email not found.'];
     }
 
     // Login User
     public function login($username, $password) {
-        // Support login with either username or email
-        $query = "SELECT * FROM users WHERE (username = '{$username}' OR email = '{$username}') AND is_active = 1";
-        $user = $this->db->selectRow($query);
+        $conn = $this->db->getConnection();
+
+        // ── Brute-force protection ──────────────────────────────────
+        $ip       = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ip_e     = $conn->real_escape_string($ip);
+        $user_e   = $conn->real_escape_string($username);
+        $window   = date('Y-m-d H:i:s', time() - 900); // 15-minute window
+
+        $ip_hits  = $this->db->selectRow("SELECT COUNT(*) AS c FROM login_attempts WHERE ip_address='{$ip_e}' AND attempted_at > '{$window}'");
+        $usr_hits = $this->db->selectRow("SELECT COUNT(*) AS c FROM login_attempts WHERE identifier='{$user_e}' AND attempted_at > '{$window}'");
+
+        if ((int)($ip_hits['c'] ?? 0) >= 10) {
+            return ['success' => false, 'message' => 'Too many login attempts from your IP. Please wait 15 minutes.'];
+        }
+        if ((int)($usr_hits['c'] ?? 0) >= 5) {
+            return ['success' => false, 'message' => 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.'];
+        }
+
+        // ── Fetch user ──────────────────────────────────────────────
+        $query = "SELECT * FROM users WHERE (username = '{$user_e}' OR email = '{$user_e}') AND is_active = 1";
+        $user  = $this->db->selectRow($query);
 
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['email'] = $user['email'];
-            $_SESSION['role'] = $user['role'];
+            // Block regular users who haven't verified their email yet
+            if ($user['role'] === 'user' && empty($user['email_verified'])) {
+                return [
+                    'success'     => false,
+                    'message'     => 'Please verify your email before logging in.',
+                    'need_verify' => true,
+                    'email'       => $user['email'],
+                    'user_id'     => $user['user_id'],
+                ];
+            }
+
+            // Clear failed attempts for this identifier
+            $conn->query("DELETE FROM login_attempts WHERE identifier='{$user_e}'");
+
+            // Regenerate session ID to prevent session fixation
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+
+            $_SESSION['user_id']   = $user['user_id'];
+            $_SESSION['username']  = $user['username'];
+            $_SESSION['email']     = $user['email'];
+            $_SESSION['role']      = $user['role'];
             $_SESSION['full_name'] = $user['full_name'];
-            
-            return array('success' => true, 'message' => 'Login successful!', 'user' => $user);
-        } else {
-            return array('success' => false, 'message' => 'Invalid username or password!');
+            $_SESSION['login_at']  = time();
+
+            return ['success' => true, 'message' => 'Login successful!', 'user' => $user];
         }
+
+        // Record failed attempt
+        $conn->query("INSERT INTO login_attempts (identifier, ip_address) VALUES ('{$user_e}', '{$ip_e}')");
+
+        return ['success' => false, 'message' => 'Invalid username or password!'];
     }
 
     // Get User by ID

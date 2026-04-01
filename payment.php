@@ -5,6 +5,7 @@ require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/Payment.php';
+require_once 'src/classes/Otp.php';
 
 if (!User::isLoggedIn()) {
     header('Location: login.php');
@@ -41,33 +42,60 @@ $error_message   = '';
 $success_message = '';
 $payment_done    = false;
 
+// Load OTP helper + fetch user's email
+$otp     = new Otp($db);
+$userRow = $db->selectRow("SELECT email, full_name FROM users WHERE user_id={$user_id}");
+
+// Auto-send booking OTP when user first lands on this page (GET)
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $otp->send($user_id, 'booking_confirm', $userRow['email'], $userRow['full_name']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $payment_method  = $_POST['payment_method'] ?? '';
-    $allowed_methods = ['credit_card', 'debit_card', 'easypaisa', 'jazzcash', 'bank_transfer', 'cash'];
+    $action = $_POST['action'] ?? 'pay';
 
-    if (empty($payment_method) || !in_array($payment_method, $allowed_methods, true)) {
-        $error_message = 'Please select a valid payment method.';
+    // Resend OTP request
+    if ($action === 'resend_otp') {
+        $sent = $otp->send($user_id, 'booking_confirm', $userRow['email'], $userRow['full_name']);
+        $success_message = $sent['success'] ? "OTP resent to {$userRow['email']}." : $sent['message'];
+        if (!$sent['success']) $error_message = $sent['message'];
     } else {
-        $transaction_id = 'TXN-' . strtoupper(bin2hex(random_bytes(6)));
+        // Normal payment submit — verify OTP first
+        $otp_code        = trim($_POST['otp_code'] ?? '');
+        $payment_method  = $_POST['payment_method'] ?? '';
+        $allowed_methods = ['credit_card', 'debit_card', 'easypaisa', 'jazzcash', 'bank_transfer', 'cash'];
 
-        $payment_data = [
-            'booking_id'     => $booking_id,
-            'user_id'        => $user_id,
-            'amount'         => $booking['total_fare'],
-            'payment_method' => $payment_method,
-            'transaction_id' => $transaction_id,
-            'payment_status' => 'completed',
-            'payment_date'   => date('Y-m-d H:i:s'),
-        ];
-
-        $payment_id = $db->insert('payments', $payment_data);
-
-        if ($payment_id) {
-            $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
-            $success_message = 'Payment successful! Your booking is confirmed.';
-            $payment_done    = true;
+        if (empty($otp_code)) {
+            $error_message = 'Please enter the OTP sent to your email to confirm payment.';
+        } elseif (empty($payment_method) || !in_array($payment_method, $allowed_methods, true)) {
+            $error_message = 'Please select a valid payment method.';
         } else {
-            $error_message = 'Payment processing failed. Please try again.';
+            $otp_res = $otp->verify((string)$user_id, 'booking_confirm', $otp_code);
+            if (!$otp_res['success']) {
+                $error_message = $otp_res['message'];
+            } else {
+                $transaction_id = 'TXN-' . strtoupper(bin2hex(random_bytes(6)));
+
+                $payment_data = [
+                    'booking_id'     => $booking_id,
+                    'user_id'        => $user_id,
+                    'amount'         => $booking['total_fare'],
+                    'payment_method' => $payment_method,
+                    'transaction_id' => $transaction_id,
+                    'payment_status' => 'completed',
+                    'payment_date'   => date('Y-m-d H:i:s'),
+                ];
+
+                $payment_id = $db->insert('payments', $payment_data);
+
+                if ($payment_id) {
+                    $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
+                    $success_message = 'Payment successful! Your booking is confirmed.';
+                    $payment_done    = true;
+                } else {
+                    $error_message = 'Payment processing failed. Please try again.';
+                }
+            }
         }
     }
 }
@@ -497,6 +525,29 @@ require_once 'inc/header.php';
                             <span id="hintText"></span>
                         </div>
 
+                        <!-- OTP Verification field -->
+                        <div class="hint-box" style="background:#fff9e6;border-color:#fbbf24;color:#92400e;margin-top:.85rem;">
+                            <i class="bi bi-shield-lock-fill" style="color:#d97706;"></i>
+                            <div>
+                                <strong>OTP Confirmation</strong> — An OTP was sent to
+                                <strong><?= htmlspecialchars($userRow['email']) ?></strong>.
+                                Enter it below to authorise payment.
+                            </div>
+                        </div>
+                        <div class="mt-2" style="display:flex;gap:.65rem;align-items:stretch;">
+                            <input type="text" name="otp_code" id="otpCodeInput"
+                                   placeholder="6-digit OTP" maxlength="6" inputmode="numeric"
+                                   style="flex:1;padding:.725rem 1rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:1.3rem;font-weight:800;letter-spacing:.5rem;text-align:center;background:#f9fafb;"
+                                   autocomplete="one-time-code" required>
+                            <form method="POST" style="margin:0;">
+                                <input type="hidden" name="action" value="resend_otp">
+                                <button type="submit" style="height:100%;padding:.7rem .9rem;background:#f1f5f9;border:1.5px solid #d1d5db;border-radius:10px;font-size:.8rem;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap;">
+                                    <i class="bi bi-arrow-repeat"></i> Resend
+                                </button>
+                            </form>
+                        </div>
+                        <input type="hidden" name="action" value="pay">
+
                         <!-- Pay button -->
                         <button type="submit" class="btn-pay" id="payBtn" disabled>
                             <span class="lock-icon"><i class="bi bi-lock-fill"></i></span>
@@ -560,9 +611,26 @@ require_once 'inc/header.php';
             hintTxt.textContent = hints[tile.dataset.method] || '';
             hintBox.style.display = 'flex';
 
-            payBtn.disabled = false;
+            selected = true;
+            updatePayBtn();
         });
     });
+
+    // Enable Pay button only when a method is selected AND OTP has 6 digits
+    var otpInput = document.getElementById('otpCodeInput');
+    var selected = false;
+
+    function updatePayBtn() {
+        var hasOtp = otpInput && otpInput.value.replace(/\D/g,'').length === 6;
+        payBtn.disabled = !(selected && hasOtp);
+    }
+
+    if (otpInput) {
+        otpInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            updatePayBtn();
+        });
+    }
 
     document.getElementById('paymentForm').addEventListener('submit', function () {
         payBtn.disabled = true;

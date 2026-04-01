@@ -1,39 +1,116 @@
 <?php
-// signup.php - Signup Page
+// signup.php – Registration with email OTP verification
 
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
+require_once 'src/classes/Otp.php';
 
 $error_message   = '';
 $success_message = '';
 
+// Which "step" are we on?
+// step=1  → registration form
+// step=2  → OTP entry form (user_id stored in session)
+$step = (int)($_SESSION['signup_step'] ?? 1);
+
+$db   = new Database();
+$db->connect();
+$user = new User($db);
+$otp  = new Otp($db);
+
+// ── Handle POST ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $db = new Database();
-    $db->connect();
 
-    $user             = new User($db);
-    $username         = trim($_POST['username']         ?? '');
-    $email            = trim($_POST['email']            ?? '');
-    $password         = $_POST['password']         ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-    $full_name        = trim($_POST['full_name']        ?? '');
-    $phone            = trim($_POST['phone']            ?? '');
-    $address          = trim($_POST['address']          ?? '');
+    $action = $_POST['action'] ?? 'register';
 
-    if (empty($username) || empty($email) || empty($password) || empty($full_name)) {
-        $error_message = 'Please fill all required fields!';
-    } elseif ($password !== $confirm_password) {
-        $error_message = 'Passwords do not match!';
-    } elseif (strlen($password) < 6) {
-        $error_message = 'Password must be at least 6 characters!';
-    } else {
-        $result = $user->register($username, $email, $password, $full_name, $phone, $address);
-        if ($result['success']) {
-            $success_message = 'Account created! Redirecting to login…';
-            header('Refresh: 2; url=login.php');
+    // ─── STEP 1: Register + send OTP ──────────────────────────────────────
+    if ($action === 'register') {
+        $username         = trim($_POST['username']         ?? '');
+        $email            = trim($_POST['email']            ?? '');
+        $password         = $_POST['password']         ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        $full_name        = trim($_POST['full_name']        ?? '');
+        $phone            = trim($_POST['phone']            ?? '');
+        $address          = trim($_POST['address']          ?? '');
+
+        if (empty($username) || empty($email) || empty($password) || empty($full_name)) {
+            $error_message = 'Please fill all required fields!';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error_message = 'Please enter a valid email address.';
+        } elseif ($password !== $confirm_password) {
+            $error_message = 'Passwords do not match!';
+        } elseif (strlen($password) < 6) {
+            $error_message = 'Password must be at least 6 characters!';
         } else {
-            $error_message = $result['message'];
+            $result = $user->register($username, $email, $password, $full_name, $phone, $address);
+            if ($result['success']) {
+                $new_id = $result['user_id'];
+                // Send OTP
+                $sent = $otp->send((string)$new_id, 'signup', $email, $full_name);
+                if ($sent['success']) {
+                    $_SESSION['signup_step']    = 2;
+                    $_SESSION['signup_user_id'] = $new_id;
+                    $_SESSION['signup_email']   = $email;
+                    $_SESSION['signup_name']    = $full_name;
+                    $step = 2;
+                    $success_message = "We sent a 6-digit OTP to {$email}. Enter it below to activate your account.";
+                } else {
+                    // OTP failed — still created account, let them verify later
+                    $_SESSION['signup_step']    = 2;
+                    $_SESSION['signup_user_id'] = $new_id;
+                    $_SESSION['signup_email']   = $email;
+                    $_SESSION['signup_name']    = $full_name;
+                    $step = 2;
+                    $error_message = 'Account created but OTP email failed: ' . $sent['message'];
+                }
+            } else {
+                $error_message = $result['message'];
+            }
+        }
+    }
+
+    // ─── STEP 2: Verify OTP ───────────────────────────────────────────────
+    elseif ($action === 'verify_otp') {
+        $code    = trim($_POST['otp_code'] ?? '');
+        $uid     = (int)($_SESSION['signup_user_id'] ?? 0);
+        $email   = $_SESSION['signup_email'] ?? '';
+
+        if (!$uid) {
+            $error_message = 'Session expired. Please sign up again.';
+            $step = 1;
+            unset($_SESSION['signup_step'], $_SESSION['signup_user_id'], $_SESSION['signup_email'], $_SESSION['signup_name']);
+        } else {
+            $res = $otp->verify((string)$uid, 'signup', $code);
+            if ($res['success']) {
+                $user->verifyEmail($uid);
+                unset($_SESSION['signup_step'], $_SESSION['signup_user_id'], $_SESSION['signup_email'], $_SESSION['signup_name']);
+                $success_message = 'Email verified! Your account is active. Redirecting to login…';
+                header('Refresh: 2; url=login.php');
+                $step = 1;
+            } else {
+                $step = 2;
+                $error_message = $res['message'];
+            }
+        }
+    }
+
+    // ─── Resend OTP ───────────────────────────────────────────────────────
+    elseif ($action === 'resend_otp') {
+        $uid   = (int)($_SESSION['signup_user_id'] ?? 0);
+        $email = $_SESSION['signup_email'] ?? '';
+        $name  = $_SESSION['signup_name']  ?? '';
+        $step  = 2;
+        if ($uid && $email) {
+            $sent = $otp->send((string)$uid, 'signup', $email, $name);
+            if ($sent['success']) {
+                $success_message = 'A new OTP has been sent to ' . htmlspecialchars($email) . '.';
+            } else {
+                $error_message = $sent['message'];
+            }
+        } else {
+            $error_message = 'Session expired. Please sign up again.';
+            $step = 1;
         }
     }
 }
@@ -173,6 +250,44 @@ require_once 'inc/header.php';
 <div class="auth-page">
     <div class="su-card">
 
+<?php if ($step === 2): /* ── OTP Verification Step ── */ ?>
+
+        <div class="auth-logo">
+            <div class="logo-icon" style="background:linear-gradient(135deg,#059669,#065f46);">📧</div>
+            <h1>Verify Your Email</h1>
+            <p>Enter the 6-digit code sent to <strong><?= htmlspecialchars($_SESSION['signup_email'] ?? '') ?></strong></p>
+        </div>
+
+        <?php if ($error_message): ?>
+        <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= htmlspecialchars($error_message) ?></div>
+        <?php endif; ?>
+        <?php if ($success_message): ?>
+        <div class="alert-ok"><i class="bi bi-check-circle-fill"></i><?= htmlspecialchars($success_message) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="signup.php">
+            <input type="hidden" name="action" value="verify_otp">
+            <label class="auth-label" for="otp_code">OTP Code</label>
+            <input type="text" id="otp_code" name="otp_code" class="auth-input text-center"
+                   placeholder="— — — — — —"
+                   maxlength="6" inputmode="numeric" pattern="\d{6}" required autofocus
+                   style="font-size:2rem;font-weight:900;letter-spacing:.5rem;text-align:center;">
+            <p class="text-muted mt-2 mb-3" style="font-size:.78rem;text-align:center;">
+                Code expires in 15 minutes. Check spam/junk folder if not received.
+            </p>
+            <button type="submit" class="btn-auth">
+                <i class="bi bi-shield-check me-2"></i>Verify &amp; Activate Account
+            </button>
+        </form>
+        <form method="POST" action="signup.php" class="mt-3 text-center">
+            <input type="hidden" name="action" value="resend_otp">
+            <button type="submit" style="background:none;border:none;color:#2563eb;font-size:.85rem;cursor:pointer;font-weight:600;">
+                <i class="bi bi-arrow-repeat me-1"></i>Resend OTP
+            </button>
+        </form>
+
+<?php else: /* ── Registration Form (Step 1) ── */ ?>
+
         <div class="auth-logo">
             <div class="logo-icon">🚂</div>
             <h1>Create Your Account</h1>
@@ -194,6 +309,7 @@ require_once 'inc/header.php';
         <?php endif; ?>
 
         <form method="POST" action="signup.php" id="signupForm" novalidate>
+            <input type="hidden" name="action" value="register">
 
             <div class="su-section-label">Personal details</div>
 
@@ -264,6 +380,9 @@ require_once 'inc/header.php';
         <div class="auth-link-row">
             Already have an account? <a href="login.php">Sign in here</a>
         </div>
+
+<?php endif; /* end step 1/2 */ ?>
+
     </div>
 </div>
 

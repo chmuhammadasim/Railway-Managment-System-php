@@ -13,7 +13,7 @@ return [
     'port'       => 587,
     'encryption' => 'tls',              // 'tls' for port 587, 'ssl' for port 465
     'username'   => 'muhammadasimchattha@gmail.com',  // your Gmail address
-    'password'   => 'YOUR_APP_PASSWORD_HERE',          // 16-char App Password
+    'password'   => 'hduj tljn cdwf orvo',          // 16-char App Password
     'from_email' => 'muhammadasimchattha@gmail.com',
     'from_name'  => 'Pakistan Railways',
 ];

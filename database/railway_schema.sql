@@ -163,6 +163,33 @@ CREATE TABLE IF NOT EXISTS booking_discounts (
     FOREIGN KEY (discount_id) REFERENCES discounts(discount_id) ON DELETE CASCADE
 );
 
+-- OTP Verification Table
+CREATE TABLE IF NOT EXISTS otp_verifications (
+    otp_id       INT PRIMARY KEY AUTO_INCREMENT,
+    identifier   VARCHAR(150) NOT NULL COMMENT 'email or user_id as string',
+    purpose      ENUM('signup','reset_password','booking_confirm','profile_update') NOT NULL,
+    otp_code     VARCHAR(6) NOT NULL,
+    expires_at   DATETIME NOT NULL,
+    used         TINYINT(1) DEFAULT 0,
+    attempts     TINYINT(1) DEFAULT 0,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_otp_lookup (identifier, purpose, used)
+);
+
+-- login_attempts table for brute-force protection
+CREATE TABLE IF NOT EXISTS login_attempts (
+    attempt_id   INT PRIMARY KEY AUTO_INCREMENT,
+    identifier   VARCHAR(150) NOT NULL COMMENT 'username/email tried',
+    ip_address   VARCHAR(45) NOT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_attempts_ip  (ip_address, attempted_at),
+    INDEX idx_attempts_id  (identifier, attempted_at)
+);
+
+-- Add email_verified column to users if not present
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0 AFTER is_active;
+
 -- Create Indexes for Better Performance
 CREATE INDEX IF NOT EXISTS idx_user_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_user_role ON users(role);
