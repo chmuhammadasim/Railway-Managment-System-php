@@ -18,6 +18,7 @@ $db = new Database();
 $db->connect();
 
 $user_id    = (int)$_SESSION['user_id'];
+$is_admin   = ($_SESSION['role'] ?? '') === 'admin';
 $booking_id = (int)($_POST['booking_id'] ?? 0);
 
 if (!$booking_id) {
@@ -25,7 +26,9 @@ if (!$booking_id) {
     exit();
 }
 
-// Fetch booking + route + train + user
+// Admins can send any booking; regular users only their own
+$ownership_clause = $is_admin ? '' : " AND b.user_id = {$user_id}";
+
 $booking = $db->selectRow(
     "SELECT b.*, r.departure_city, r.arrival_city, r.departure_time, r.arrival_time,
             r.distance_km, r.base_fare,
@@ -35,11 +38,17 @@ $booking = $db->selectRow(
      JOIN routes r ON b.route_id  = r.route_id
      JOIN trains t ON r.train_id  = t.train_id
      JOIN users  u ON b.user_id   = u.user_id
-     WHERE b.booking_id = {$booking_id} AND b.user_id = {$user_id}"
+     WHERE b.booking_id = {$booking_id}{$ownership_clause}"
 );
 
 if (!$booking) {
     echo json_encode(['success' => false, 'message' => 'Booking not found or access denied.']);
+    exit();
+}
+
+// Validate email address exists
+if (empty($booking['booker_email'])) {
+    echo json_encode(['success' => false, 'message' => 'No email address on file for this booking.']);
     exit();
 }
 
@@ -298,26 +307,55 @@ $email_body = <<<HTML
 </html>
 HTML;
 
-// ── Send ──────────────────────────────────────────────────────────────────
-$to      = $booking['booker_email'];
-$subject = "E-Ticket {$booking['booking_reference']} – Pakistan Railways";
+// ── Send via PHPMailer ─────────────────────────────────────────────────────
+require_once __DIR__ . '/src/PHPMailer/Exception.php';
+require_once __DIR__ . '/src/PHPMailer/PHPMailer.php';
+require_once __DIR__ . '/src/PHPMailer/SMTP.php';
 
-$headers  = "MIME-Version: 1.0\r\n";
-$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-$headers .= "From: Pakistan Railways <noreply@pakrailways.pk>\r\n";
-$headers .= "Reply-To: support@pakrailways.pk\r\n";
-$headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception as MailException;
 
-if (mail($to, $subject, $email_body, $headers)) {
+$mailCfg = require __DIR__ . '/config/mail.php';
+
+$mail = new PHPMailer(true); // true = throw exceptions
+
+try {
+    // Server settings
+    $mail->isSMTP();
+    $mail->Host       = $mailCfg['host'];
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $mailCfg['username'];
+    $mail->Password   = $mailCfg['password'];
+    $mail->SMTPSecure = $mailCfg['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port       = (int)$mailCfg['port'];
+
+    // Recipients
+    $mail->setFrom($mailCfg['from_email'], $mailCfg['from_name']);
+    $mail->addAddress($booking['booker_email'], $booking['booker_name']);
+    $mail->addReplyTo('support@pakrailways.pk', 'Pakistan Railways Support');
+
+    // Content
+    $mail->isHTML(true);
+    $mail->CharSet  = 'UTF-8';
+    $mail->Subject  = "E-Ticket {$booking['booking_reference']} – Pakistan Railways";
+    $mail->Body     = $email_body;
+    $mail->AltBody  = "Your e-ticket for booking {$booking['booking_reference']}. "
+                    . "Journey: {$booking['departure_city']} → {$booking['arrival_city']} "
+                    . "on " . date('d M Y', strtotime($booking['journey_date'])) . ". "
+                    . "Total fare: Rs. " . number_format($booking['total_fare'], 2);
+
+    $mail->send();
+
+    $masked = preg_replace('/(?<=.{2}).(?=.*@)/u', '*', $booking['booker_email']);
     echo json_encode([
         'success' => true,
-        'message' => "E-Ticket sent to {$to} successfully.",
+        'message' => "E-Ticket sent to {$masked} successfully.",
     ]);
-} else {
-    // mail() returned false — SMTP not configured in php.ini on this server
-    // Return a helpful message instead of a silent failure
+
+} catch (MailException $e) {
     echo json_encode([
         'success' => false,
-        'message' => "Email could not be sent. Configure SMTP in php.ini (sendmail_path or SMTP settings) to enable this feature.",
+        'message' => 'Email delivery failed: ' . $mail->ErrorInfo,
     ]);
 }
