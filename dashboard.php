@@ -66,6 +66,18 @@ foreach ($bookings as $b) {
 // Avatar initial
 $avatar_initial = strtoupper(mb_substr($user['full_name'] ?? 'U', 0, 1));
 
+// Cargo stats for this user
+$cargo_kpi = $db->selectRow(
+    "SELECT COUNT(*) AS total,
+            SUM(shipment_status='in_transit') AS transit_n,
+            SUM(shipment_status='pending')    AS pending_n
+     FROM cargo_shipments WHERE booked_by = {$user_id}"
+) ?? [];
+$my_cargo_total   = (int)($cargo_kpi['total']    ?? 0);
+$my_cargo_transit = (int)($cargo_kpi['transit_n'] ?? 0);
+$my_cargo_pending = (int)($cargo_kpi['pending_n'] ?? 0);
+
+
 $pageTitle = 'My Dashboard – Railway Management System';
 require_once 'inc/header.php';
 ?>
@@ -150,9 +162,10 @@ require_once 'inc/header.php';
 /* ─── Stat cards ────────────────────────────── */
 .ud-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem; margin-bottom: 1.5rem;
 }
+@media(max-width:1100px){ .ud-stats { grid-template-columns: repeat(3,1fr); } }
 @media(max-width:900px){ .ud-stats { grid-template-columns: repeat(2,1fr); } }
 @media(max-width:480px){ .ud-stats { grid-template-columns: 1fr 1fr; } }
 .ud-stat {
@@ -331,7 +344,7 @@ require_once 'inc/header.php';
     <div class="ud-hero-inner">
         <div class="ud-avatar"><?= htmlspecialchars($avatar_initial) ?></div>
         <div class="ud-greeting">
-            <h1>Welcome back, <?= htmlspecialchars(explode(' ', $user['full_name'])[0]) ?>!</h1>
+            <h1>Welcome back, <?= htmlspecialchars(explode(' ', $user['full_name'] ?? $_SESSION['username'] ?? 'User')[0]) ?>!</h1>
             <p>
                 <?php
                 $hour = (int)date('G');
@@ -391,6 +404,13 @@ require_once 'inc/header.php';
             <div class="s-val">Rs <?= number_format($total_spent, 0) ?></div>
             <div class="s-lbl">Total Spent</div>
         </div>
+        <a href="my-cargo.php" class="ud-stat text-decoration-none" style="border:1.5px dashed #f59e0b;background:#fffbeb;">
+            <div class="s-ico" style="background:#fef3c7;">
+                <i class="bi bi-box-seam-fill" style="color:#d97706;"></i>
+            </div>
+            <div class="s-val" style="color:#92400e;"><?= $my_cargo_total ?></div>
+            <div class="s-lbl">My Cargo<?php if ($my_cargo_transit > 0): ?> <span style="color:#d97706;">&#x2022; <?= $my_cargo_transit ?> in transit</span><?php elseif ($my_cargo_pending > 0): ?> <span style="color:#92400e;">&#x2022; <?= $my_cargo_pending ?> pending</span><?php endif; ?></div>
+        </a>
     </div>
 
     <!-- ═══════════════════════════════════
@@ -533,6 +553,10 @@ require_once 'inc/header.php';
                         <a href="bookings.php" class="qa-btn">
                             <div class="qa-ico" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-journal-check"></i></div>
                             My Bookings
+                        </a>
+                        <a href="my-cargo.php" class="qa-btn">
+                            <div class="qa-ico" style="background:#fef3c7;color:#d97706;"><i class="bi bi-box-seam-fill"></i></div>
+                            My Cargo
                         </a>
                         <a href="profile.php" class="qa-btn">
                             <div class="qa-ico" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-person-circle"></i></div>

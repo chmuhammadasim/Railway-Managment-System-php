@@ -57,6 +57,9 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                     <?php if (class_exists('User') ? User::isLoggedIn() : (isset($_SESSION['user_id']) && $_SESSION['user_id'])): ?>
                         <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="bookings.php">My Bookings</a></li>
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
+                        <li class="nav-item"><a class="nav-link" href="my-cargo.php">My Cargo</a></li>
+                        <?php endif; ?>
                         <li class="nav-item"><a class="nav-link" href="profile.php">Profile</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">

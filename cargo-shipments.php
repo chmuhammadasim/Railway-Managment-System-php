@@ -37,8 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ── Create new shipment ──────────────────────────────────────────────────
     if ($action === 'create') {
-        $sender_name   = trim($_POST['sender_name']        ?? '');
-        $sender_phone  = trim($_POST['sender_phone']       ?? '');
+        $shipment_type = in_array($_POST['shipment_type'] ?? '', ['cargo_delivery','travelling']) ? $_POST['shipment_type'] : 'cargo_delivery';
+        $is_travelling = $shipment_type === 'travelling';
+
+        // For travelling: passenger fields; For cargo: sender/receiver fields
+        $passenger_name = trim($_POST['passenger_name'] ?? '');
+        $passenger_cnic = trim($_POST['passenger_cnic'] ?? '');
+        $linked_ref     = trim($_POST['linked_booking_ref'] ?? '');
+
+        // Sender/Receiver — for travelling, passenger is the sender
+        $sender_name   = $is_travelling ? $passenger_name : trim($_POST['sender_name']  ?? '');
+        $sender_phone  = $is_travelling ? trim($_POST['passenger_phone'] ?? '') : trim($_POST['sender_phone']  ?? '');
         $sender_addr   = trim($_POST['sender_address']     ?? '');
         $recv_name     = trim($_POST['receiver_name']      ?? '');
         $recv_phone    = trim($_POST['receiver_phone']     ?? '');
@@ -53,19 +62,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $est_delivery  = trim($_POST['estimated_delivery']  ?? '');
         $allowed_types = ['general','fragile','perishable','livestock','hazardous'];
 
-        if (!$sender_name || !$recv_name || !$origin || !$dest || $weight <= 0) {
-            $error_message = 'Sender, receiver, cities, and weight are required.';
+        if (!$sender_name || (!$is_travelling && !$recv_name) || !$origin || !$dest || $weight <= 0) {
+            $error_message = $is_travelling ? 'Passenger name, cities, and weight are required.' : 'Sender, receiver, cities, and weight are required.';
         } elseif (!in_array($cargo_type, $allowed_types, true)) {
             $error_message = 'Invalid cargo type.';
         } else {
-            $fee     = calcShippingFee($weight, $cargo_type);
+            // Travelling with cargo gets a 20% luggage discount
+            $fee     = $is_travelling ? round(calcShippingFee($weight, $cargo_type) * 0.80, 2) : calcShippingFee($weight, $cargo_type);
             $track   = genTracking();
             $booked  = (int)$_SESSION['user_id'];
+            $st_e    = $conn->real_escape_string($shipment_type);
+            $pn_e    = $conn->real_escape_string($passenger_name);
+            $pc_e    = $conn->real_escape_string($passenger_cnic);
+            $lr_e    = $conn->real_escape_string($linked_ref);
             $sn_e    = $conn->real_escape_string($sender_name);
             $sp_e    = $conn->real_escape_string($sender_phone);
             $sa_e    = $conn->real_escape_string($sender_addr);
-            $rn_e    = $conn->real_escape_string($recv_name);
-            $rp_e    = $conn->real_escape_string($recv_phone);
+            $rn_e    = $is_travelling ? $sn_e : $conn->real_escape_string($recv_name);
+            $rp_e    = $is_travelling ? $sp_e : $conn->real_escape_string($recv_phone);
             $ra_e    = $conn->real_escape_string($recv_addr);
             $or_e    = $conn->real_escape_string($origin);
             $de_e    = $conn->real_escape_string($dest);
@@ -74,24 +88,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rt_sql  = $route_id ? $route_id : 'NULL';
             $ed_sql  = $est_delivery ? "'{$conn->real_escape_string($est_delivery)}'" : 'NULL';
             $tr_e    = $conn->real_escape_string($track);
+            $lr_sql  = $linked_ref ? "'{$lr_e}'" : 'NULL';
 
             $conn->query(
                 "INSERT INTO cargo_shipments
-                    (tracking_number,sender_name,sender_phone,sender_address,
+                    (tracking_number,shipment_type,passenger_name,passenger_cnic,linked_booking_ref,
+                     sender_name,sender_phone,sender_address,
                      receiver_name,receiver_phone,receiver_address,
                      origin_city,destination_city,route_id,weight_kg,cargo_type,
                      declared_value,shipping_fee,special_instructions,
                      booked_by,estimated_delivery)
                  VALUES
-                    ('{$tr_e}','{$sn_e}','{$sp_e}','{$sa_e}',
+                    ('{$tr_e}','{$st_e}','{$pn_e}','{$pc_e}',{$lr_sql},
+                     '{$sn_e}','{$sp_e}','{$sa_e}',
                      '{$rn_e}','{$rp_e}','{$ra_e}',
                      '{$or_e}','{$de_e}',{$rt_sql},{$weight},'{$ct_e}',
                      {$decl_val},{$fee},'{$sp2_e}',
                      {$booked},{$ed_sql})"
             );
             $new_id = $conn->insert_id;
-            AuditLog::log($db, 'CREATE_SHIPMENT', 'cargo', "New cargo shipment {$track} created ({$origin}→{$dest}, {$weight}kg {$cargo_type})", $new_id);
-            $success_message = "Shipment created! Tracking: <strong>{$track}</strong> — Fee: <strong>Rs " . number_format($fee, 2) . "</strong>";
+            $type_label = $is_travelling ? 'passenger travelling with cargo' : 'cargo delivery';
+            AuditLog::log($db, 'CREATE_SHIPMENT', 'cargo', "New {$type_label} shipment {$track} created ({$origin}→{$dest}, {$weight}kg {$cargo_type})", $new_id);
+            $discount_note = $is_travelling ? ' (20% luggage discount applied)' : '';
+            $success_message = "Shipment created! Tracking: <strong>{$track}</strong> — Fee: <strong>Rs " . number_format($fee, 2) . "</strong>{$discount_note}";
         }
     }
 
@@ -235,6 +254,8 @@ require_once 'inc/header.php';
 .sp-paid       { background:#d1fae5; color:#065f46; }
 .sp-refunded   { background:#ede9fe; color:#4c1d95; }
 .type-pill { display:inline-block; padding:.15em .55em; border-radius:6px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; background:#f1f5f9; color:#475569; }
+.mode-btn { padding:.8rem 1rem; text-align:left; border-radius:12px; transition:all .2s; }
+.mode-btn.active-mode { box-shadow:0 0 0 2.5px #f59e0b; }
 .type-fragile    { background:#fef3c7; color:#92400e; }
 .type-perishable { background:#d1fae5; color:#065f46; }
 .type-livestock  { background:#dcfce7; color:#15803d; }
@@ -374,15 +395,15 @@ require_once 'inc/header.php';
             <thead>
                 <tr>
                     <th>Tracking</th>
+                    <th>Mode</th>
                     <th>From → To</th>
-                    <th>Sender</th>
+                    <th>Sender / Passenger</th>
                     <th>Receiver</th>
-                    <th>Type</th>
+                    <th>Cargo Type</th>
                     <th>Weight</th>
                     <th>Fee</th>
                     <th>Status</th>
                     <th>Payment</th>
-                    <th>Booked</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -390,25 +411,49 @@ require_once 'inc/header.php';
             <?php if (empty($shipments)): ?>
                 <tr><td colspan="11" class="text-center py-5 text-muted">No shipments found.</td></tr>
             <?php else: foreach ($shipments as $s): ?>
+                <?php $is_travel_row = ($s['shipment_type'] ?? 'cargo_delivery') === 'travelling'; ?>
                 <tr>
                     <td><code style="font-size:.78rem;color:#1e40af;"><?= htmlspecialchars($s['tracking_number']) ?></code><br>
                         <span style="font-size:.7rem;color:#6b7280;"><?= date('d M Y', strtotime($s['booking_date'])) ?></span>
+                    </td>
+                    <td>
+                        <?php if ($is_travel_row): ?>
+                        <span class="badge" style="background:#7c3aed;font-size:.72rem;"><i class="bi bi-person-fill me-1"></i>Travelling</span>
+                        <?php if ($s['linked_booking_ref']): ?>
+                        <br><span style="font-size:.7rem;color:#7c3aed;"><?= htmlspecialchars($s['linked_booking_ref']) ?></span>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <span class="badge bg-warning text-dark" style="font-size:.72rem;"><i class="bi bi-box-seam me-1"></i>Cargo</span>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <span class="fw-semibold"><?= htmlspecialchars($s['origin_city']) ?></span>
                         <i class="bi bi-arrow-right text-muted mx-1" style="font-size:.7rem;"></i>
                         <span class="fw-semibold"><?= htmlspecialchars($s['destination_city']) ?></span>
                     </td>
-                    <td><?= htmlspecialchars($s['sender_name']) ?><br>
-                        <span style="font-size:.72rem;color:#6b7280;"><?= htmlspecialchars($s['sender_phone'] ?? '') ?></span></td>
-                    <td><?= htmlspecialchars($s['receiver_name']) ?><br>
-                        <span style="font-size:.72rem;color:#6b7280;"><?= htmlspecialchars($s['receiver_phone'] ?? '') ?></span></td>
+                    <td>
+                        <?= htmlspecialchars($s['sender_name']) ?>
+                        <?php if ($is_travel_row && $s['passenger_cnic']): ?>
+                        <br><span style="font-size:.7rem;color:#7c3aed;"><i class="bi bi-credit-card-2-front me-1"></i><?= htmlspecialchars($s['passenger_cnic']) ?></span>
+                        <?php else: ?>
+                        <br><span style="font-size:.72rem;color:#6b7280;"><?= htmlspecialchars($s['sender_phone'] ?? '') ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($is_travel_row): ?>
+                        <span style="font-size:.78rem;color:#9ca3af;">— same person —</span>
+                        <?php else: ?>
+                        <?= htmlspecialchars($s['receiver_name']) ?><br>
+                        <span style="font-size:.72rem;color:#6b7280;"><?= htmlspecialchars($s['receiver_phone'] ?? '') ?></span>
+                        <?php endif; ?>
+                    </td>
                     <td><span class="type-pill type-<?= $s['cargo_type'] ?>"><?= htmlspecialchars($s['cargo_type']) ?></span></td>
                     <td><?= number_format($s['weight_kg'], 1) ?> kg</td>
-                    <td class="fw-bold">Rs <?= number_format($s['shipping_fee'], 0) ?></td>
+                    <td class="fw-bold">Rs <?= number_format($s['shipping_fee'], 0) ?>
+                        <?php if ($is_travel_row): ?><br><span style="font-size:.68rem;color:#7c3aed;">−20% luggage</span><?php endif; ?>
+                    </td>
                     <td><span class="sp sp-<?= $s['shipment_status'] ?>"><?= str_replace('_',' ',ucfirst($s['shipment_status'])) ?></span></td>
                     <td><span class="sp sp-<?= $s['payment_status'] ?>"><?= ucfirst($s['payment_status']) ?></span></td>
-                    <td style="font-size:.75rem;"><?= htmlspecialchars($s['booked_by_name'] ?? '—') ?></td>
                     <td>
                         <button class="btn btn-outline-primary btn-sm py-0 px-2 me-1"
                                 data-bs-toggle="modal" data-bs-target="#editModal"
@@ -450,43 +495,100 @@ require_once 'inc/header.php';
 <div class="modal fade" id="newShipmentModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold"><i class="bi bi-box-seam me-2"></i>New Cargo Shipment</h5>
+            <div class="modal-header" id="shipModalHeader" style="background:#f59e0b;">
+                <h5 class="modal-title fw-bold" id="shipModalTitle"><i class="bi bi-box-seam me-2"></i>New Cargo Shipment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
                 <input type="hidden" name="action" value="create">
+                <input type="hidden" name="shipment_type" id="hiddenShipType" value="cargo_delivery">
                 <div class="modal-body">
+
+                    <!-- ── Mode Toggle ──────────────────────────────────────── -->
+                    <div class="d-flex gap-2 mb-4">
+                        <button type="button" id="btnModeCargo" class="btn btn-warning fw-bold flex-fill mode-btn active-mode" onclick="setShipMode('cargo_delivery')">
+                            <i class="bi bi-box-seam me-2"></i>Cargo Delivery
+                            <div style="font-size:.72rem;font-weight:400;opacity:.8;">Goods shipped independently</div>
+                        </button>
+                        <button type="button" id="btnModeTravel" class="btn btn-outline-secondary fw-bold flex-fill mode-btn" onclick="setShipMode('travelling')">
+                            <i class="bi bi-person-luggage me-2"></i>Travelling with Cargo
+                            <div style="font-size:.72rem;font-weight:400;opacity:.8;">Passenger carrying luggage/goods &mdash; 20% discount</div>
+                        </button>
+                    </div>
+
                     <div class="row g-3">
-                        <!-- Sender -->
-                        <div class="col-12"><h6 class="fw-bold text-primary border-bottom pb-1">Sender Details</h6></div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Sender Name *</label>
-                            <input type="text" name="sender_name" class="form-control" required>
+                        <!-- ── CARGO DELIVERY: Sender ──────────────────────── -->
+                        <div id="senderSection">
+                            <div class="row g-3">
+                                <div class="col-12"><h6 class="fw-bold text-primary border-bottom pb-1">Sender Details</h6></div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sender Name *</label>
+                                    <input type="text" name="sender_name" id="senderName" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sender Phone</label>
+                                    <input type="text" name="sender_phone" class="form-control" placeholder="+92-300-0000000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sender Address</label>
+                                    <input type="text" name="sender_address" class="form-control">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Sender Phone</label>
-                            <input type="text" name="sender_phone" class="form-control" placeholder="+92-300-0000000">
+
+                        <!-- ── TRAVELLING: Passenger ───────────────────────── -->
+                        <div id="passengerSection" style="display:none;">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="fw-bold border-bottom pb-1" style="color:#7c3aed;"><i class="bi bi-person-fill me-1"></i>Passenger Details</h6>
+                                    <div class="alert alert-info py-2 mb-0" style="font-size:.83rem;">
+                                        <i class="bi bi-info-circle me-1"></i>The passenger is travelling with their cargo. A <strong>20% luggage discount</strong> is applied to the shipping fee.
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Passenger Name *</label>
+                                    <input type="text" name="passenger_name" id="passengerName" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Phone</label>
+                                    <input type="text" name="passenger_phone" class="form-control" placeholder="+92-300-0000000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">CNIC / Passport No.</label>
+                                    <input type="text" name="passenger_cnic" class="form-control" placeholder="e.g. 42101-1234567-9">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Linked Booking Reference <span class="text-muted fw-normal">(optional)</span></label>
+                                    <input type="text" name="linked_booking_ref" class="form-control" placeholder="e.g. RWY20250401120000001">
+                                    <div class="form-text">Link to an existing passenger booking if available.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Cargo Description / Items</label>
+                                    <input type="text" name="sender_address" class="form-control" placeholder="e.g. Personal luggage, merchandise">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Sender Address</label>
-                            <input type="text" name="sender_address" class="form-control">
+
+                        <!-- ── Receiver (cargo only) ───────────────────────── -->
+                        <div id="receiverSection">
+                            <div class="row g-3">
+                                <div class="col-12"><h6 class="fw-bold text-success border-bottom pb-1 mt-2">Receiver Details</h6></div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Name *</label>
+                                    <input type="text" name="receiver_name" id="receiverName" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Phone</label>
+                                    <input type="text" name="receiver_phone" class="form-control" placeholder="+92-300-0000000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Address</label>
+                                    <input type="text" name="receiver_address" class="form-control">
+                                </div>
+                            </div>
                         </div>
-                        <!-- Receiver -->
-                        <div class="col-12"><h6 class="fw-bold text-success border-bottom pb-1 mt-2">Receiver Details</h6></div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Receiver Name *</label>
-                            <input type="text" name="receiver_name" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Receiver Phone</label>
-                            <input type="text" name="receiver_phone" class="form-control" placeholder="+92-300-0000000">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Receiver Address</label>
-                            <input type="text" name="receiver_address" class="form-control">
-                        </div>
-                        <!-- Shipment info -->
+
+                        <!-- ── Shipment info (common) ──────────────────────── -->
                         <div class="col-12"><h6 class="fw-bold text-warning border-bottom pb-1 mt-2">Shipment Details</h6></div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Origin City *</label>
@@ -517,7 +619,7 @@ require_once 'inc/header.php';
                             <input type="number" name="weight_kg" id="weightInput" class="form-control" min="0.1" max="5000" step="0.1" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold">Cargo Type *</label>
+                            <label class="form-label fw-semibold" id="cargoTypeLabel">Cargo Type *</label>
                             <select name="cargo_type" id="cargoTypeSelect" class="form-select" required>
                                 <option value="general">General (Rs 50/kg)</option>
                                 <option value="fragile">Fragile (Rs 70/kg)</option>
@@ -533,6 +635,7 @@ require_once 'inc/header.php';
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Estimated Fee</label>
                             <div id="feeDisplay" class="form-control bg-light fw-bold text-success">Rs 0</div>
+                            <div id="feeDiscountNote" style="display:none;font-size:.72rem;color:#7c3aed;" class="mt-1"><i class="bi bi-tag-fill me-1"></i>20% luggage discount included</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Special Instructions</label>
@@ -548,7 +651,7 @@ require_once 'inc/header.php';
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-send me-1"></i>Create Shipment</button>
+                    <button type="submit" class="btn btn-warning fw-bold" id="shipSubmitBtn"><i class="bi bi-send me-1"></i>Create Shipment</button>
                 </div>
             </form>
         </div>
@@ -594,25 +697,76 @@ require_once 'inc/header.php';
 </div>
 
 <script>
-// Fee calculator
-(function(){
-    var rates={general:50,fragile:70,perishable:80,livestock:100,hazardous:125};
-    function update(){
-        var w=parseFloat(document.getElementById('weightInput').value)||0;
-        var t=document.getElementById('cargoTypeSelect').value;
-        var fee=Math.round(w*(rates[t]||50)*100)/100;
-        document.getElementById('feeDisplay').textContent='Rs '+fee.toLocaleString('en-PK',{minimumFractionDigits:2});
+// ── Shipment mode toggle ──────────────────────────────────────────────────────
+var currentMode = 'cargo_delivery';
+function setShipMode(mode) {
+    currentMode = mode;
+    document.getElementById('hiddenShipType').value = mode;
+    var isTravelling = mode === 'travelling';
+
+    // Toggle sections
+    document.getElementById('senderSection').style.display   = isTravelling ? 'none' : '';
+    document.getElementById('passengerSection').style.display = isTravelling ? '' : 'none';
+    document.getElementById('receiverSection').style.display  = isTravelling ? 'none' : '';
+
+    // Toggle button styles
+    var btnCargo  = document.getElementById('btnModeCargo');
+    var btnTravel = document.getElementById('btnModeTravel');
+    if (isTravelling) {
+        btnCargo.classList.remove('btn-warning','active-mode');
+        btnCargo.classList.add('btn-outline-secondary');
+        btnTravel.classList.remove('btn-outline-secondary');
+        btnTravel.classList.add('btn-warning','active-mode');
+        document.getElementById('shipModalHeader').style.background = '#7c3aed';
+        document.getElementById('shipModalTitle').innerHTML = '<i class="bi bi-person-luggage me-2"></i>Travelling with Cargo';
+    } else {
+        btnTravel.classList.remove('btn-warning','active-mode');
+        btnTravel.classList.add('btn-outline-secondary');
+        btnCargo.classList.remove('btn-outline-secondary');
+        btnCargo.classList.add('btn-warning','active-mode');
+        document.getElementById('shipModalHeader').style.background = '#f59e0b';
+        document.getElementById('shipModalTitle').innerHTML = '<i class="bi bi-box-seam me-2"></i>New Cargo Shipment';
     }
-    document.getElementById('weightInput').addEventListener('input',update);
-    document.getElementById('cargoTypeSelect').addEventListener('change',update);
+
+    // Toggle required attributes
+    var senderName   = document.getElementById('senderName');
+    var passengerName = document.getElementById('passengerName');
+    var receiverName  = document.getElementById('receiverName');
+    if (senderName)    senderName.required    = !isTravelling;
+    if (passengerName) passengerName.required  = isTravelling;
+    if (receiverName)  receiverName.required   = !isTravelling;
+
+    // Discount note
+    document.getElementById('feeDiscountNote').style.display = isTravelling ? '' : 'none';
+
+    updateFee();
+}
+
+// Reset modal on open
+document.getElementById('newShipmentModal').addEventListener('show.bs.modal', function () {
+    setShipMode('cargo_delivery');
+});
+
+// ── Fee calculator ──────────────────────────────────────────────────────────
+(function(){
+    var rates = {general:50, fragile:70, perishable:80, livestock:100, hazardous:125};
+    window.updateFee = function() {
+        var w = parseFloat(document.getElementById('weightInput').value) || 0;
+        var t = document.getElementById('cargoTypeSelect').value;
+        var fee = Math.round(w * (rates[t] || 50) * 100) / 100;
+        if (currentMode === 'travelling') fee = Math.round(fee * 0.80 * 100) / 100;
+        document.getElementById('feeDisplay').textContent = 'Rs ' + fee.toLocaleString('en-PK', {minimumFractionDigits:2});
+    };
+    document.getElementById('weightInput').addEventListener('input', updateFee);
+    document.getElementById('cargoTypeSelect').addEventListener('change', updateFee);
 }());
 
-// Edit modal
-document.getElementById('editModal').addEventListener('show.bs.modal',function(e){
-    var btn=e.relatedTarget;
-    document.getElementById('editId').value=btn.dataset.id;
-    document.getElementById('editStatus').value=btn.dataset.status;
-    document.getElementById('editPay').value=btn.dataset.pay;
+// ── Edit modal ──────────────────────────────────────────────────────────────
+document.getElementById('editModal').addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
+    document.getElementById('editId').value     = btn.dataset.id;
+    document.getElementById('editStatus').value = btn.dataset.status;
+    document.getElementById('editPay').value     = btn.dataset.pay;
 });
 </script>
 

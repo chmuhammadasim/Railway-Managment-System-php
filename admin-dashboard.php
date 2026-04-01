@@ -459,6 +459,7 @@ require_once 'inc/header.php';
                 <span style="background:#f59e0b;color:#fff;border-radius:999px;padding:.1em .45em;font-size:.67rem;font-weight:700;"><?= $pending_bookings_n ?></span>
                 <?php endif; ?>
             </a>
+            <a href="cargo-shipments.php"><i class="bi bi-box-seam"></i> Cargo</a>
 
             <div class="sb-sep">Finance</div>
             <a href="manage-payments.php" style="justify-content:space-between;">
@@ -472,6 +473,7 @@ require_once 'inc/header.php';
             <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>
 
             <div class="sb-sep">System</div>
+            <a href="audit-logs.php"><i class="bi bi-clock-history"></i> Audit Logs</a>
             <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
             <a href="profile.php"><i class="bi bi-person-gear"></i> My Profile</a>
             <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
