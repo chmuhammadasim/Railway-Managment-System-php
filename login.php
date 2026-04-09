@@ -23,14 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         unset($_SESSION['redirect_after_login']);
         header('Location: ' . $redirect);
         exit();
-    } elseif (!empty($result['need_verify'])) {
-        // Unverified account — redirect to signup OTP step
-        $_SESSION['signup_step']    = 2;
-        $_SESSION['signup_user_id'] = $result['user_id'];
-        $_SESSION['signup_email']   = $result['email'];
-        $_SESSION['signup_name']    = '';
-        header('Location: signup.php');
-        exit();
     } else {
         $error_message = $result['message'];
     }

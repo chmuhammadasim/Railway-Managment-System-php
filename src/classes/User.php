@@ -22,14 +22,13 @@ class User {
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
         $data = [
-            'username'       => $username,
-            'email'          => $email,
-            'password'       => $hashed_password,
-            'full_name'      => $full_name,
-            'phone'          => $phone,
-            'address'        => $address,
-            'role'           => 'user',
-            'email_verified' => 0,   // requires OTP verification
+            'username'  => $username,
+            'email'     => $email,
+            'password'  => $hashed_password,
+            'full_name' => $full_name,
+            'phone'     => $phone,
+            'address'   => $address,
+            'role'      => 'user',
         ];
 
         $user_id = $this->db->insert('users', $data);
@@ -40,13 +39,7 @@ class User {
         return ['success' => false, 'message' => 'Registration failed!'];
     }
 
-    // Mark email as verified after OTP check
-    public function verifyEmail($user_id): bool {
-        $conn = $this->db->getConnection();
-        return (bool) $conn->query("UPDATE users SET email_verified=1 WHERE user_id=" . (int)$user_id);
-    }
-
-    // Reset password directly (used after OTP verification)
+    // Reset password directly
     public function resetPassword(string $email, string $new_password): array {
         $conn  = $this->db->getConnection();
         $eml_e = $conn->real_escape_string($email);
@@ -83,17 +76,6 @@ class User {
         $user  = $this->db->selectRow($query);
 
         if ($user && password_verify($password, $user['password'])) {
-            // Block regular users who haven't verified their email yet
-            if ($user['role'] === 'user' && empty($user['email_verified'])) {
-                return [
-                    'success'     => false,
-                    'message'     => 'Please verify your email before logging in.',
-                    'need_verify' => true,
-                    'email'       => $user['email'],
-                    'user_id'     => $user['user_id'],
-                ];
-            }
-
             // Clear failed attempts for this identifier
             $conn->query("DELETE FROM login_attempts WHERE identifier='{$user_e}'");
 

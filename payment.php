@@ -5,7 +5,6 @@ require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/Payment.php';
-require_once 'src/classes/Otp.php';
 
 if (!User::isLoggedIn()) {
     header('Location: login.php');
@@ -42,60 +41,33 @@ $error_message   = '';
 $success_message = '';
 $payment_done    = false;
 
-// Load OTP helper + fetch user's email
-$otp     = new Otp($db);
-$userRow = $db->selectRow("SELECT email, full_name FROM users WHERE user_id={$user_id}");
-
-// Auto-send booking OTP when user first lands on this page (GET)
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $otp->send($user_id, 'booking_confirm', $userRow['email'], $userRow['full_name']);
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'pay';
+    $payment_method  = $_POST['payment_method'] ?? '';
+    $allowed_methods = ['credit_card', 'debit_card', 'easypaisa', 'jazzcash', 'bank_transfer', 'cash'];
 
-    // Resend OTP request
-    if ($action === 'resend_otp') {
-        $sent = $otp->send($user_id, 'booking_confirm', $userRow['email'], $userRow['full_name']);
-        $success_message = $sent['success'] ? "OTP resent to {$userRow['email']}." : $sent['message'];
-        if (!$sent['success']) $error_message = $sent['message'];
+    if (empty($payment_method) || !in_array($payment_method, $allowed_methods, true)) {
+        $error_message = 'Please select a valid payment method.';
     } else {
-        // Normal payment submit — verify OTP first
-        $otp_code        = trim($_POST['otp_code'] ?? '');
-        $payment_method  = $_POST['payment_method'] ?? '';
-        $allowed_methods = ['credit_card', 'debit_card', 'easypaisa', 'jazzcash', 'bank_transfer', 'cash'];
+        $transaction_id = 'TXN-' . strtoupper(bin2hex(random_bytes(6)));
 
-        if (empty($otp_code)) {
-            $error_message = 'Please enter the OTP sent to your email to confirm payment.';
-        } elseif (empty($payment_method) || !in_array($payment_method, $allowed_methods, true)) {
-            $error_message = 'Please select a valid payment method.';
+        $payment_data = [
+            'booking_id'     => $booking_id,
+            'user_id'        => $user_id,
+            'amount'         => $booking['total_fare'],
+            'payment_method' => $payment_method,
+            'transaction_id' => $transaction_id,
+            'payment_status' => 'completed',
+            'payment_date'   => date('Y-m-d H:i:s'),
+        ];
+
+        $payment_id = $db->insert('payments', $payment_data);
+
+        if ($payment_id) {
+            $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
+            $success_message = 'Payment successful! Your booking is confirmed.';
+            $payment_done    = true;
         } else {
-            $otp_res = $otp->verify((string)$user_id, 'booking_confirm', $otp_code);
-            if (!$otp_res['success']) {
-                $error_message = $otp_res['message'];
-            } else {
-                $transaction_id = 'TXN-' . strtoupper(bin2hex(random_bytes(6)));
-
-                $payment_data = [
-                    'booking_id'     => $booking_id,
-                    'user_id'        => $user_id,
-                    'amount'         => $booking['total_fare'],
-                    'payment_method' => $payment_method,
-                    'transaction_id' => $transaction_id,
-                    'payment_status' => 'completed',
-                    'payment_date'   => date('Y-m-d H:i:s'),
-                ];
-
-                $payment_id = $db->insert('payments', $payment_data);
-
-                if ($payment_id) {
-                    $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
-                    $success_message = 'Payment successful! Your booking is confirmed.';
-                    $payment_done    = true;
-                } else {
-                    $error_message = 'Payment processing failed. Please try again.';
-                }
-            }
+            $error_message = 'Payment processing failed. Please try again.';
         }
     }
 }
@@ -105,57 +77,6 @@ require_once 'inc/header.php';
 ?>
 
 <style>
-/* ═══════════════════════════════════════════
-   Payment page
-═══════════════════════════════════════════ */
-.pay-wrap { background:#f1f5f9; min-height:calc(100vh - 60px); padding-bottom:60px; }
-
-/* ── Hero band ──────────────────────────── */
-.pay-hero {
-    background: linear-gradient(135deg,#0b1728 0%,#0f2040 45%,#1a3a6e 100%);
-    color:#fff; padding:2rem 0 4rem; position:relative; overflow:hidden;
-}
-.pay-hero::before {
-    content:''; position:absolute; inset:0;
-    background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
-    background-size:26px 26px; pointer-events:none;
-}
-.pay-hero-wave { position:absolute; bottom:-2px; left:0; right:0; line-height:0; }
-.pay-hero-wave svg { display:block; width:100%; height:60px; }
-.pay-hero-inner { max-width:960px; margin:0 auto; padding:0 1.25rem; position:relative; z-index:2; }
-
-/* Step bar */
-.pay-steps { display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
-.step-item  { display:flex; flex-direction:column; align-items:center; gap:.3rem; flex-shrink:0; }
-.step-circle {
-    width:42px; height:42px; border-radius:50%;
-    border:2.5px solid rgba(255,255,255,.3); display:flex; align-items:center;
-    justify-content:center; font-size:1rem;
-    background:rgba(255,255,255,.08); color:rgba(255,255,255,.5);
-    backdrop-filter:blur(4px); transition:all .3s;
-}
-.step-item.done   .step-circle { background:#10b981; border-color:#10b981; color:#fff; }
-.step-item.active .step-circle { background:#2563eb; border-color:#60a5fa; color:#fff;
-    box-shadow:0 0 0 4px rgba(96,165,250,.25); }
-.step-label { font-size:.72rem; font-weight:700; color:rgba(255,255,255,.45); white-space:nowrap; letter-spacing:.04em; text-transform:uppercase; }
-.step-item.done .step-label, .step-item.active .step-label { color:rgba(255,255,255,.9); }
-.step-connector { flex:0 0 80px; height:2px; background:rgba(255,255,255,.15); margin:0 .25rem; position:relative; top:-10px; transition:background .3s; }
-.step-connector.done { background:#10b981; }
-
-/* Route pill */
-.route-pill {
-    display:inline-flex; align-items:center; gap:.6rem;
-    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
-    border-radius:999px; padding:.55rem 1.25rem; font-weight:700;
-    font-size:clamp(.9rem,2.5vw,1.15rem); backdrop-filter:blur(6px);
-    letter-spacing:-.01em;
-}
-.route-pill .arr { color:#fbbf24; font-size:1.1rem; }
-.pay-meta { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:.85rem; }
-.pay-meta-badge {
-    display:inline-flex; align-items:center; gap:.35rem;
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
-    border-radius:999px; padding:.3rem .85rem; font-size:.78rem; font-weight:600;
     backdrop-filter:blur(4px);
 }
 
@@ -525,28 +446,6 @@ require_once 'inc/header.php';
                             <span id="hintText"></span>
                         </div>
 
-                        <!-- OTP Verification field -->
-                        <div class="hint-box" style="background:#fff9e6;border-color:#fbbf24;color:#92400e;margin-top:.85rem;">
-                            <i class="bi bi-shield-lock-fill" style="color:#d97706;"></i>
-                            <div>
-                                <strong>OTP Confirmation</strong> — An OTP was sent to
-                                <strong><?= htmlspecialchars($userRow['email']) ?></strong>.
-                                Enter it below to authorise payment.
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display:flex;gap:.65rem;align-items:stretch;">
-                            <input type="text" name="otp_code" id="otpCodeInput"
-                                   placeholder="6-digit OTP" maxlength="6" inputmode="numeric"
-                                   style="flex:1;padding:.725rem 1rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:1.3rem;font-weight:800;letter-spacing:.5rem;text-align:center;background:#f9fafb;"
-                                   autocomplete="one-time-code" required>
-                            <button type="button" id="resendOtpBtn"
-                                    style="padding:.7rem .9rem;background:#f1f5f9;border:1.5px solid #d1d5db;border-radius:10px;font-size:.8rem;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap;">
-                                <i class="bi bi-arrow-repeat"></i> Resend
-                            </button>
-                        </div>
-                        <div id="resendMsg" style="font-size:.8rem;margin-top:.3rem;min-height:1.1em;"></div>
-                        <input type="hidden" name="action" value="pay">
-
                         <!-- Pay button -->
                         <button type="submit" class="btn-pay" id="payBtn" disabled>
                             <span class="lock-icon"><i class="bi bi-lock-fill"></i></span>
@@ -615,20 +514,10 @@ require_once 'inc/header.php';
         });
     });
 
-    // Enable Pay button only when a method is selected AND OTP has 6 digits
-    var otpInput = document.getElementById('otpCodeInput');
     var selected = false;
 
     function updatePayBtn() {
-        var hasOtp = otpInput && otpInput.value.replace(/\D/g,'').length === 6;
-        payBtn.disabled = !(selected && hasOtp);
-    }
-
-    if (otpInput) {
-        otpInput.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '').slice(0, 6);
-            updatePayBtn();
-        });
+        payBtn.disabled = !selected;
     }
 
     document.getElementById('paymentForm').addEventListener('submit', function () {
@@ -636,31 +525,6 @@ require_once 'inc/header.php';
         payBtn.innerHTML =
             '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
     });
-
-    // Resend OTP via fetch (avoids nested-form bug)
-    var resendBtn = document.getElementById('resendOtpBtn');
-    var resendMsg = document.getElementById('resendMsg');
-    if (resendBtn) {
-        resendBtn.addEventListener('click', function () {
-            resendBtn.disabled = true;
-            resendMsg.textContent = 'Sending…';
-            resendMsg.style.color = '#6b7280';
-            var fd = new FormData();
-            fd.append('action', 'resend_otp');
-            fetch(window.location.href, { method: 'POST', body: fd })
-                .then(function (r) { return r.text(); })
-                .then(function () {
-                    resendMsg.textContent = 'OTP resent! Check your email.';
-                    resendMsg.style.color = '#15803d';
-                    setTimeout(function () { resendBtn.disabled = false; resendMsg.textContent = ''; }, 30000);
-                })
-                .catch(function () {
-                    resendMsg.textContent = 'Failed to resend. Try again.';
-                    resendMsg.style.color = '#b91c1c';
-                    resendBtn.disabled = false;
-                });
-        });
-    }
 }());
 </script>
 

@@ -4,7 +4,6 @@
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
-require_once 'src/classes/Otp.php';
 
 if (!User::isLoggedIn()) {
     header('Location: login.php');
@@ -16,107 +15,40 @@ $db->connect();
 
 $user_id  = (int)$_SESSION['user_id'];
 $user_obj = new User($db);
-$otp      = new Otp($db);
 $user     = $user_obj->getUserById($user_id);
 
-$error_message   = '';
+$error_message = '';
 $success_message = '';
 
-// profile_step: 1=edit form  2=OTP verification
-$profile_step = (int)($_SESSION['profile_step'] ?? 1);
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'request_update';
+    $full_name = trim($_POST['full_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $address = trim($_POST['address'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
-    // ── Step 1 → validate form, store pending, send OTP ──────────────
-    if ($action === 'request_update') {
-        $full_name        = trim($_POST['full_name']        ?? '');
-        $email            = trim($_POST['email']            ?? '');
-        $phone            = trim($_POST['phone']            ?? '');
-        $address          = trim($_POST['address']          ?? '');
-        $password         = $_POST['password']         ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-
-        if (empty($full_name) || empty($email)) {
-            $error_message = 'Full name and email are required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error_message = 'Please enter a valid email address.';
-        } elseif (!empty($password) && $password !== $confirm_password) {
-            $error_message = 'Passwords do not match.';
-        } elseif (!empty($password) && strlen($password) < 6) {
-            $error_message = 'Password must be at least 6 characters.';
+    if (empty($full_name) || empty($email)) {
+        $error_message = 'Full name and email are required.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = 'Please enter a valid email address.';
+    } elseif (!empty($password) && $password !== $confirm_password) {
+        $error_message = 'Passwords do not match.';
+    } elseif (!empty($password) && strlen($password) < 6) {
+        $error_message = 'Password must be at least 6 characters.';
+    } else {
+        $result = $user_obj->updateProfile($user_id, $full_name, $email, $phone, $address, $password);
+        if ($result['success']) {
+            $success_message = 'Profile updated successfully!';
+            $user = $user_obj->getUserById($user_id);
+            $_SESSION['full_name'] = $user['full_name'];
+            $_SESSION['email'] = $user['email'];
         } else {
-            // Store pending changes in session for later application
-            $_SESSION['profile_pending'] = [
-                'full_name' => $full_name,
-                'email'     => $email,
-                'phone'     => $phone,
-                'address'   => $address,
-                'password'  => $password, // raw; hashed in updateProfile
-            ];
-            $sent = $otp->send($user_id, 'profile_update', $user['email'], $user['full_name']);
-            if ($sent['success']) {
-                $_SESSION['profile_step'] = 2;
-                $profile_step = 2;
-                $success_message = "OTP sent to {$user['email']}. Enter it below to save your changes.";
-            } else {
-                $error_message = $sent['message'];
-            }
+            $error_message = $result['message'];
         }
-    }
-
-    // ── Step 2 → verify OTP then apply changes ────────────────────────
-    elseif ($action === 'verify_update') {
-        $code    = trim($_POST['otp_code'] ?? '');
-        $pending = $_SESSION['profile_pending'] ?? null;
-        $profile_step = 2;
-
-        if (!$pending) {
-            $error_message = 'Session expired. Please re-submit your changes.';
-            $_SESSION['profile_step'] = 1;
-            $profile_step = 1;
-        } else {
-            $res = $otp->verify((string)$user_id, 'profile_update', $code);
-            if (!$res['success']) {
-                $error_message = $res['message'];
-            } else {
-                $result = $user_obj->updateProfile(
-                    $user_id,
-                    $pending['full_name'],
-                    $pending['email'],
-                    $pending['phone'],
-                    $pending['address'],
-                    $pending['password']
-                );
-                if ($result['success']) {
-                    unset($_SESSION['profile_step'], $_SESSION['profile_pending']);
-                    $profile_step    = 1;
-                    $success_message = 'Profile updated successfully!';
-                    $user = $user_obj->getUserById($user_id);
-                    $_SESSION['full_name'] = $user['full_name'];
-                } else {
-                    $error_message = $result['message'];
-                }
-            }
-        }
-    }
-
-    // ── Resend OTP ────────────────────────────────────────────────────
-    elseif ($action === 'resend_profile_otp') {
-        $profile_step = 2;
-        $sent = $otp->send($user_id, 'profile_update', $user['email'], $user['full_name']);
-        $success_message = $sent['success'] ? "OTP resent to {$user['email']}." : $sent['message'];
-        if (!$sent['success']) $error_message = $sent['message'];
-    }
-
-    // ── Cancel OTP step → back to form ───────────────────────────────
-    elseif ($action === 'cancel_update') {
-        unset($_SESSION['profile_step'], $_SESSION['profile_pending']);
-        $profile_step = 1;
     }
 }
 
-// Back-link based on role
 $back_url = match($_SESSION['role'] ?? 'user') {
     'admin'    => 'admin-dashboard.php',
     'employee' => 'employee-dashboard.php',
@@ -214,7 +146,6 @@ require_once 'inc/header.php';
     <div class="container">
         <div class="row g-4 justify-content-center">
 
-            <!-- ── Left: Avatar + Info card ── -->
             <div class="col-lg-3 col-md-4">
                 <div class="profile-avatar-card">
                     <div class="profile-avatar">
@@ -274,66 +205,25 @@ require_once 'inc/header.php';
                 </div>
             </div>
 
-                    <!-- ── Right: Edit form OR OTP step ── -->
-                    <div class="col-lg-7 col-md-8">
-                        <div class="form-card">
-                            <h4 class="fw-bold mb-0" style="color:#0f172a;">
-                                <i class="bi bi-person-gear me-2 text-primary"></i>Edit Profile
-                            </h4>
-                            <p class="text-muted mt-1 mb-0" style="font-size:.875rem;">Update your personal details and security settings below.</p>
+            <div class="col-lg-7 col-md-8">
+                <div class="form-card">
+                    <h4 class="fw-bold mb-0" style="color:#0f172a;">
+                        <i class="bi bi-person-gear me-2 text-primary"></i>Edit Profile
+                    </h4>
+                    <p class="text-muted mt-1 mb-0" style="font-size:.875rem;">Update your personal details and security settings below.</p>
 
-                            <?php if ($error_message): ?>
-                            <div class="alert alert-danger border-0 rounded-3 py-2 mt-3">
-                                <i class="bi bi-exclamation-circle me-2"></i><?= htmlspecialchars($error_message) ?>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($success_message): ?>
-                            <div class="alert alert-success border-0 rounded-3 py-2 mt-3">
-                                <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($success_message) ?>
-                            </div>
-                            <?php endif; ?>
+                    <?php if ($error_message): ?>
+                    <div class="alert alert-danger border-0 rounded-3 py-2 mt-3">
+                        <i class="bi bi-exclamation-circle me-2"></i><?= htmlspecialchars($error_message) ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($success_message): ?>
+                    <div class="alert alert-success border-0 rounded-3 py-2 mt-3">
+                        <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($success_message) ?>
+                    </div>
+                    <?php endif; ?>
 
-                            <?php if ($profile_step === 2): ?>
-                            <!-- ── OTP Verification Card ── -->
-                            <div class="mt-3 p-4 rounded-3" style="background:#fffbeb;border:1.5px solid #fbbf24;">
-                                <div class="text-center mb-3">
-                                    <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;box-shadow:0 4px 14px rgba(217,119,6,.35);">
-                                        🔒
-                                    </div>
-                                    <h5 class="mt-2 mb-0 fw-bold">Confirm Profile Update</h5>
-                                    <p class="text-muted" style="font-size:.85rem;">
-                                        Enter the 6-digit OTP sent to <strong><?= htmlspecialchars($user['email']) ?></strong>
-                                    </p>
-                                </div>
-                                <form method="POST">
-                                    <input type="hidden" name="action" value="verify_update">
-                                    <input type="text" name="otp_code" class="form-control mb-3"
-                                           placeholder="— — — — — —" maxlength="6" inputmode="numeric"
-                                           style="font-size:2rem;font-weight:900;letter-spacing:.5rem;text-align:center;"
-                                           autofocus required>
-                                    <button type="submit" class="btn-save btn">
-                                        <i class="bi bi-shield-check me-2"></i>Verify &amp; Save
-                                    </button>
-                                </form>
-                                <div class="d-flex justify-content-between mt-3">
-                                    <form method="POST">
-                                        <input type="hidden" name="action" value="resend_profile_otp">
-                                        <button type="submit" style="background:none;border:none;color:#d97706;font-size:.85rem;font-weight:600;cursor:pointer;">
-                                            <i class="bi bi-arrow-repeat me-1"></i>Resend OTP
-                                        </button>
-                                    </form>
-                                    <form method="POST">
-                                        <input type="hidden" name="action" value="cancel_update">
-                                        <button type="submit" style="background:none;border:none;color:#64748b;font-size:.85rem;cursor:pointer;">
-                                            ← Back to form
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <?php else: ?>
-                            <!-- ── Edit Form ── -->
-
+                    <form method="POST" class="mt-3">
                         <div class="section-divider">Personal Information</div>
 
                         <div class="row g-3">
@@ -409,13 +299,12 @@ require_once 'inc/header.php';
                             <a href="<?= $back_url ?>" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
-                    <?php endif; ?><!-- /profile_step -->
                 </div>
             </div>
 
-        </div><!-- /row -->
-    </div><!-- /container -->
-</div><!-- /profile-wrap -->
+        </div>
+    </div>
+</div>
 
 <script>
 function togglePwd(fieldId, iconId) {
@@ -445,6 +334,7 @@ function togglePwd(fieldId, iconId) {
             msg.style.display = 'block';
         }
     }
+
     p1.addEventListener('input', check);
     p2.addEventListener('input', check);
 }());

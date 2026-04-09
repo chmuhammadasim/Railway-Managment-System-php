@@ -1,108 +1,87 @@
 <?php
-// forgot_password.php – OTP-based password reset
+// forgot_password.php – Password reset with email link
 
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
-require_once 'src/classes/Otp.php';
+require_once 'src/classes/PasswordReset.php';
 
 if (User::isLoggedIn()) { header('Location: dashboard.php'); exit(); }
 
-$db   = new Database();
+$db = new Database();
 $db->connect();
-$otp  = new Otp($db);
 $user = new User($db);
+$passwordReset = new PasswordReset($db);
 
-$error_message   = '';
+$error_message = '';
 $success_message = '';
+$step = 1;
+$token = trim($_GET['token'] ?? $_POST['token'] ?? '');
+$reset_context = null;
 
-// step 1 = enter email
-// step 2 = enter OTP
-// step 3 = set new password
-$step = (int)($_SESSION['fp_step'] ?? 1);
+if ($token !== '') {
+    $reset_context = $passwordReset->validateToken($token);
+    if ($reset_context['success']) {
+        $step = 2;
+    } else {
+        $error_message = $reset_context['message'];
+        $token = '';
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    // ── Step 1: Send OTP ─────────────────────────────────────────────
-    if ($action === 'send_otp') {
+    if ($action === 'request_reset') {
         $email = trim($_POST['email'] ?? '');
+
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error_message = 'Please enter a valid email address.';
         } else {
-            $conn = $db->getConnection();
-            $eml  = $conn->real_escape_string($email);
-            $row  = $db->selectRow("SELECT user_id, full_name FROM users WHERE email='{$eml}' AND is_active=1");
-            if (!$row) {
-                // Deliberate vague message to avoid user enumeration
-                $success_message = "If that email is registered, you'll receive an OTP shortly.";
-            } else {
-                $sent = $otp->send($email, 'reset_password', $email, $row['full_name']);
-                if ($sent['success']) {
-                    $_SESSION['fp_step']  = 2;
-                    $_SESSION['fp_email'] = $email;
-                    $_SESSION['fp_name']  = $row['full_name'];
-                    $step = 2;
-                    $success_message = "OTP sent to {$email}. Valid for 15 minutes.";
+            $connection = $db->getConnection();
+            $emailEscaped = $connection->real_escape_string($email);
+            $account = $db->selectRow("SELECT user_id, full_name FROM users WHERE email='{$emailEscaped}' AND is_active=1");
+
+            if ($account) {
+                $result = $passwordReset->requestLink((int) $account['user_id'], $email, $account['full_name']);
+                if (!$result['success']) {
+                    $error_message = $result['message'];
                 } else {
-                    $error_message = $sent['message'];
+                    $success_message = "If that email is registered, we've sent a password reset link.";
+                }
+            } else {
+                $success_message = "If that email is registered, we've sent a password reset link.";
+            }
+        }
+    } elseif ($action === 'reset_password') {
+        $token = trim($_POST['token'] ?? '');
+        $reset_context = $passwordReset->validateToken($token);
+
+        if (!$reset_context['success']) {
+            $error_message = $reset_context['message'];
+            $token = '';
+            $step = 1;
+        } else {
+            $step = 2;
+            $new_password = $_POST['new_password'] ?? '';
+            $confirm_password = $_POST['confirm_password'] ?? '';
+
+            if (strlen($new_password) < 6) {
+                $error_message = 'Password must be at least 6 characters.';
+            } elseif ($new_password !== $confirm_password) {
+                $error_message = 'Passwords do not match.';
+            } else {
+                $result = $user->resetPassword($reset_context['email'], $new_password);
+                if ($result['success']) {
+                    $passwordReset->consumeToken($token);
+                    $success_message = 'Password reset successfully! Redirecting to login...';
+                    header('Refresh: 2; url=login.php');
+                    $step = 1;
+                    $token = '';
+                } else {
+                    $error_message = $result['message'];
                 }
             }
-        }
-    }
-
-    // ── Step 2: Verify OTP ───────────────────────────────────────────
-    elseif ($action === 'verify_otp') {
-        $code  = trim($_POST['otp_code'] ?? '');
-        $email = $_SESSION['fp_email'] ?? '';
-        $step  = 2;
-        if (!$email) { $error_message = 'Session expired. Please start over.'; $step = 1; }
-        else {
-            $res = $otp->verify($email, 'reset_password', $code);
-            if ($res['success']) {
-                $_SESSION['fp_step']     = 3;
-                $_SESSION['fp_verified'] = true;
-                $step = 3;
-            } else {
-                $error_message = $res['message'];
-            }
-        }
-    }
-
-    // ── Step 3: Set new password ─────────────────────────────────────
-    elseif ($action === 'reset_password') {
-        $email    = $_SESSION['fp_email']    ?? '';
-        $verified = $_SESSION['fp_verified'] ?? false;
-        $newpwd   = $_POST['new_password']   ?? '';
-        $conpwd   = $_POST['confirm_password'] ?? '';
-        $step     = 3;
-        if (!$email || !$verified) { $error_message = 'Session expired.'; $step = 1; }
-        elseif (strlen($newpwd) < 6) { $error_message = 'Password must be at least 6 characters.'; }
-        elseif ($newpwd !== $conpwd)  { $error_message = 'Passwords do not match.'; }
-        else {
-            $res = $user->resetPassword($email, $newpwd);
-            if ($res['success']) {
-                unset($_SESSION['fp_step'], $_SESSION['fp_email'], $_SESSION['fp_name'], $_SESSION['fp_verified']);
-                $success_message = 'Password reset successfully! Redirecting to login…';
-                header('Refresh: 2; url=login.php');
-                $step = 1;
-            } else {
-                $error_message = $res['message'];
-            }
-        }
-    }
-
-    // ── Resend OTP ────────────────────────────────────────────────────
-    elseif ($action === 'resend_otp') {
-        $email = $_SESSION['fp_email'] ?? '';
-        $name  = $_SESSION['fp_name']  ?? '';
-        $step  = 2;
-        if ($email) {
-            $sent = $otp->send($email, 'reset_password', $email, $name);
-            $success_message = $sent['success'] ? "OTP resent to {$email}." : $sent['message'];
-            if (!$sent['success']) $error_message = $sent['message'];
-        } else {
-            $error_message = 'Session expired.'; $step = 1;
         }
     }
 }
@@ -123,7 +102,7 @@ require_once 'inc/header.php';
 .fp-card {
     background: #fff; border-radius: 22px;
     box-shadow: 0 24px 80px rgba(0,0,0,.25);
-    width: 100%; max-width: 440px;
+    width: 100%; max-width: 460px;
     padding: 2.75rem 2.5rem 2.25rem;
     position: relative; z-index: 1;
     animation: slideUp .45s ease both;
@@ -153,17 +132,17 @@ require_once 'inc/header.php';
         <div class="fp-icon">🔑</div>
         <h1>Forgot Password</h1>
         <p>
-            <?php if ($step===1) echo 'Enter your email to receive a reset code';
-            elseif ($step===2) echo 'Enter the OTP sent to your email';
-            else               echo 'Set a new password'; ?>
+            <?php if ($step === 1): ?>
+                Enter your email to receive a secure reset link
+            <?php else: ?>
+                Choose a new password for <?= htmlspecialchars($reset_context['email'] ?? '') ?>
+            <?php endif; ?>
         </p>
     </div>
 
-    <!-- Step indicator -->
     <div class="fp-step-dots">
-        <div class="fp-dot <?= $step>=1?'active':'' ?>"></div>
-        <div class="fp-dot <?= $step>=2?'active':'' ?>"></div>
-        <div class="fp-dot <?= $step>=3?'active':'' ?>"></div>
+        <div class="fp-dot <?= $step >= 1 ? 'active' : '' ?>"></div>
+        <div class="fp-dot <?= $step >= 2 ? 'active' : '' ?>"></div>
     </div>
 
     <?php if ($error_message): ?>
@@ -174,45 +153,27 @@ require_once 'inc/header.php';
     <?php endif; ?>
 
     <?php if ($step === 1): ?>
-    <!-- STEP 1: Email -->
     <form method="POST">
-        <input type="hidden" name="action" value="send_otp">
+        <input type="hidden" name="action" value="request_reset">
         <label class="auth-label" for="email">Email Address</label>
         <input type="email" id="email" name="email" class="auth-input" placeholder="you@example.com" required autofocus>
-        <button type="submit" class="btn-auth mt-3"><i class="bi bi-send me-2"></i>Send OTP</button>
+        <button type="submit" class="btn-auth mt-3"><i class="bi bi-send me-2"></i>Send Reset Link</button>
     </form>
-
-    <?php elseif ($step === 2): ?>
-    <!-- STEP 2: OTP -->
-    <form method="POST">
-        <input type="hidden" name="action" value="verify_otp">
-        <label class="auth-label">OTP Code</label>
-        <input type="text" name="otp_code" class="auth-input" placeholder="— — — — — —"
-               maxlength="6" inputmode="numeric" pattern="\d{6}" required autofocus
-               style="font-size:2rem;font-weight:900;letter-spacing:.5rem;text-align:center;">
-        <button type="submit" class="btn-auth mt-3"><i class="bi bi-shield-check me-2"></i>Verify OTP</button>
-    </form>
-    <form method="POST" class="mt-3 text-center">
-        <input type="hidden" name="action" value="resend_otp">
-        <button type="submit" style="background:none;border:none;color:#2563eb;font-size:.85rem;cursor:pointer;font-weight:600;">
-            <i class="bi bi-arrow-repeat me-1"></i>Resend OTP
-        </button>
-    </form>
-
-    <?php elseif ($step === 3): ?>
-    <!-- STEP 3: New password -->
+    <?php else: ?>
     <form method="POST">
         <input type="hidden" name="action" value="reset_password">
+        <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
         <label class="auth-label">New Password</label>
         <div class="pw-wrap mb-3">
             <input type="password" name="new_password" id="np" class="auth-input" placeholder="Min. 6 characters"
                    required style="padding-right:2.8rem;">
-            <button type="button" class="pw-toggle" onclick="var f=document.getElementById('np');f.type=f.type==='password'?'text':'password';">
+            <button type="button" class="pw-toggle" onclick="var field=document.getElementById('np');field.type=field.type==='password'?'text':'password';">
                 <i class="bi bi-eye"></i>
             </button>
         </div>
         <label class="auth-label">Confirm Password</label>
         <input type="password" name="confirm_password" class="auth-input mb-3" placeholder="Repeat password" required>
+        <p class="text-muted mb-3" style="font-size:.78rem;">This link expires 30 minutes after it is sent.</p>
         <button type="submit" class="btn-auth"><i class="bi bi-check-lg me-2"></i>Reset Password</button>
     </form>
     <?php endif; ?>
