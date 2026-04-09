@@ -17,6 +17,13 @@ $user_id  = (int)$_SESSION['user_id'];
 $user_obj = new User($db);
 $user     = $user_obj->getUserById($user_id);
 
+if (!$user || !is_array($user)) {
+    // Session exists but no matching DB record – force re-login
+    session_destroy();
+    header('Location: login.php?reason=session_expired');
+    exit();
+}
+
 $error_message = '';
 $success_message = '';
 

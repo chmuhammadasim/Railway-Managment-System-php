@@ -75,7 +75,8 @@ $can_pay_balance = !$is_admin && $booking['booking_status'] !== 'cancelled' && $
 
 $journey_ts = booking_departure_timestamp($booking);
 $hours_left = ($journey_ts - time()) / 3600;
-$can_modify = ($booking['booking_status'] !== 'cancelled') && $hours_left >= 24;
+$can_modify = ($booking['booking_status'] !== 'cancelled') && $hours_left >= 4;
+$can_cancel = ($booking['booking_status'] !== 'cancelled') && $hours_left > 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -229,12 +230,14 @@ $can_modify = ($booking['booking_status'] !== 'cancelled') && $hours_left >= 24;
             <a href="booking_update.php?id=<?= $booking_id ?>" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil-square me-1"></i>Change Journey
             </a>
+            <?php endif; ?>
+            <?php if ($can_cancel): ?>
             <a href="booking_cancel.php?id=<?= $booking_id ?>" class="btn btn-danger btn-sm">
                 <i class="bi bi-x-circle me-1"></i>Cancel
             </a>
-            <?php elseif ($booking['booking_status'] !== 'cancelled' && !$is_admin && $hours_left < 24 && $hours_left > 0): ?>
+            <?php elseif ($booking['booking_status'] !== 'cancelled' && !$is_admin && $hours_left <= 0): ?>
             <span class="badge bg-secondary py-2 px-3" style="font-size:.75rem;">
-                <i class="bi bi-lock-fill me-1"></i>Modifications locked (&lt; 24 hrs)
+                <i class="bi bi-lock-fill me-1"></i>Journey departed
             </span>
             <?php endif; ?>
             <?php if ($can_pay_balance): ?>

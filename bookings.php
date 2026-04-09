@@ -203,7 +203,8 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
         $status  = strtolower($booking['booking_status']);
         $jts     = booking_departure_timestamp($booking);
         $hours   = ($jts - time()) / 3600;
-        $modifiable = $hours >= 24 && $status !== 'cancelled';
+        $can_update = $hours >= 4  && $status !== 'cancelled';
+        $can_cancel = $hours > 0   && $status !== 'cancelled';
         $is_future  = $jts > time();
     ?>
     <div class="bk-card s-<?= $status ?>">
@@ -255,15 +256,21 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
                 <i class="bi bi-credit-card me-1"></i>Pay Now
             </a>
             <?php endif; ?>
-            <?php if ($modifiable): ?>
+            <?php if ($can_update): ?>
             <a href="booking_update.php?id=<?= $booking['booking_id'] ?>" class="btn btn-outline-warning btn-sm">
                 <i class="bi bi-pencil-square me-1"></i>Change
             </a>
+            <?php endif; ?>
+            <?php if ($can_cancel): ?>
             <a href="booking_cancel.php?id=<?= $booking['booking_id'] ?>" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-x-circle me-1"></i>Cancel
             </a>
-            <?php elseif ($status !== 'cancelled' && $hours < 24 && $hours > 0): ?>
-            <span class="text-muted small align-self-center"><i class="bi bi-lock me-1"></i>Locked – < 24 hrs to departure</span>
+            <?php elseif ($status !== 'cancelled' && $hours <= 0): ?>
+            <span class="text-muted small align-self-center"><i class="bi bi-lock me-1"></i>Departed</span>
+            <?php elseif ($status !== 'cancelled' && $hours > 0 && $hours < 4): ?>
+            <a href="booking_cancel.php?id=<?= $booking['booking_id'] ?>" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </a>
             <?php endif; ?>
         </div>
     </div>

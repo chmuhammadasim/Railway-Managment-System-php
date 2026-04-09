@@ -440,8 +440,8 @@ class Booking {
 
         $departure_ts = $this->getRouteDepartureTimestamp($current_route);
         $hours_until_departure = ($departure_ts - time()) / 3600;
-        if ($hours_until_departure < 24) {
-            return array('success' => false, 'message' => 'Journey changes are only allowed up to 24 hours before departure.');
+        if ($hours_until_departure < 4) {
+            return array('success' => false, 'message' => 'Journey changes are only allowed up to 4 hours before departure.');
         }
 
         if ((int)$new_route_id === (int)$booking['route_id']) {
@@ -466,7 +466,20 @@ class Booking {
 
         $passengers = $this->getBookingPassengerManifest($booking_id);
         if (count($passengers) !== (int)$booking['number_of_seats']) {
-            return array('success' => false, 'message' => 'This booking is missing passenger seat assignments and cannot be changed safely.');
+            // Booking has no seat records – build a synthetic economy-class list so
+            // the journey-change preview still works for legacy / seeded bookings.
+            $passengers = [];
+            for ($i = 0; $i < (int)$booking['number_of_seats']; $i++) {
+                $passengers[] = [
+                    'booking_seat_id' => 0,
+                    'seat_id'         => 0,
+                    'passenger_name'  => 'Passenger ' . ($i + 1),
+                    'passenger_age'   => null,
+                    'passenger_gender'=> 'Other',
+                    'seat_number'     => '',
+                    'seat_type'       => 'economy',
+                ];
+            }
         }
 
         $this->ensureRouteSeatsExist($new_route);
@@ -563,15 +576,18 @@ class Booking {
         }
 
         if ($hours < 24) {
+            $cancel_fee    = round($fare, 2);
+            $refund_amount = 0.0;
             return array(
-                'allowed'       => false,
+                'allowed'       => true,
                 'hours'         => $hours,
                 'refund_pct'    => 0,
                 'fee_pct'       => 100,
-                'refund_amount' => 0,
-                'cancel_fee'    => $fare,
-                'tier_label'    => 'No Refund',
-                'message'       => 'Cancellations are not allowed within 24 hours of the journey.',
+                'refund_amount' => $refund_amount,
+                'cancel_fee'    => $cancel_fee,
+                'tier_label'    => 'No Refund (< 24 hrs)',
+                'message'       => 'Cancellation within 24 hours applies a 100% cancellation fee. No refund will be issued.',
+                'booking'       => $booking,
                 'is_unpaid'     => false,
             );
         } elseif ($hours < 48) {

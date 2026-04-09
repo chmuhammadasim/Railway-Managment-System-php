@@ -152,8 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!hash_equals($csrf_token, $submitted_token)) {
         $error_message = 'Invalid request. Please refresh the page and try again.';
-    } elseif ($hours_until_departure < 24) {
-        $error_message = 'Journey changes are only allowed up to 24 hours before departure.';
+    } elseif ($hours_until_departure < 4) {
+        $error_message = 'Journey changes are only allowed up to 4 hours before departure.';
     } else {
         $new_route_id = isset($_POST['new_route_id']) ? (int)$_POST['new_route_id'] : 0;
         if ($new_route_id <= 0) {
@@ -243,11 +243,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <?php if (!$current_route): ?>
                     <div class="alert alert-danger">Current route details could not be loaded for this booking.</div>
-                <?php elseif ($hours_until_departure < 24): ?>
+                <?php elseif ($hours_until_departure < 4): ?>
                     <div class="alert alert-danger mb-0">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <strong>Journey changes are locked.</strong>
-                        You can update your booking only until 24 hours before departure.
+                        You can update your booking only until 4 hours before departure.
                     </div>
                 <?php else: ?>
 
@@ -294,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="deadline-warn mb-3">
                     <i class="bi bi-info-circle me-1"></i>
-                    Journey updates stay available until <strong>24 hours before departure</strong>.
+                    Journey updates stay available until <strong>4 hours before departure</strong>.
                     Your current booking departs in <strong><?= htmlspecialchars(format_time_remaining($hours_until_departure)) ?></strong>.
                 </div>
 
