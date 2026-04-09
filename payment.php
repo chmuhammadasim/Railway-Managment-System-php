@@ -77,6 +77,57 @@ require_once 'inc/header.php';
 ?>
 
 <style>
+/* ═══════════════════════════════════════════
+   Payment page
+═══════════════════════════════════════════ */
+.pay-wrap { background:#f1f5f9; min-height:calc(100vh - 60px); padding-bottom:60px; }
+
+/* ── Hero band ──────────────────────────── */
+.pay-hero {
+    background: linear-gradient(135deg,#0b1728 0%,#0f2040 45%,#1a3a6e 100%);
+    color:#fff; padding:2rem 0 4rem; position:relative; overflow:hidden;
+}
+.pay-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:26px 26px; pointer-events:none;
+}
+.pay-hero-wave { position:absolute; bottom:-2px; left:0; right:0; line-height:0; }
+.pay-hero-wave svg { display:block; width:100%; height:60px; }
+.pay-hero-inner { max-width:960px; margin:0 auto; padding:0 1.25rem; position:relative; z-index:2; }
+
+/* Step bar */
+.pay-steps { display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+.step-item  { display:flex; flex-direction:column; align-items:center; gap:.3rem; flex-shrink:0; }
+.step-circle {
+    width:42px; height:42px; border-radius:50%;
+    border:2.5px solid rgba(255,255,255,.3); display:flex; align-items:center;
+    justify-content:center; font-size:1rem;
+    background:rgba(255,255,255,.08); color:rgba(255,255,255,.5);
+    backdrop-filter:blur(4px); transition:all .3s;
+}
+.step-item.done   .step-circle { background:#10b981; border-color:#10b981; color:#fff; }
+.step-item.active .step-circle { background:#2563eb; border-color:#60a5fa; color:#fff;
+    box-shadow:0 0 0 4px rgba(96,165,250,.25); }
+.step-label { font-size:.72rem; font-weight:700; color:rgba(255,255,255,.45); white-space:nowrap; letter-spacing:.04em; text-transform:uppercase; }
+.step-item.done .step-label, .step-item.active .step-label { color:rgba(255,255,255,.9); }
+.step-connector { flex:0 0 80px; height:2px; background:rgba(255,255,255,.15); margin:0 .25rem; position:relative; top:-10px; transition:background .3s; }
+.step-connector.done { background:#10b981; }
+
+/* Route pill */
+.route-pill {
+    display:inline-flex; align-items:center; gap:.6rem;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    border-radius:999px; padding:.55rem 1.25rem; font-weight:700;
+    font-size:clamp(.9rem,2.5vw,1.15rem); backdrop-filter:blur(6px);
+    letter-spacing:-.01em;
+}
+.route-pill .arr { color:#fbbf24; font-size:1.1rem; }
+.pay-meta { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:.85rem; }
+.pay-meta-badge {
+    display:inline-flex; align-items:center; gap:.35rem;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
+    border-radius:999px; padding:.3rem .85rem; font-size:.78rem; font-weight:600;
     backdrop-filter:blur(4px);
 }
 
