@@ -556,7 +556,11 @@ require_once 'inc/header.php';
                         </a>
                         <a href="my-cargo.php" class="qa-btn">
                             <div class="qa-ico" style="background:#fef3c7;color:#d97706;"><i class="bi bi-box-seam-fill"></i></div>
-                            My Cargo
+                            Cargo &amp; Luggage
+                        </a>
+                        <a href="operations-hub.php" class="qa-btn">
+                            <div class="qa-ico" style="background:#e0f2fe;color:#0369a1;"><i class="bi bi-diagram-3-fill"></i></div>
+                            Operations Hub
                         </a>
                         <a href="profile.php" class="qa-btn">
                             <div class="qa-ico" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-person-circle"></i></div>

@@ -205,7 +205,7 @@ $routes = $db->select(
 ) ?: [];
 
 $hideMainNavbar = true;
-$pageTitle = 'Cargo Shipments';
+$pageTitle = 'Cargo & Luggage Desk';
 require_once 'inc/header.php';
 ?>
 
@@ -280,9 +280,11 @@ require_once 'inc/header.php';
         <div class="sb-sep">Operations</div>
         <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
         <a href="manage-routes.php"><i class="bi bi-signpost-split"></i> Routes</a>
+        <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
         <a href="manage-bookings.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
         <a href="manage-payments.php"><i class="bi bi-credit-card"></i> Payments</a>
-        <a href="cargo-shipments.php" class="active"><i class="bi bi-box-seam"></i> Cargo</a>
+        <a href="cargo-shipments.php" class="active"><i class="bi bi-box-seam"></i> Cargo &amp; Luggage</a>
+        <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
 
         <div class="sb-sep">People</div>
         <?php if ($is_admin): ?><a href="manage-users.php"><i class="bi bi-people"></i> Users</a><?php endif; ?>
@@ -304,8 +306,8 @@ require_once 'inc/header.php';
 <main class="adm-main">
     <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="fw-black mb-0" style="color:#0f172a;"><i class="bi bi-box-seam me-2 text-warning"></i>Cargo Shipments</h2>
-            <p class="text-muted mb-0" style="font-size:.9rem;">Manage freight &amp; cargo on Pakistan Railways trains.</p>
+            <h2 class="fw-black mb-0" style="color:#0f172a;"><i class="bi bi-box-seam me-2 text-warning"></i>Cargo &amp; Luggage Desk</h2>
+            <p class="text-muted mb-0" style="font-size:.9rem;">Manage freight, parcels, and passenger luggage on Pakistan Railways trains.</p>
         </div>
         <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#newShipmentModal">
             <i class="bi bi-plus-circle me-1"></i>New Shipment

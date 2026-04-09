@@ -182,6 +182,7 @@ require_once 'inc/header.php';
     <a href="my-trains.php"><i class="bi bi-train-front"></i>My Trains</a>
     <a href="check-passengers.php"><i class="bi bi-people"></i>Passengers</a>
     <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i>Seat Management</a>
+    <a href="operations-hub.php"><i class="bi bi-diagram-3"></i>Operations Hub</a>
     <div class="sb-section">Bookings</div>
     <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i>Today's Bookings</a>
     <div class="sb-section">Account</div>
@@ -213,6 +214,9 @@ require_once 'inc/header.php';
         <div class="d-flex gap-2 flex-wrap">
             <a href="check-passengers.php" class="btn btn-outline-success btn-sm">
                 <i class="bi bi-people me-1"></i>Passengers
+            </a>
+            <a href="operations-hub.php?tab=live" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-broadcast-pin me-1"></i>Live Ops
             </a>
             <a href="assign-seats.php" class="btn btn-success btn-sm">
                 <i class="bi bi-grid-3x3-gap me-1"></i>Seat Management
@@ -283,6 +287,7 @@ require_once 'inc/header.php';
             ['my-trains.php',        'bi-train-front',      '#064e3b', 'My Trains',         'View & manage trains'],
             ['check-passengers.php', 'bi-people-fill',      '#1d4ed8', 'Passenger Manifest', 'View today\'s passengers'],
             ['assign-seats.php',     'bi-grid-3x3-gap-fill','#7c3aed', 'Seat Management',   'Assign & manage seats'],
+            ['operations-hub.php',   'bi-diagram-3-fill',   '#0f766e', 'Operations Hub',    'Live status, RAC, and service desk'],
             ['route-details-emp.php?id='.($today_routes[0]['route_id'] ?? 0),'bi-map-fill','#0f766e','Route Details','First route of today'],
         ] as [$href, $icon, $color, $title, $sub]): ?>
         <div class="col-6 col-md-3">

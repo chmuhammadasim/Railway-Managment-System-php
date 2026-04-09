@@ -4,6 +4,7 @@
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
+require_once 'src/classes/Booking.php';
 
 if (!User::isLoggedIn() || $_SESSION['role'] !== 'employee') {
     header('Location: login.php');
@@ -12,6 +13,7 @@ if (!User::isLoggedIn() || $_SESSION['role'] !== 'employee') {
 
 $db   = new Database();
 $db->connect();
+$bookingObj = new Booking($db);
 
 $booking_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$booking_id) {
@@ -26,21 +28,15 @@ $error_message   = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
     if ($action === 'confirm') {
-        $db->query("UPDATE bookings SET booking_status='confirmed' WHERE booking_id = {$booking_id}");
+        $bookingObj->confirmBooking($booking_id);
         $success_message = 'Booking confirmed successfully.';
     } elseif ($action === 'cancel') {
-        $seats = $db->select("SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}");
-        if ($seats) {
-            foreach ($seats as $s) {
-                $db->query("UPDATE seats SET status='available' WHERE seat_id = {$s['seat_id']}");
-            }
+        $result = $bookingObj->cancelBooking($booking_id, 'Employee cancellation');
+        if ($result['success']) {
+            $success_message = $result['message'];
+        } else {
+            $error_message = $result['message'];
         }
-        $bk = $db->selectRow("SELECT route_id, number_of_seats FROM bookings WHERE booking_id = {$booking_id}");
-        if ($bk) {
-            $db->query("UPDATE routes SET available_seats = available_seats + {$bk['number_of_seats']} WHERE route_id = {$bk['route_id']}");
-        }
-        $db->query("UPDATE bookings SET booking_status='cancelled' WHERE booking_id = {$booking_id}");
-        $success_message = 'Booking cancelled and seats released successfully.';
     } elseif ($action === 'checkin') {
         $db->query("UPDATE bookings SET booking_status='completed' WHERE booking_id = {$booking_id}");
         $success_message = 'Passenger checked in and booking marked as completed.';

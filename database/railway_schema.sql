@@ -230,6 +230,116 @@ CREATE TABLE IF NOT EXISTS cargo_shipments (
     INDEX idx_cargo_track   (tracking_number)
 );
 
+-- Stations Table
+CREATE TABLE IF NOT EXISTS stations (
+    station_id INT PRIMARY KEY AUTO_INCREMENT,
+    station_name VARCHAR(100) NOT NULL,
+    station_code VARCHAR(10) UNIQUE NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    province VARCHAR(100) DEFAULT '',
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_station_city (city, is_active)
+);
+
+-- Live Train Status Table
+CREATE TABLE IF NOT EXISTS live_train_status (
+    status_id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    service_state ENUM('scheduled','boarding','running','delayed','arrived','cancelled','maintenance') DEFAULT 'scheduled',
+    current_station VARCHAR(100),
+    next_station VARCHAR(100),
+    delay_minutes INT DEFAULT 0,
+    expected_arrival DATETIME DEFAULT NULL,
+    status_note VARCHAR(255),
+    updated_by INT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_live_route (route_id),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Lost & Found Table
+CREATE TABLE IF NOT EXISTS lost_found_items (
+    item_id INT PRIMARY KEY AUTO_INCREMENT,
+    record_type ENUM('lost','found') DEFAULT 'lost',
+    route_id INT DEFAULT NULL,
+    reported_by INT DEFAULT NULL,
+    assigned_to INT DEFAULT NULL,
+    claimed_by INT DEFAULT NULL,
+    item_name VARCHAR(120) NOT NULL,
+    category VARCHAR(60) DEFAULT 'general',
+    description TEXT,
+    location_hint VARCHAR(255),
+    contact_phone VARCHAR(20),
+    status ENUM('reported','under_review','matched','claimed','closed') DEFAULT 'reported',
+    resolution_note VARCHAR(255),
+    resolved_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_lost_found_status (status, created_at),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
+    FOREIGN KEY (reported_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (claimed_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Train Maintenance Table
+CREATE TABLE IF NOT EXISTS train_maintenance (
+    maintenance_id INT PRIMARY KEY AUTO_INCREMENT,
+    train_id INT NOT NULL,
+    maintenance_type ENUM('inspection','repair','cleaning','overhaul') DEFAULT 'inspection',
+    scheduled_date DATE NOT NULL,
+    status ENUM('scheduled','in_progress','completed','cancelled') DEFAULT 'scheduled',
+    assigned_employee_id INT DEFAULT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_maintenance_schedule (scheduled_date, status),
+    FOREIGN KEY (train_id) REFERENCES trains(train_id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_employee_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Crew Assignments Table
+CREATE TABLE IF NOT EXISTS crew_assignments (
+    assignment_id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    role_title VARCHAR(80) NOT NULL,
+    shift_start DATETIME DEFAULT NULL,
+    shift_end DATETIME DEFAULT NULL,
+    assignment_status ENUM('assigned','checked_in','completed','cancelled') DEFAULT 'assigned',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_crew_route (route_id, assignment_status),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Waitlist / RAC Table
+CREATE TABLE IF NOT EXISTS waitlist_entries (
+    waitlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    user_id INT NOT NULL,
+    passenger_manifest TEXT NOT NULL,
+    passenger_count INT NOT NULL,
+    preferred_class ENUM('economy','premium','luxury') DEFAULT 'economy',
+    queue_status ENUM('waitlist','rac','confirmed','cancelled') DEFAULT 'waitlist',
+    queue_position INT DEFAULT NULL,
+    note VARCHAR(255),
+    linked_booking_id INT DEFAULT NULL,
+    auto_promoted_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_waitlist_route (route_id, queue_status, created_at),
+    INDEX idx_waitlist_user (user_id, queue_status, created_at),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (linked_booking_id) REFERENCES bookings(booking_id) ON DELETE SET NULL
+);
+
 -- Cancellation columns on bookings
 ALTER TABLE bookings
     ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(255) DEFAULT NULL   AFTER payment_status,

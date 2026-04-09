@@ -37,11 +37,44 @@ if (!$booking) {
     exit();
 }
 
+if ($booking['booking_status'] === 'cancelled') {
+    header('Location: bookings.php');
+    exit();
+}
+
+$payment_summary = $db->selectRow(
+    "SELECT COALESCE(SUM(CASE WHEN payment_status = 'completed' THEN amount ELSE 0 END), 0) AS completed_total
+     FROM payments
+     WHERE booking_id = {$booking_id}"
+);
+
+$settled_amount = (float)($payment_summary['completed_total'] ?? 0);
+$amount_due = max((float)$booking['total_fare'] - $settled_amount, 0);
+$credit_amount = max($settled_amount - (float)$booking['total_fare'], 0);
+$payment_required = $amount_due > 0.009;
+$success_heading = 'Payment Successful!';
+$success_detail = 'Your booking is confirmed. Your e-ticket is ready.';
+
 $error_message   = '';
 $success_message = '';
 $payment_done    = false;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (!$payment_required) {
+    if ($booking['booking_status'] !== 'confirmed' || $booking['payment_status'] !== 'completed') {
+        $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
+    }
+
+    $payment_done = true;
+    $success_message = $credit_amount > 0.009
+        ? 'No additional payment is required. Your previous payment already covers this booking.'
+        : 'No additional payment is required for this booking.';
+    $success_heading = 'No Payment Needed';
+    $success_detail = $credit_amount > 0.009
+        ? 'Your earlier payment is higher than the new fare, so no extra charge is needed.'
+        : 'This booking is already fully paid.';
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $payment_required) {
     $payment_method  = $_POST['payment_method'] ?? '';
     $allowed_methods = ['credit_card', 'debit_card', 'easypaisa', 'jazzcash', 'bank_transfer', 'cash'];
 
@@ -53,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $payment_data = [
             'booking_id'     => $booking_id,
             'user_id'        => $user_id,
-            'amount'         => $booking['total_fare'],
+            'amount'         => $amount_due,
             'payment_method' => $payment_method,
             'transaction_id' => $transaction_id,
             'payment_status' => 'completed',
@@ -64,7 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($payment_id) {
             $db->query("UPDATE bookings SET booking_status='confirmed', payment_status='completed' WHERE booking_id = {$booking_id}");
-            $success_message = 'Payment successful! Your booking is confirmed.';
+            $success_message = $settled_amount > 0.009
+                ? 'Additional payment successful! Your updated booking is confirmed.'
+                : 'Payment successful! Your booking is confirmed.';
+            $success_heading = $settled_amount > 0.009 ? 'Balance Received!' : 'Payment Successful!';
+            $success_detail = 'Your booking is confirmed. Your e-ticket is ready.';
             $payment_done    = true;
         } else {
             $error_message = 'Payment processing failed. Please try again.';
@@ -331,15 +368,15 @@ require_once 'inc/header.php';
         <div class="success-wrap">
             <div class="success-ring"><i class="bi bi-check-lg"></i></div>
 
-            <h2 class="fw-black" style="font-size:1.8rem;color:#065f46;">Payment Successful!</h2>
-            <p class="text-muted mb-1" style="font-size:.95rem;">Your booking is confirmed. Your e-ticket is ready.</p>
+            <h2 class="fw-black" style="font-size:1.8rem;color:#065f46;"><?= htmlspecialchars($success_heading) ?></h2>
+            <p class="text-muted mb-1" style="font-size:.95rem;"><?= htmlspecialchars($success_detail) ?></p>
             <div class="confetti-line mx-auto"></div>
 
             <div class="ref-badge">
                 <i class="bi bi-hash"></i> <?= htmlspecialchars($booking['booking_reference']) ?>
             </div>
 
-            <p class="text-muted" style="font-size:.82rem;">Redirecting to your bookings in a moment…</p>
+            <p class="text-muted" style="font-size:.82rem;">Redirecting to your ticket in a moment...</p>
             <div class="countdown-bar" style="max-width:220px;margin:0 auto;">
                 <div class="countdown-fill"></div>
             </div>
@@ -354,7 +391,7 @@ require_once 'inc/header.php';
             </div>
         </div>
     </div>
-    <script>setTimeout(function(){ window.location='bookings.php'; }, 4500);</script>
+    <script>setTimeout(function(){ window.location='booking_details.php?id=<?= $booking_id ?>'; }, 4500);</script>
 
     <?php else: ?>
     <!-- ══ PAYMENT FORM ═════════════════════════════════════ -->
@@ -409,6 +446,18 @@ require_once 'inc/header.php';
                         <span class="lbl"><i class="bi bi-bookmark"></i>Booking Ref</span>
                         <span class="val" style="color:#2563eb;"><?= htmlspecialchars($booking['booking_reference']) ?></span>
                     </div>
+                    <?php if ($settled_amount > 0.009): ?>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-wallet2"></i>Already Paid</span>
+                        <span class="val">Rs <?= number_format($settled_amount, 2) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($credit_amount > 0.009): ?>
+                    <div class="bk-detail-row">
+                        <span class="lbl"><i class="bi bi-arrow-down-circle"></i>Fare Reduced</span>
+                        <span class="val text-success">Rs <?= number_format($credit_amount, 2) ?> lower</span>
+                    </div>
+                    <?php endif; ?>
 
                     <?php if ($seats): ?>
                     <div style="margin-top:.5rem;">
@@ -427,12 +476,27 @@ require_once 'inc/header.php';
                     <!-- Fare -->
                     <div class="fare-hero">
                         <div>
-                            <div class="fh-label">Total Amount Due</div>
-                            <div class="fh-amount">Rs <?= number_format($booking['total_fare'], 0) ?></div>
+                            <div class="fh-label">Amount Due Now</div>
+                            <div class="fh-amount">Rs <?= number_format($amount_due, 0) ?></div>
                             <div class="fh-ref">Ref: <?= htmlspecialchars($booking['booking_reference']) ?></div>
                         </div>
                         <i class="bi bi-shield-check" style="font-size:2.5rem;color:rgba(255,255,255,.2);"></i>
                     </div>
+
+                    <?php if ($settled_amount > 0.009): ?>
+                    <div class="hint-box" style="display:flex;background:#f8fafc;border-color:#e2e8f0;color:#334155;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>
+                            Original booking total: <strong>Rs <?= number_format((float)$booking['total_fare'], 2) ?></strong>.
+                            You have already paid <strong>Rs <?= number_format($settled_amount, 2) ?></strong>.
+                            <?php if ($amount_due > 0.009): ?>
+                                Only the remaining balance is being charged now.
+                            <?php else: ?>
+                                No additional payment is required.
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Trust grid -->
                     <div class="trust-grid">
@@ -500,7 +564,7 @@ require_once 'inc/header.php';
                         <!-- Pay button -->
                         <button type="submit" class="btn-pay" id="payBtn" disabled>
                             <span class="lock-icon"><i class="bi bi-lock-fill"></i></span>
-                            <span id="payBtnLabel">Pay Rs <?= number_format($booking['total_fare'], 0) ?> Securely</span>
+                            <span id="payBtnLabel">Pay Rs <?= number_format($amount_due, 0) ?> Securely</span>
                         </button>
 
                         <div class="text-center mt-2" style="font-size:.73rem;color:#9ca3af;">

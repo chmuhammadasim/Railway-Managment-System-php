@@ -201,6 +201,7 @@ require_once 'inc/header.php';
         <a href="my-trains.php" class="active"><i class="bi bi-train-front"></i> My Trains</a>
         <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
         <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
         <div class="sb-sep">Bookings</div>
         <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
         <div class="sb-sep">Account</div>

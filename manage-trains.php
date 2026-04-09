@@ -352,8 +352,10 @@ require_once 'inc/header.php';
             <div class="sb-sep">Operations</div>
             <a href="manage-trains.php" class="active"><i class="bi bi-train-front"></i> Trains</a>
             <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
+            <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
             <a href="manage-bookings.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
             <a href="manage-payments.php"><i class="bi bi-cash-stack"></i> Payments</a>
+            <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
 
             <div class="sb-sep">Users</div>
             <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>

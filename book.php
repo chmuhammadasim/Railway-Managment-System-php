@@ -56,6 +56,7 @@ foreach ($all_seats as $s) {
     $st = $s['seat_type'] ?? 'economy';
     $seats_by_type[$st][] = $s;
 }
+$overall_available_seats = count(array_filter($all_seats, fn($seat) => ($seat['status'] ?? '') === 'available'));
 
 // Fare multipliers per class
 $fare_mul   = ['economy' => 1.0, 'premium' => 1.5, 'luxury' => 2.5];
@@ -321,6 +322,20 @@ require_once 'inc/header.php';
          style="background:#fee2e2;color:#7f1d1d;">
         <i class="bi bi-exclamation-triangle-fill fs-5"></i>
         <?= htmlspecialchars($error_message) ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($overall_available_seats === 0): ?>
+    <div class="alert alert-warning d-flex align-items-start gap-3 rounded-3 mb-3 border-0"
+         style="background:#fffbeb;color:#92400e;">
+        <i class="bi bi-hourglass-split fs-5 mt-1"></i>
+        <div>
+            <strong>No seats are currently available on this route.</strong>
+            <div class="small mt-1">You can still request RAC or join the automatic waitlist and get confirmed when seats open up.</div>
+            <a href="operations-hub.php?tab=waitlist" class="btn btn-sm btn-outline-warning mt-2 fw-semibold">
+                <i class="bi bi-diagram-3 me-1"></i>Open Waitlist / RAC
+            </a>
+        </div>
     </div>
     <?php endif; ?>
 

@@ -6,6 +6,13 @@ require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/Booking.php';
 
+function booking_departure_timestamp(array $booking) {
+    $journey_date = $booking['journey_date'] ?? date('Y-m-d');
+    $departure_time = $booking['departure_time'] ?? '00:00:00';
+
+    return strtotime($journey_date . ' ' . $departure_time);
+}
+
 if (!User::isLoggedIn()) {
     header('Location: login.php');
     exit();
@@ -24,7 +31,7 @@ $upcoming    = 0;
 $total_spent = 0;
 $cancelled   = 0;
 foreach ($all_bookings as $b) {
-    $jts = strtotime($b['journey_date'] . ' 00:00:00');
+    $jts = booking_departure_timestamp($b);
     if ($b['booking_status'] === 'confirmed' && $jts > time()) $upcoming++;
     if ($b['booking_status'] === 'cancelled') $cancelled++;
     if ($b['payment_status'] === 'completed') $total_spent += (float)$b['total_fare'];
@@ -35,11 +42,13 @@ $filter = $_GET['filter'] ?? 'all';
 $search = trim($_GET['q'] ?? '');
 
 $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
+    $departure_ts = booking_departure_timestamp($b);
+
     if ($filter === 'upcoming') {
         if ($b['booking_status'] === 'cancelled') return false;
-        if (strtotime($b['journey_date'] . ' 00:00:00') <= time()) return false;
+        if ($departure_ts <= time()) return false;
     } elseif ($filter === 'past') {
-        if (strtotime($b['journey_date'] . ' 00:00:00') > time()) return false;
+        if ($departure_ts > time()) return false;
     } elseif ($filter !== 'all') {
         if (strtolower($b['booking_status']) !== $filter) return false;
     }
@@ -192,7 +201,7 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
     <?php if (count($bookings) > 0): ?>
     <?php foreach ($bookings as $booking):
         $status  = strtolower($booking['booking_status']);
-        $jts     = strtotime($booking['journey_date'] . ' 00:00:00');
+        $jts     = booking_departure_timestamp($booking);
         $hours   = ($jts - time()) / 3600;
         $modifiable = $hours >= 24 && $status !== 'cancelled';
         $is_future  = $jts > time();

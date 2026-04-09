@@ -4,6 +4,7 @@
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
+require_once 'src/classes/Operations.php';
 
 if (!User::isLoggedIn() || $_SESSION['role'] !== 'employee') {
     header('Location: login.php');
@@ -13,6 +14,8 @@ if (!User::isLoggedIn() || $_SESSION['role'] !== 'employee') {
 $db   = new Database();
 $db->connect();
 $conn = $db->getConnection();
+$operations = new Operations($db);
+$operations->ensureSchema();
 
 $success_message = '';
 $error_message   = '';
@@ -60,6 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error_message = 'No available seats selected.';
             }
         }
+    }
+
+    if ($success_message !== '' && $route_id_p > 0) {
+        $operations->processWaitlist($route_id_p);
     }
 
     $qs = http_build_query(array_filter(['route_id' => $route_id_p ?: null]));
@@ -272,6 +279,7 @@ require_once 'inc/header.php';
         <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
         <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
         <a href="assign-seats.php" class="active"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
         <div class="sb-sep">Account</div>
         <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
         <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>

@@ -5,6 +5,7 @@ require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/Train.php';
+require_once 'src/classes/Operations.php';
 
 if (!User::isLoggedIn() || $_SESSION['role'] != 'admin') {
     header('Location: login.php');
@@ -27,8 +28,11 @@ $db->connect();
 $conn = $db->getConnection();
 
 $train_obj = new Train($db);
+$operations = new Operations($db);
+$operations->ensureSchema();
 $user_obj = new User($db);
 $user = $user_obj->getUserById($_SESSION['user_id']);
+$stations = $operations->getStations(true);
 
 $filter_status = $_GET['status'] ?? 'all';
 $filter_window = $_GET['window'] ?? 'upcoming';
@@ -359,6 +363,7 @@ require_once 'inc/header.php';
             <div class="sb-sep">Operations</div>
             <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
             <a href="manage-routes.php" class="active"><i class="bi bi-map"></i> Routes</a>
+            <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
             <a href="manage-bookings.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
             <a href="manage-payments.php"><i class="bi bi-cash-stack"></i> Payments</a>
 
@@ -681,11 +686,13 @@ require_once 'inc/header.php';
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Departure City</label>
-                            <input type="text" class="form-control" name="departure_city" id="departureCityField" required>
+                            <input type="text" class="form-control" name="departure_city" id="departureCityField" list="stationCityList" required>
+                            <div class="form-text">Use a registered station city when available.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Arrival City</label>
-                            <input type="text" class="form-control" name="arrival_city" id="arrivalCityField" required>
+                            <input type="text" class="form-control" name="arrival_city" id="arrivalCityField" list="stationCityList" required>
+                            <div class="form-text">Station cities from Operations Hub appear here.</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-semibold">Journey Date</label>
@@ -743,6 +750,12 @@ require_once 'inc/header.php';
         </div>
     </div>
 </div>
+
+<datalist id="stationCityList">
+    <?php foreach ($stations as $station): ?>
+    <option value="<?= htmlspecialchars($station['city']) ?>"><?= htmlspecialchars($station['station_code'] . ' | ' . $station['station_name']) ?></option>
+    <?php endforeach; ?>
+</datalist>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

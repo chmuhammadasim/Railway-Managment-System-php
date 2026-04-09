@@ -55,10 +55,18 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                     <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
                     <?php if (class_exists('User') ? User::isLoggedIn() : (isset($_SESSION['user_id']) && $_SESSION['user_id'])): ?>
+                        <?php $navRole = $_SESSION['role'] ?? ROLE_USER; ?>
                         <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="bookings.php">My Bookings</a></li>
-                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
-                        <li class="nav-item"><a class="nav-link" href="my-cargo.php">My Cargo</a></li>
+                        <li class="nav-item"><a class="nav-link" href="operations-hub.php">Operations Hub</a></li>
+                        <?php if ($navRole === ROLE_USER): ?>
+                        <li class="nav-item"><a class="nav-link" href="bookings.php">Booking History</a></li>
+                        <li class="nav-item"><a class="nav-link" href="my-cargo.php">Cargo &amp; Luggage</a></li>
+                        <?php elseif ($navRole === ROLE_EMPLOYEE): ?>
+                        <li class="nav-item"><a class="nav-link" href="check-passengers.php">Passenger Desk</a></li>
+                        <li class="nav-item"><a class="nav-link" href="my-trains.php">My Trains</a></li>
+                        <?php elseif ($navRole === ROLE_ADMIN): ?>
+                        <li class="nav-item"><a class="nav-link" href="manage-routes.php">Routes</a></li>
+                        <li class="nav-item"><a class="nav-link" href="manage-trains.php">Trains</a></li>
                         <?php endif; ?>
                         <li class="nav-item"><a class="nav-link" href="profile.php">Profile</a></li>
                         <li class="nav-item dropdown">
@@ -70,7 +78,17 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                                 <li><a class="dropdown-item" href="profile.php">Profile</a></li>
-                                <li><a class="dropdown-item" href="bookings.php">My Bookings</a></li>
+                                <li><a class="dropdown-item" href="operations-hub.php">Operations Hub</a></li>
+                                <?php if ($navRole === ROLE_USER): ?>
+                                <li><a class="dropdown-item" href="bookings.php">Booking History</a></li>
+                                <li><a class="dropdown-item" href="my-cargo.php">Cargo &amp; Luggage</a></li>
+                                <?php elseif ($navRole === ROLE_EMPLOYEE): ?>
+                                <li><a class="dropdown-item" href="check-passengers.php">Passenger Desk</a></li>
+                                <li><a class="dropdown-item" href="my-trains.php">My Trains</a></li>
+                                <?php elseif ($navRole === ROLE_ADMIN): ?>
+                                <li><a class="dropdown-item" href="manage-routes.php">Route Control</a></li>
+                                <li><a class="dropdown-item" href="audit-logs.php">Audit Logs</a></li>
+                                <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="logout.php">Logout</a></li>
                             </ul>

@@ -453,6 +453,7 @@ require_once 'inc/header.php';
             <div class="sb-sep">Operations</div>
             <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
             <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
+            <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
             <a href="booking-admin.php" style="justify-content:space-between;">
                 <span><i class="bi bi-ticket-perforated"></i> Bookings</span>
                 <?php if ($pending_bookings_n > 0): ?>
@@ -460,6 +461,7 @@ require_once 'inc/header.php';
                 <?php endif; ?>
             </a>
             <a href="cargo-shipments.php"><i class="bi bi-box-seam"></i> Cargo</a>
+            <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
 
             <div class="sb-sep">Finance</div>
             <a href="manage-payments.php" style="justify-content:space-between;">
@@ -894,6 +896,12 @@ require_once 'inc/header.php';
                         </a>
                         <a href="manage-routes.php" class="qa-btn">
                             <i class="bi bi-map-fill"></i>Routes
+                        </a>
+                        <a href="operations-hub.php?tab=stations" class="qa-btn">
+                            <i class="bi bi-building-fill" style="color:#0f766e;"></i>Stations
+                        </a>
+                        <a href="operations-hub.php" class="qa-btn">
+                            <i class="bi bi-diagram-3-fill" style="color:#0369a1;"></i>Operations Hub
                         </a>
                         <a href="manage-users.php" class="qa-btn">
                             <i class="bi bi-people-fill"></i>Users

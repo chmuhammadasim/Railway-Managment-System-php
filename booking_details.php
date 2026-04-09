@@ -6,6 +6,13 @@ require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/Booking.php';
 
+function booking_departure_timestamp(array $booking) {
+    $journey_date = $booking['journey_date'] ?? date('Y-m-d');
+    $departure_time = $booking['departure_time'] ?? '00:00:00';
+
+    return strtotime($journey_date . ' ' . $departure_time);
+}
+
 if (!User::isLoggedIn()) {
     header('Location: login.php');
     exit();
@@ -52,10 +59,23 @@ $payment = $db->selectRow(
     "SELECT * FROM payments WHERE booking_id = {$booking_id} ORDER BY created_at DESC LIMIT 1"
 );
 
-$journey_ts = strtotime($booking['journey_date'] . ' 00:00:00');
+$payment_summary = $db->selectRow(
+    "SELECT COALESCE(SUM(CASE WHEN payment_status = 'completed' THEN amount ELSE 0 END), 0) AS completed_total
+     FROM payments
+     WHERE booking_id = {$booking_id}"
+);
+
+$settled_amount = (float)($payment_summary['completed_total'] ?? 0);
+$amount_due = max((float)$booking['total_fare'] - $settled_amount, 0);
+$is_admin   = ($_SESSION['role'] === 'admin');
+$display_payment_status = $amount_due > 0.009
+    ? 'pending'
+    : ($booking['payment_status'] ?? ($payment['payment_status'] ?? 'pending'));
+$can_pay_balance = !$is_admin && $booking['booking_status'] !== 'cancelled' && $amount_due > 0.009;
+
+$journey_ts = booking_departure_timestamp($booking);
 $hours_left = ($journey_ts - time()) / 3600;
 $can_modify = ($booking['booking_status'] !== 'cancelled') && $hours_left >= 24;
-$is_admin   = ($_SESSION['role'] === 'admin');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -184,8 +204,8 @@ $is_admin   = ($_SESSION['role'] === 'admin');
         <span class="s-pill s-<?= strtolower($booking['booking_status']) ?>">
             <i class="bi bi-circle-fill" style="font-size:.55rem;"></i><?= ucfirst($booking['booking_status']) ?>
         </span>
-        <?php if ($payment): ?>
-        &nbsp;<span class="s-pill s-<?= strtolower($payment['payment_status']) ?>" style="font-size:.76rem;">Payment <?= ucfirst($payment['payment_status']) ?></span>
+        <?php if (!empty($display_payment_status)): ?>
+        &nbsp;<span class="s-pill s-<?= strtolower($display_payment_status) ?>" style="font-size:.76rem;">Payment <?= ucfirst($display_payment_status) ?></span>
         <?php endif; ?>
     </div>
 </div>
@@ -217,9 +237,9 @@ $is_admin   = ($_SESSION['role'] === 'admin');
                 <i class="bi bi-lock-fill me-1"></i>Modifications locked (&lt; 24 hrs)
             </span>
             <?php endif; ?>
-            <?php if (!$payment && $booking['payment_status'] === 'pending' && $booking['booking_status'] !== 'cancelled'): ?>
+            <?php if ($can_pay_balance): ?>
             <a href="payment.php?booking_id=<?= $booking_id ?>" class="btn btn-success btn-sm">
-                <i class="bi bi-credit-card me-1"></i>Pay Now
+                <i class="bi bi-credit-card me-1"></i><?= $settled_amount > 0.009 ? 'Pay Balance' : 'Pay Now' ?>
             </a>
             <?php endif; ?>
             <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
@@ -245,10 +265,10 @@ $is_admin   = ($_SESSION['role'] === 'admin');
                 <span class="s-pill s-<?= strtolower($booking['booking_status']) ?>">
                     <i class="bi bi-circle-fill" style="font-size:.55rem;"></i><?= ucfirst($booking['booking_status']) ?>
                 </span>
-                <?php if ($payment): ?>
+                <?php if (!empty($display_payment_status)): ?>
                 <div class="mt-1">
-                    <span class="s-pill s-<?= strtolower($payment['payment_status']) ?>" style="font-size:.72rem;padding:.25em .8em;">
-                        Payment <?= ucfirst($payment['payment_status']) ?>
+                    <span class="s-pill s-<?= strtolower($display_payment_status) ?>" style="font-size:.72rem;padding:.25em .8em;">
+                        Payment <?= ucfirst($display_payment_status) ?>
                     </span>
                 </div>
                 <?php endif; ?>
@@ -286,7 +306,8 @@ $is_admin   = ($_SESSION['role'] === 'admin');
                 ['Booked By',        htmlspecialchars($booking['booker_name'])],
                 ['Contact',          htmlspecialchars($booking['booker_phone'] ?: $booking['booker_email'])],
                 ['Payment Method',   $payment ? ucwords(str_replace('_',' ',$payment['payment_method'])) : '—'],
-                ['Base Fare / Seat', 'Rs '.number_format($booking['base_fare'],2)],
+                ['Amount Paid',      'Rs '.number_format($settled_amount,2)],
+                ['Balance Due',      'Rs '.number_format($amount_due,2)],
             ] as [$lbl,$val]): ?>
             <div class="info-cell"><span class="lbl"><?= $lbl ?></span><span class="val"><?= $val ?></span></div>
             <?php endforeach; ?>
@@ -359,9 +380,14 @@ $is_admin   = ($_SESSION['role'] === 'admin');
                 </div>
                 <div class="col-md-7">
                     <div class="fare-hero">
-                        <div class="fare-hero-lbl">Total Fare</div>
-                        <div class="fare-hero-amt">Rs <?= number_format($booking['total_fare'],2) ?></div>
-                        <div class="fare-hero-sub"><?= (int)$booking['number_of_seats'] ?> seat<?= $booking['number_of_seats']>1?'s':'' ?> &bull; <?= ucfirst($booking['train_type']) ?></div>
+                        <div class="fare-hero-lbl"><?= $amount_due > 0.009 ? 'Outstanding Balance' : 'Total Fare' ?></div>
+                        <div class="fare-hero-amt">Rs <?= number_format($amount_due > 0.009 ? $amount_due : (float)$booking['total_fare'],2) ?></div>
+                        <div class="fare-hero-sub">
+                            <?= (int)$booking['number_of_seats'] ?> seat<?= $booking['number_of_seats']>1?'s':'' ?> &bull; <?= ucfirst($booking['train_type']) ?>
+                            <?php if ($amount_due > 0.009 && $settled_amount > 0.009): ?>
+                                &bull; Rs <?= number_format($settled_amount,2) ?> already paid
+                            <?php endif; ?>
+                        </div>
                         <?php if ($payment && $payment['transaction_id']): ?>
                         <div class="fare-hero-txn"><i class="bi bi-hash"></i><?= htmlspecialchars($payment['transaction_id']) ?></div>
                         <?php endif; ?>
@@ -374,6 +400,19 @@ $is_admin   = ($_SESSION['role'] === 'admin');
         <?php if ($payment): ?>
         <div class="section-hdr"><i class="bi bi-clock-history text-primary"></i>Payment Record</div>
         <div class="pay-section">
+            <?php if ($amount_due > 0.009): ?>
+            <div class="pay-row" style="border-color:#f59e0b;">
+                <div>
+                    <i class="bi bi-exclamation-circle me-2 text-warning"></i>
+                    <span class="fw-semibold">Additional payment required</span>
+                    <span class="text-muted small ms-2">Current fare Rs <?= number_format((float)$booking['total_fare'],2) ?></span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold text-warning">Rs <?= number_format($amount_due,2) ?> due</span>
+                    <a href="payment.php?booking_id=<?= $booking_id ?>" class="btn btn-warning btn-sm">Pay balance</a>
+                </div>
+            </div>
+            <?php endif; ?>
             <div class="pay-row">
                 <div>
                     <i class="bi bi-credit-card me-2 text-muted"></i>

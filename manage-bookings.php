@@ -4,6 +4,7 @@
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
+require_once 'src/classes/Booking.php';
 
 if (!User::isLoggedIn() || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
@@ -12,6 +13,7 @@ if (!User::isLoggedIn() || $_SESSION['role'] !== 'admin') {
 
 $db = new Database();
 $db->connect();
+$bookingObj = new Booking($db);
 
 // ── Filters from GET ──────────────────────────────────────────────────────────
 $filter_status  = $_GET['status']     ?? 'all';
@@ -96,9 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $bid = (int)($_POST['booking_id'] ?? 0);
     if ($bid > 0) {
         if ($_POST['action'] === 'confirm') {
-            $db->query("UPDATE bookings SET booking_status='confirmed' WHERE booking_id = {$bid}");
+            $bookingObj->confirmBooking($bid);
         } elseif ($_POST['action'] === 'cancel') {
-            $db->query("UPDATE bookings SET booking_status='cancelled' WHERE booking_id = {$bid}");
+            $bookingObj->cancelBooking($bid, 'Admin queue cancellation');
         }
     }
     // Redirect to same page to avoid re-POST
@@ -220,8 +222,10 @@ require_once 'inc/header.php';
         <div class="sb-sep">Operations</div>
         <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
         <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
+        <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
         <a href="manage-bookings.php" class="active"><i class="bi bi-ticket-perforated"></i> Bookings</a>
         <a href="manage-payments.php"><i class="bi bi-cash-stack"></i> Payments</a>
+        <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
 
         <div class="sb-sep">Users</div>
         <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>

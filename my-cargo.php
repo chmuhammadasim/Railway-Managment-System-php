@@ -220,7 +220,7 @@ $cities = ['Karachi','Lahore','Islamabad','Rawalpindi','Peshawar','Quetta','Mult
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Cargo – Railway System</title>
+    <title>Cargo &amp; Luggage – Railway System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="public/css/style.css">
@@ -330,7 +330,7 @@ $cities = ['Karachi','Lahore','Islamabad','Rawalpindi','Peshawar','Quetta','Mult
                 <li class="nav-item"><a class="nav-link" href="index.php"><i class="bi bi-house me-1"></i>Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="bookings.php"><i class="bi bi-ticket-perforated me-1"></i>My Bookings</a></li>
-                <li class="nav-item"><a class="nav-link active" href="my-cargo.php"><i class="bi bi-box-seam me-1"></i>My Cargo</a></li>
+                <li class="nav-item"><a class="nav-link active" href="my-cargo.php"><i class="bi bi-box-seam me-1"></i>Cargo &amp; Luggage</a></li>
                 <li class="nav-item"><a class="nav-link" href="profile.php"><i class="bi bi-person me-1"></i>Profile</a></li>
                 <li class="nav-item ms-1"><a class="btn btn-danger btn-sm" href="logout.php">Logout</a></li>
             </ul>
