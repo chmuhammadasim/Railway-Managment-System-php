@@ -12,8 +12,8 @@ return [
     'host'       => 'smtp.gmail.com',   // or smtp.office365.com, etc.
     'port'       => 587,
     'encryption' => 'tls',              // 'tls' for port 587, 'ssl' for port 465
-    'username'   => 'muhammadasimchattha@gmail.com',  // your Gmail address
-    'password'   => 'hduj tljn cdwf orvo',          // 16-char App Password
-    'from_email' => 'muhammadasimchattha@gmail.com',
+    'username'   => '',  // your Gmail address
+    'password'   => '',          // 16-char App Password
+    'from_email' => '',
     'from_name'  => 'Pakistan Railways',
 ];
