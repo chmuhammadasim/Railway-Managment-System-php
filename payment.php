@@ -310,6 +310,46 @@ require_once 'inc/header.php';
 .countdown-fill { height:100%; background:linear-gradient(90deg,#10b981,#2563eb); border-radius:2px;
     animation:countdown 4.5s linear forwards; }
 @keyframes countdown { from{width:100%} to{width:0%} }
+
+/* ── Payment detail panels ───────────────  */
+.pay-panel { display:none; margin-top:.9rem; }
+.pay-panel.active { display:block; animation:slideDown .22s ease; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.pay-panel-inner {
+    background:#f8fafc; border:1.5px solid #e2e8f0;
+    border-radius:14px; padding:1.1rem 1.25rem;
+}
+.panel-title {
+    font-size:.73rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.08em; color:#64748b; margin-bottom:.9rem;
+    display:flex; align-items:center; gap:.4rem;
+}
+.form-label-sm { font-size:.78rem; font-weight:700; color:#374151; margin-bottom:.28rem; display:block; }
+.card-input { font-family:'Courier New',monospace; letter-spacing:.06em; }
+.input-icon-r { position:relative; }
+.input-icon-r .ii { position:absolute; top:50%; right:.75rem; transform:translateY(-50%); color:#9ca3af; font-size:.9rem; pointer-events:none; }
+.card-type-label { position:absolute; top:50%; right:.75rem; transform:translateY(-50%);
+    font-size:.62rem; font-weight:800; padding:.15em .4em; border-radius:4px;
+    background:#1d4ed8; color:#fff; letter-spacing:.04em; display:none; }
+.cvv-help { font-size:.69rem; color:#9ca3af; margin-top:.2rem; }
+.test-fill-btn {
+    font-size:.71rem; padding:.18rem .55rem; border-radius:6px;
+    background:#eff6ff; border:1px solid #bfdbfe; color:#2563eb;
+    cursor:pointer; font-weight:700; white-space:nowrap; line-height:1.5;
+}
+.test-fill-btn:hover { background:#dbeafe; }
+.iban-addon { background:#f1f5f9; border-right:0; color:#374151; font-weight:800;
+    font-size:.82rem; padding:.4rem .65rem; }
+.mpin-field { letter-spacing:.3em; font-size:1.05rem; text-align:center; }
+.cash-amount-box { background:#f1f5f9; border-radius:10px; padding:1rem 1.25rem; text-align:center; }
+.cash-amount-box .ca-lbl { font-size:.72rem; color:#6b7280; font-weight:600; }
+.cash-amount-box .ca-num { font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1.1; }
+.panel-field-error { font-size:.73rem; color:#dc2626; margin-top:.2rem; display:none; }
+.panel-field-error.show { display:block; }
+.field-invalid input, .field-invalid select { border-color:#ef4444 !important; background:#fff5f5 !important; }
+.wallet-logo { font-size:1rem; font-weight:900; padding:.1em .45em; border-radius:6px; margin-left:.3rem; }
+.ep-logo { background:#0ba360; color:#fff; }
+.jc-logo { background:#e07b00; color:#fff; }
 </style>
 
 <div class="pay-wrap">
@@ -526,8 +566,9 @@ require_once 'inc/header.php';
                 </div>
                 <div style="padding:1.25rem 1.35rem;">
 
-                    <form method="POST" id="paymentForm" novalidate>
+                    <form method="POST" id="paymentForm" novalidate autocomplete="off">
 
+                        <!-- Method tiles -->
                         <div class="methods-grid" id="methodsGrid">
                             <?php
                             $methods = [
@@ -542,12 +583,10 @@ require_once 'inc/header.php';
                             ?>
                             <label class="method-tile" data-method="<?= $val ?>"
                                    data-color="<?= $clr ?>" data-bg="<?= $bg ?>">
-                                <input type="radio" name="payment_method" value="<?= $val ?>" class="d-none" required>
+                                <input type="radio" name="payment_method" value="<?= $val ?>" class="d-none">
                                 <div class="mt-check"><i class="bi bi-check-lg"></i></div>
                                 <div class="method-tile-inner">
-                                    <span class="mt-icon">
-                                        <i class="bi <?= $icon ?>" style="color:<?= $clr ?>;"></i>
-                                    </span>
+                                    <span class="mt-icon"><i class="bi <?= $icon ?>" style="color:<?= $clr ?>;"></i></span>
                                     <span class="mt-name"><?= $name ?></span>
                                     <span class="mt-desc"><?= $desc ?></span>
                                 </div>
@@ -555,11 +594,220 @@ require_once 'inc/header.php';
                             <?php endforeach; ?>
                         </div>
 
-                        <!-- Hint box -->
-                        <div class="hint-box" id="hintBox" style="display:none;">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <span id="hintText"></span>
+                        <!-- ══ Panel: Credit / Debit Card ══════════════════ -->
+                        <div class="pay-panel" id="panel-card">
+                            <div class="pay-panel-inner">
+                                <div class="panel-title">
+                                    <i class="bi bi-credit-card-2-front" style="color:#2563eb;"></i>
+                                    <span id="cardPanelTitle">Card Details</span>
+                                    <button type="button" class="test-fill-btn ms-auto" onclick="PAY.fillCard()">
+                                        <i class="bi bi-magic me-1"></i>Use test card
+                                    </button>
+                                </div>
+
+                                <!-- Card number -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">Card Number <span class="text-danger">*</span></label>
+                                    <div class="input-icon-r">
+                                        <input type="text" id="cardNumber" name="card_number"
+                                               class="form-control form-control-sm card-input"
+                                               maxlength="19" placeholder="1234  5678  9012  3456"
+                                               inputmode="numeric" autocomplete="cc-number">
+                                        <span class="card-type-label" id="cardTypeLabel"></span>
+                                    </div>
+                                    <div class="panel-field-error" id="err-cardNumber">Please enter a valid 16-digit card number.</div>
+                                </div>
+
+                                <!-- Cardholder name -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">Cardholder Name <span class="text-danger">*</span></label>
+                                    <input type="text" id="cardName" name="card_name"
+                                           class="form-control form-control-sm"
+                                           placeholder="Name as printed on card"
+                                           autocomplete="cc-name">
+                                    <div class="panel-field-error" id="err-cardName">Please enter the cardholder name.</div>
+                                </div>
+
+                                <!-- Expiry + CVV -->
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label-sm">Expiry <span class="text-danger">*</span></label>
+                                        <input type="text" id="cardExpiry" name="card_expiry"
+                                               class="form-control form-control-sm card-input"
+                                               maxlength="5" placeholder="MM/YY"
+                                               autocomplete="cc-exp">
+                                        <div class="panel-field-error" id="err-cardExpiry">Invalid expiry date.</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label-sm">
+                                            CVV <span class="text-danger">*</span>
+                                            <i class="bi bi-question-circle text-muted ms-1"
+                                               style="font-size:.7rem;cursor:help;"
+                                               title="3 digits on back of card (Amex: 4 on front)"></i>
+                                        </label>
+                                        <div class="input-icon-r">
+                                            <input type="password" id="cardCvv" name="card_cvv"
+                                                   class="form-control form-control-sm"
+                                                   maxlength="4" placeholder="•••"
+                                                   inputmode="numeric" autocomplete="cc-csc">
+                                            <span class="ii" id="cvvEyeWrap" style="cursor:pointer;">
+                                                <i class="bi bi-eye-slash" id="cvvEye"></i>
+                                            </span>
+                                        </div>
+                                        <div class="cvv-help">3 digits on back of card</div>
+                                        <div class="panel-field-error" id="err-cardCvv">Enter the 3-digit CVV.</div>
+                                    </div>
+                                </div>
+
+                                <!-- Test card hint -->
+                                <div class="hint-box mt-3" style="font-size:.76rem;">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>This is a test environment. Use any dummy card number above or click <strong>Use test card</strong> to auto-fill valid test data.</span>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- ══ Panel: EasyPaisa / JazzCash ═════════════════ -->
+                        <div class="pay-panel" id="panel-mobile">
+                            <div class="pay-panel-inner">
+                                <div class="panel-title">
+                                    <i class="bi bi-phone-fill" id="mobileIcon" style="color:#059669;"></i>
+                                    <span id="mobilePanelTitle">Wallet Details</span>
+                                    <button type="button" class="test-fill-btn ms-auto" onclick="PAY.fillMobile()">
+                                        <i class="bi bi-magic me-1"></i>Autofill test
+                                    </button>
+                                </div>
+
+                                <!-- Phone number -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">Registered Mobile Number <span class="text-danger">*</span></label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text" style="background:#f1f5f9;font-size:.82rem;font-weight:700;">+92</span>
+                                        <input type="tel" id="mobileNumber" name="mobile_number"
+                                               class="form-control form-control-sm"
+                                               placeholder="3XX-XXXXXXX" maxlength="10"
+                                               inputmode="numeric">
+                                    </div>
+                                    <div class="panel-field-error" id="err-mobileNumber">Enter a valid 10-digit number starting with 3 (e.g. 3001234567).</div>
+                                </div>
+
+                                <!-- MPIN -->
+                                <div class="mb-1">
+                                    <label class="form-label-sm">4-Digit MPIN <span class="text-danger">*</span></label>
+                                    <div class="input-icon-r">
+                                        <input type="password" id="mpinField" name="mpin"
+                                               class="form-control form-control-sm mpin-field"
+                                               maxlength="4" placeholder="••••"
+                                               inputmode="numeric" pattern="[0-9]{4}">
+                                        <span class="ii" id="mpinEyeWrap" style="cursor:pointer;">
+                                            <i class="bi bi-eye-slash" id="mpinEye"></i>
+                                        </span>
+                                    </div>
+                                    <div class="panel-field-error" id="err-mpin">Enter your 4-digit MPIN.</div>
+                                </div>
+
+                                <div class="hint-box mt-3" style="font-size:.76rem;" id="mobileHint">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span id="mobileHintText">A payment confirmation request will be sent to your registered number.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ Panel: Bank Transfer ════════════════════════ -->
+                        <div class="pay-panel" id="panel-bank">
+                            <div class="pay-panel-inner">
+                                <div class="panel-title">
+                                    <i class="bi bi-building-fill" style="color:#7c3aed;"></i>
+                                    Bank Transfer Details
+                                    <button type="button" class="test-fill-btn ms-auto" onclick="PAY.fillBank()">
+                                        <i class="bi bi-magic me-1"></i>Autofill test
+                                    </button>
+                                </div>
+
+                                <!-- Bank select -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">Your Bank <span class="text-danger">*</span></label>
+                                    <select id="bankName" name="bank_name" class="form-select form-select-sm">
+                                        <option value="">— Select your bank —</option>
+                                        <option>HBL (Habib Bank Limited)</option>
+                                        <option>UBL (United Bank Limited)</option>
+                                        <option>MCB Bank</option>
+                                        <option>Allied Bank</option>
+                                        <option>Bank Alfalah</option>
+                                        <option>Standard Chartered Pakistan</option>
+                                        <option>Meezan Bank</option>
+                                        <option>Faysal Bank</option>
+                                        <option>Askari Bank</option>
+                                        <option>Bank Al-Habib</option>
+                                        <option>NBP (National Bank of Pakistan)</option>
+                                        <option>JS Bank</option>
+                                        <option>Habib Metropolitan Bank</option>
+                                        <option>Silk Bank</option>
+                                    </select>
+                                    <div class="panel-field-error" id="err-bankName">Please select your bank.</div>
+                                </div>
+
+                                <!-- Account title -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">Account Title <span class="text-danger">*</span></label>
+                                    <input type="text" id="accountTitle" name="account_title"
+                                           class="form-control form-control-sm"
+                                           placeholder="As registered with your bank">
+                                    <div class="panel-field-error" id="err-accountTitle">Please enter your account title.</div>
+                                </div>
+
+                                <!-- IBAN -->
+                                <div class="mb-3">
+                                    <label class="form-label-sm">IBAN <span class="text-danger">*</span></label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text iban-addon">PK</span>
+                                        <input type="text" id="ibanField" name="iban"
+                                               class="form-control form-control-sm card-input"
+                                               maxlength="22" placeholder="XX XXXX XXXX XXXX XXXX XXXX">
+                                    </div>
+                                    <div class="panel-field-error" id="err-iban">Enter a valid IBAN (PK + 22 characters).</div>
+                                </div>
+
+                                <!-- Payment reference reminder -->
+                                <div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:10px;padding:.75rem 1rem;font-size:.78rem;color:#4c1d95;">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Transfer <strong>Rs <?= number_format($amount_due, 2) ?></strong> and use
+                                    <strong><?= htmlspecialchars($booking['booking_reference']) ?></strong>
+                                    as the payment reference / narration.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ Panel: Cash at Counter ══════════════════════ -->
+                        <div class="pay-panel" id="panel-cash">
+                            <div class="pay-panel-inner">
+                                <div class="panel-title">
+                                    <i class="bi bi-cash-stack" style="color:#0f172a;"></i>
+                                    Cash at Station Counter
+                                </div>
+                                <div class="cash-amount-box mb-3">
+                                    <div class="ca-lbl">Amount to Pay at Counter</div>
+                                    <div class="ca-num">Rs <?= number_format($amount_due, 0) ?></div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+                                    <span style="background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:.3em .9em;font-size:.76rem;font-weight:700;">
+                                        <i class="bi bi-hash"></i> <?= htmlspecialchars($booking['booking_reference']) ?>
+                                    </span>
+                                    <span style="background:#dcfce7;color:#15803d;border-radius:999px;padding:.3em .9em;font-size:.76rem;font-weight:700;">
+                                        <i class="bi bi-clock"></i> Hold: 2 Hours
+                                    </span>
+                                </div>
+                                <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:.7rem 1rem;font-size:.78rem;color:#78350f;">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Your seats are reserved for <strong>2 hours</strong>. Visit the nearest ticket counter
+                                    with your booking reference before they are released.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validation error strip -->
+                        <div class="alert alert-danger py-2 mt-2 d-none" id="panelError"
+                             style="font-size:.82rem;border-radius:10px;"></div>
 
                         <!-- Pay button -->
                         <button type="submit" class="btn-pay" id="payBtn" disabled>
@@ -592,54 +840,313 @@ require_once 'inc/header.php';
 </div><!-- /pay-wrap -->
 
 <script>
-(function () {
-    var hints = {
-        credit_card:   'Enter your Visa or Mastercard card number and CVV at the next step.',
-        debit_card:    'Use your ATM or bank debit card. You will be redirected to your bank\'s 3D-Secure page.',
-        easypaisa:     'You will receive a payment request on your EasyPaisa-registered mobile number.',
-        jazzcash:      'Pay instantly via your JazzCash mobile account. Ensure you have sufficient balance.',
-        bank_transfer: 'Transfer the exact amount via IBFT and mention your booking reference as the note.',
-        cash:          'Your booking is held for 2 hours. Pay at the station ticket counter before departure.'
+var PAY = (function () {
+
+    /* ── State ───────────────────────────────────────────── */
+    var currentMethod = null;
+
+    /* ── DOM refs ────────────────────────────────────────── */
+    var tiles       = document.querySelectorAll('.method-tile');
+    var payBtn      = document.getElementById('payBtn');
+    var payLabel    = document.getElementById('payBtnLabel');
+    var panelError  = document.getElementById('panelError');
+    var form        = document.getElementById('paymentForm');
+
+    /* panel map */
+    var panelMap = {
+        credit_card:   'panel-card',
+        debit_card:    'panel-card',
+        easypaisa:     'panel-mobile',
+        jazzcash:      'panel-mobile',
+        bank_transfer: 'panel-bank',
+        cash:          'panel-cash',
     };
 
-    var tiles   = document.querySelectorAll('.method-tile');
-    var payBtn  = document.getElementById('payBtn');
-    var hintBox = document.getElementById('hintBox');
-    var hintTxt = document.getElementById('hintText');
+    /* ── Utility ─────────────────────────────────────────── */
+    function hideAllPanels() {
+        document.querySelectorAll('.pay-panel').forEach(function(p){ p.classList.remove('active'); });
+    }
+    function showPanel(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.add('active');
+    }
+    function setErr(id, show) {
+        var el = document.getElementById('err-' + id);
+        if (!el) return;
+        el.classList.toggle('show', show);
+        var field = el.previousElementSibling || el.parentElement;
+        if (field) field.classList.toggle('field-invalid', show);
+    }
+    function clearAllErrs() {
+        document.querySelectorAll('.panel-field-error').forEach(function(e){ e.classList.remove('show'); });
+        document.querySelectorAll('.field-invalid').forEach(function(e){ e.classList.remove('field-invalid'); });
+        panelError.classList.add('d-none');
+    }
+    function showGlobalErr(msg) {
+        panelError.textContent = msg;
+        panelError.classList.remove('d-none');
+        panelError.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
 
+    /* ── Method selection ────────────────────────────────── */
     tiles.forEach(function (tile) {
         tile.addEventListener('click', function () {
+            var method = tile.dataset.method;
+            currentMethod = method;
+
+            // Update tile UI
             tiles.forEach(function (t) {
                 t.classList.remove('selected');
                 t.style.borderColor = '';
                 t.style.background  = '';
             });
-
             tile.classList.add('selected');
             tile.style.borderColor = tile.dataset.color;
             tile.style.background  = tile.dataset.bg;
-
             tile.querySelector('input').checked = true;
 
-            hintTxt.textContent = hints[tile.dataset.method] || '';
-            hintBox.style.display = 'flex';
+            // Show correct panel
+            hideAllPanels();
+            var panelId = panelMap[method];
+            if (panelId) showPanel(panelId);
 
-            selected = true;
+            // Customise per wallet
+            if (method === 'easypaisa') {
+                document.getElementById('mobilePanelTitle').innerHTML =
+                    'EasyPaisa Wallet <span class="wallet-logo ep-logo">EP</span>';
+                document.getElementById('mobileIcon').style.color = '#059669';
+                document.getElementById('mobileHintText').textContent =
+                    'A payment request will be pushed to your EasyPaisa number. Confirm it in the app or USSD.';
+            } else if (method === 'jazzcash') {
+                document.getElementById('mobilePanelTitle').innerHTML =
+                    'JazzCash Wallet <span class="wallet-logo jc-logo">JC</span>';
+                document.getElementById('mobileIcon').style.color = '#d97706';
+                document.getElementById('mobileHintText').textContent =
+                    'A JazzCash payment request will be sent. Approve via the app or by replying to *786#.';
+            }
+
+            // Customise card panel title
+            if (method === 'credit_card') {
+                document.getElementById('cardPanelTitle').textContent = 'Credit Card Details';
+            } else if (method === 'debit_card') {
+                document.getElementById('cardPanelTitle').textContent = 'Debit / ATM Card Details';
+            }
+
+            clearAllErrs();
             updatePayBtn();
         });
     });
 
-    var selected = false;
-
+    /* ── Enable/disable pay button ───────────────────────── */
     function updatePayBtn() {
-        payBtn.disabled = !selected;
+        payBtn.disabled = !currentMethod;
     }
 
-    document.getElementById('paymentForm').addEventListener('submit', function () {
+    /* ── Card number formatter ───────────────────────────── */
+    var cardNumberEl = document.getElementById('cardNumber');
+    if (cardNumberEl) {
+        cardNumberEl.addEventListener('input', function () {
+            var raw = this.value.replace(/\D/g, '').substring(0, 16);
+            this.value = raw.replace(/(.{4})/g, '$1 ').trim();
+
+            // detect card type
+            var label = document.getElementById('cardTypeLabel');
+            if (/^4/.test(raw)) {
+                label.textContent = 'VISA'; label.style.background = '#1a56db'; label.style.display = 'block';
+            } else if (/^5[1-5]/.test(raw) || /^2[2-7]/.test(raw)) {
+                label.textContent = 'MC'; label.style.background = '#e3342f'; label.style.display = 'block';
+            } else if (/^3[47]/.test(raw)) {
+                label.textContent = 'AMEX'; label.style.background = '#0070ba'; label.style.display = 'block';
+            } else {
+                label.style.display = 'none';
+            }
+        });
+    }
+
+    /* ── Expiry formatter ────────────────────────────────── */
+    var cardExpiryEl = document.getElementById('cardExpiry');
+    if (cardExpiryEl) {
+        cardExpiryEl.addEventListener('input', function (e) {
+            var raw = this.value.replace(/\D/g, '').substring(0, 4);
+            if (raw.length > 2) raw = raw.substring(0,2) + '/' + raw.substring(2);
+            this.value = raw;
+        });
+    }
+
+    /* ── CVV toggle ──────────────────────────────────────── */
+    var cvvWrap = document.getElementById('cvvEyeWrap');
+    if (cvvWrap) {
+        cvvWrap.addEventListener('click', function () {
+            var inp = document.getElementById('cardCvv');
+            var eye = document.getElementById('cvvEye');
+            var show = inp.type === 'password';
+            inp.type = show ? 'text' : 'password';
+            eye.className = show ? 'bi bi-eye' : 'bi bi-eye-slash';
+        });
+    }
+
+    /* ── MPIN toggle ─────────────────────────────────────── */
+    var mpinWrap = document.getElementById('mpinEyeWrap');
+    if (mpinWrap) {
+        mpinWrap.addEventListener('click', function () {
+            var inp = document.getElementById('mpinField');
+            var eye = document.getElementById('mpinEye');
+            var show = inp.type === 'password';
+            inp.type = show ? 'text' : 'password';
+            eye.className = show ? 'bi bi-eye' : 'bi bi-eye-slash';
+        });
+    }
+
+    /* ── IBAN formatter ──────────────────────────────────── */
+    var ibanEl = document.getElementById('ibanField');
+    if (ibanEl) {
+        ibanEl.addEventListener('input', function () {
+            var raw = this.value.replace(/[^A-Z0-9]/gi,'').toUpperCase().substring(0, 22);
+            // space every 4 chars
+            this.value = raw.replace(/(.{4})/g,'$1 ').trim();
+        });
+    }
+
+    /* ── Mobile number filter ────────────────────────────── */
+    var mobEl = document.getElementById('mobileNumber');
+    if (mobEl) {
+        mobEl.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g,'').substring(0,10);
+        });
+    }
+
+    /* ── MPIN filter ─────────────────────────────────────── */
+    var mpinEl = document.getElementById('mpinField');
+    if (mpinEl) {
+        mpinEl.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g,'').substring(0,4);
+        });
+    }
+
+    /* ── CVV filter ──────────────────────────────────────── */
+    var cvvEl = document.getElementById('cardCvv');
+    if (cvvEl) {
+        cvvEl.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g,'').substring(0,4);
+        });
+    }
+
+    /* ── Validation ──────────────────────────────────────── */
+    function validateCard() {
+        var ok = true;
+        var num  = (document.getElementById('cardNumber').value || '').replace(/\s/g,'');
+        var name = (document.getElementById('cardName').value || '').trim();
+        var exp  = (document.getElementById('cardExpiry').value || '').trim();
+        var cvv  = (document.getElementById('cardCvv').value || '').trim();
+
+        var numOk = /^\d{16}$/.test(num);
+        setErr('cardNumber', !numOk); if(!numOk) ok=false;
+
+        var nameOk = name.length >= 2;
+        setErr('cardName', !nameOk); if(!nameOk) ok=false;
+
+        var expOk = false;
+        if (/^\d{2}\/\d{2}$/.test(exp)) {
+            var mm = parseInt(exp.split('/')[0],10);
+            var yy = parseInt(exp.split('/')[1],10) + 2000;
+            var now = new Date();
+            expOk = mm >= 1 && mm <= 12 && (yy > now.getFullYear() || (yy === now.getFullYear() && mm >= now.getMonth()+1));
+        }
+        setErr('cardExpiry', !expOk); if(!expOk) ok=false;
+
+        var cvvOk = /^\d{3,4}$/.test(cvv);
+        setErr('cardCvv', !cvvOk); if(!cvvOk) ok=false;
+
+        return ok;
+    }
+
+    function validateMobile() {
+        var ok = true;
+        var mob  = (document.getElementById('mobileNumber').value || '').replace(/\D/g,'');
+        var mpin = (document.getElementById('mpinField').value || '').trim();
+
+        var mobOk = /^3\d{9}$/.test(mob);
+        setErr('mobileNumber', !mobOk); if(!mobOk) ok=false;
+
+        var mpinOk = /^\d{4}$/.test(mpin);
+        setErr('mpin', !mpinOk); if(!mpinOk) ok=false;
+
+        return ok;
+    }
+
+    function validateBank() {
+        var ok = true;
+        var bank  = (document.getElementById('bankName').value || '').trim();
+        var title = (document.getElementById('accountTitle').value || '').trim();
+        var iban  = (document.getElementById('ibanField').value || '').replace(/\s/g,'');
+
+        var bankOk = bank.length > 0;
+        setErr('bankName', !bankOk); if(!bankOk) ok=false;
+
+        var titleOk = title.length >= 3;
+        setErr('accountTitle', !titleOk); if(!titleOk) ok=false;
+
+        var ibanOk = /^[A-Z0-9]{22}$/.test(iban);
+        setErr('iban', !ibanOk); if(!ibanOk) ok=false;
+
+        return ok;
+    }
+
+    /* ── Form submit ─────────────────────────────────────── */
+    form.addEventListener('submit', function (e) {
+        clearAllErrs();
+
+        if (!currentMethod) {
+            e.preventDefault();
+            showGlobalErr('Please select a payment method.');
+            return;
+        }
+
+        var valid = true;
+        if (currentMethod === 'credit_card' || currentMethod === 'debit_card') {
+            valid = validateCard();
+        } else if (currentMethod === 'easypaisa' || currentMethod === 'jazzcash') {
+            valid = validateMobile();
+        } else if (currentMethod === 'bank_transfer') {
+            valid = validateBank();
+        }
+        // cash: always valid
+
+        if (!valid) {
+            e.preventDefault();
+            showGlobalErr('Please fix the highlighted fields before continuing.');
+            return;
+        }
+
         payBtn.disabled = true;
-        payBtn.innerHTML =
-            '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+        payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
     });
+
+    /* ── Autofill helpers (public) ───────────────────────── */
+    function fillCard() {
+        document.getElementById('cardNumber').value  = '4532 1234 5678 9012';
+        document.getElementById('cardName').value    = 'ALI KHAN';
+        document.getElementById('cardExpiry').value  = '12/28';
+        document.getElementById('cardCvv').value     = '123';
+        // Trigger card-type detection
+        document.getElementById('cardNumber').dispatchEvent(new Event('input'));
+        clearAllErrs();
+    }
+
+    function fillMobile() {
+        document.getElementById('mobileNumber').value = '3001234567';
+        document.getElementById('mpinField').value    = '1234';
+        clearAllErrs();
+    }
+
+    function fillBank() {
+        document.getElementById('bankName').value     = 'HBL (Habib Bank Limited)';
+        document.getElementById('accountTitle').value = 'Ali Khan';
+        document.getElementById('ibanField').value    = 'PK36 HABB 0000 1234 5678 0100'.replace('PK','').trim();
+        clearAllErrs();
+    }
+
+    return { fillCard: fillCard, fillMobile: fillMobile, fillBank: fillBank };
 }());
 </script>
 
