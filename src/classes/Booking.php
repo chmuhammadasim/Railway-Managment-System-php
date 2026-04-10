@@ -645,18 +645,29 @@ class Booking {
         $conn->begin_transaction();
 
         try {
+            // Step 1: update the two guaranteed columns that always exist in the base schema
             if (!$conn->query(
                 "UPDATE bookings SET
-                    booking_status = '" . BOOKING_CANCELLED . "',
-                    cancellation_reason = '{$reason_sql}',
-                    cancellation_fee = {$cancel_fee},
-                    refund_amount = {$refund_amount},
-                    cancelled_at = NOW(),
-                    payment_status = '{$booking_payment_status}'
+                    booking_status    = '" . BOOKING_CANCELLED . "',
+                    payment_status    = '{$booking_payment_status}'
                  WHERE booking_id = {$booking_id}"
             )) {
-                throw new \RuntimeException('Failed to cancel this booking.');
+                throw new \RuntimeException('Failed to cancel this booking: ' . $conn->error);
             }
+
+            // Step 2: attempt to store extra cancellation detail columns.
+            // These columns are added via ALTER TABLE in the schema and may be absent
+            // on MySQL 8 installations (ADD COLUMN IF NOT EXISTS is MariaDB-only).
+            // We run this as a best-effort query and ignore failure so cancellation
+            // always succeeds even on a minimal schema.
+            $conn->query(
+                "UPDATE bookings SET
+                    cancellation_reason = '{$reason_sql}',
+                    cancellation_fee    = {$cancel_fee},
+                    refund_amount       = {$refund_amount},
+                    cancelled_at        = NOW()
+                 WHERE booking_id = {$booking_id}"
+            );
 
             $seats = $this->db->select("SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}");
             if ($seats) {
@@ -677,14 +688,21 @@ class Booking {
             $this->syncRouteAvailableSeats((int)$booking['route_id']);
 
             if (!($preview['is_unpaid'] ?? false) && $refund_amount > 0) {
-                if (!$conn->query(
+                // Attempt to mark the payment as refunded; ignore failure if
+                // refund_date / refund_reason columns don't exist on this schema.
+                $paid_update = $conn->query(
                     "UPDATE payments SET
                         payment_status = 'refunded',
-                        refund_date = NOW(),
-                        refund_reason = '{$refund_note_sql}'
+                        refund_date    = NOW(),
+                        refund_reason  = '{$refund_note_sql}'
                      WHERE booking_id = {$booking_id} AND payment_status = 'completed'"
-                )) {
-                    throw new \RuntimeException('Failed to update the payment refund status.');
+                );
+                if (!$paid_update) {
+                    // Fallback: update only payment_status
+                    $conn->query(
+                        "UPDATE payments SET payment_status = 'refunded'
+                         WHERE booking_id = {$booking_id} AND payment_status = 'completed'"
+                    );
                 }
             }
 
@@ -829,6 +847,78 @@ class Booking {
         return $this->db->update('bookings', 'booking_id', $booking_id, 
                                  array('booking_status' => BOOKING_CONFIRMED, 
                                        'payment_status' => PAYMENT_COMPLETED));
+    }
+
+    /**
+     * Update the passenger details (name, age, gender) for one or more seats
+     * on a booking. Only allowed on non-cancelled bookings.
+     *
+     * $passengers_data  array of:
+     *   ['booking_seat_id' => int, 'passenger_name' => string,
+     *    'passenger_age' => int|null, 'passenger_gender' => string|null]
+     *
+     * Returns ['success' => bool, 'message' => string]
+     */
+    public function updatePassengerDetails($booking_id, $user_id, array $passengers_data) {
+        $booking_id = (int)$booking_id;
+        $booking = $this->getBookingById($booking_id);
+
+        if (!$booking) {
+            return ['success' => false, 'message' => 'Booking not found.'];
+        }
+        if ((int)$booking['user_id'] !== (int)$user_id) {
+            return ['success' => false, 'message' => 'Unauthorised.'];
+        }
+        if ($booking['booking_status'] === BOOKING_CANCELLED) {
+            return ['success' => false, 'message' => 'Cannot edit a cancelled booking.'];
+        }
+
+        if (empty($passengers_data)) {
+            return ['success' => false, 'message' => 'No passenger data provided.'];
+        }
+
+        $conn = $this->db->getConnection();
+        $conn->begin_transaction();
+
+        try {
+            foreach ($passengers_data as $passenger) {
+                $bsid = (int)($passenger['booking_seat_id'] ?? 0);
+                if ($bsid <= 0) continue;
+
+                $name = trim($passenger['passenger_name'] ?? '');
+                if ($name === '') {
+                    throw new \RuntimeException('Passenger name cannot be blank.');
+                }
+
+                $name_e   = $conn->real_escape_string($name);
+                $age_sql  = isset($passenger['passenger_age']) && $passenger['passenger_age'] !== ''
+                    ? (int)$passenger['passenger_age']
+                    : 'NULL';
+                $gender_allowed = ['M', 'F', 'Other'];
+                $gender_raw = $passenger['passenger_gender'] ?? '';
+                $gender_sql = in_array($gender_raw, $gender_allowed, true)
+                    ? "'" . $conn->real_escape_string($gender_raw) . "'"
+                    : 'NULL';
+
+                if (!$conn->query(
+                    "UPDATE booking_seats SET
+                        passenger_name   = '{$name_e}',
+                        passenger_age    = {$age_sql},
+                        passenger_gender = {$gender_sql}
+                     WHERE booking_seat_id = {$bsid}
+                       AND booking_id = {$booking_id}"
+                )) {
+                    throw new \RuntimeException('Failed to update passenger details.');
+                }
+            }
+
+            $conn->commit();
+        } catch (\Throwable $throwable) {
+            $conn->rollback();
+            return ['success' => false, 'message' => $throwable->getMessage()];
+        }
+
+        return ['success' => true, 'message' => 'Passenger details updated successfully.'];
     }
 
     // Get all bookings (Admin)

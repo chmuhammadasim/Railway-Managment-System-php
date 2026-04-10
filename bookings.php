@@ -180,6 +180,31 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
 <div class="content-area">
 <div class="container py-4" style="max-width:900px;">
 
+    <?php
+    // Flash banner from booking_cancel.php PRG redirect
+    if (!empty($_SESSION['cancel_flash'])):
+        $cf = $_SESSION['cancel_flash'];
+        unset($_SESSION['cancel_flash']);
+    ?>
+    <div class="alert alert-success d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert" style="border-radius:12px;">
+        <i class="bi bi-check-circle-fill fs-4 flex-shrink-0 mt-1"></i>
+        <div>
+            <div class="fw-bold mb-1">Booking Cancelled Successfully</div>
+            <div style="font-size:.88rem;">
+                Ticket <strong><?= htmlspecialchars($cf['booking_reference']) ?></strong> has been cancelled.
+                <?php if (!$cf['is_unpaid'] && (float)$cf['refund_amount'] > 0): ?>
+                    A refund of <strong>Rs <?= number_format((float)$cf['refund_amount'], 2) ?></strong>
+                    (<?= htmlspecialchars($cf['tier_label']) ?>) will be credited within 5–7 business days.
+                <?php elseif ($cf['is_unpaid']): ?>
+                    This was an unpaid reservation — the seats have been released with no charge.
+                <?php else: ?>
+                    No refund applies (<?= htmlspecialchars($cf['tier_label']) ?>).
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div class="filter-tabs">
             <?php foreach (['all'=>['All','bi-list-ul'],'upcoming'=>['Upcoming','bi-calendar-check'],'confirmed'=>['Confirmed','bi-check-circle'],'pending'=>['Pending','bi-clock'],'past'=>['Past','bi-calendar-x'],'cancelled'=>['Cancelled','bi-x-circle']] as $key=>[$label,$icon]):

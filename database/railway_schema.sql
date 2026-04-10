@@ -77,6 +77,10 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     journey_date DATE NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    cancellation_reason VARCHAR(255) DEFAULT NULL,
+    cancellation_fee DECIMAL(10,2) DEFAULT 0.00,
+    refund_amount DECIMAL(10,2) DEFAULT 0.00,
+    cancelled_at DATETIME DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE
 );
@@ -340,12 +344,41 @@ CREATE TABLE IF NOT EXISTS waitlist_entries (
     FOREIGN KEY (linked_booking_id) REFERENCES bookings(booking_id) ON DELETE SET NULL
 );
 
--- Cancellation columns on bookings
-ALTER TABLE bookings
-    ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(255) DEFAULT NULL   AFTER payment_status,
-    ADD COLUMN IF NOT EXISTS cancellation_fee    DECIMAL(10,2) DEFAULT 0.00  AFTER cancellation_reason,
-    ADD COLUMN IF NOT EXISTS refund_amount       DECIMAL(10,2) DEFAULT 0.00  AFTER cancellation_fee,
-    ADD COLUMN IF NOT EXISTS cancelled_at        DATETIME DEFAULT NULL        AFTER refund_amount;
+-- Cancellation columns on bookings (migration for existing tables created before these were added)
+-- Using a stored procedure so this works on both MySQL 8 and MariaDB without
+-- the MariaDB-only "ADD COLUMN IF NOT EXISTS" syntax.
+DROP PROCEDURE IF EXISTS add_cancellation_columns;
+DELIMITER ;;
+CREATE PROCEDURE add_cancellation_columns()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'cancellation_reason'
+    ) THEN
+        ALTER TABLE bookings ADD COLUMN cancellation_reason VARCHAR(255) DEFAULT NULL;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'cancellation_fee'
+    ) THEN
+        ALTER TABLE bookings ADD COLUMN cancellation_fee DECIMAL(10,2) DEFAULT 0.00;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'refund_amount'
+    ) THEN
+        ALTER TABLE bookings ADD COLUMN refund_amount DECIMAL(10,2) DEFAULT 0.00;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME = 'cancelled_at'
+    ) THEN
+        ALTER TABLE bookings ADD COLUMN cancelled_at DATETIME DEFAULT NULL;
+    END IF;
+END;;
+DELIMITER ;
+CALL add_cancellation_columns();
+DROP PROCEDURE IF EXISTS add_cancellation_columns;
 
 -- Password reset tokens table
 CREATE TABLE IF NOT EXISTS password_reset_tokens (

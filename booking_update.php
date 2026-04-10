@@ -71,7 +71,7 @@ $current_route = $db->selectRow(
 );
 
 $passengers = $db->select(
-    "SELECT bs.passenger_name, bs.passenger_age, bs.passenger_gender, s.seat_number, s.seat_type
+    "SELECT bs.booking_seat_id, bs.passenger_name, bs.passenger_age, bs.passenger_gender, s.seat_number, s.seat_type
      FROM booking_seats bs
      JOIN seats s ON bs.seat_id = s.seat_id
      WHERE bs.booking_id = {$booking_id}
@@ -152,6 +152,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!hash_equals($csrf_token, $submitted_token)) {
         $error_message = 'Invalid request. Please refresh the page and try again.';
+    } elseif (isset($_POST['update_passengers'])) {
+        // ── Passenger detail edit ──────────────────────────────────────────
+        $passengers_input = $_POST['passengers'] ?? [];
+        $mapped = [];
+        foreach ($passengers_input as $bsid => $pdata) {
+            $mapped[] = [
+                'booking_seat_id'  => (int)$bsid,
+                'passenger_name'   => $pdata['name']   ?? '',
+                'passenger_age'    => $pdata['age']    ?? '',
+                'passenger_gender' => $pdata['gender'] ?? '',
+            ];
+        }
+        $result = $booking_obj->updatePassengerDetails($booking_id, $user_id, $mapped);
+        if ($result['success']) {
+            // PRG redirect → avoid re-submit on refresh
+            $_SESSION['booking_update_flash'] = $result['message'];
+            header('Location: booking_update.php?id=' . $booking_id);
+            exit();
+        } else {
+            $error_message = $result['message'];
+        }
+        // re-fetch passengers after attempted update
+        $passengers = $db->select(
+            "SELECT bs.booking_seat_id, bs.passenger_name, bs.passenger_age, bs.passenger_gender,
+                    s.seat_number, s.seat_type
+             FROM booking_seats bs
+             JOIN seats s ON bs.seat_id = s.seat_id
+             WHERE bs.booking_id = {$booking_id}
+             ORDER BY bs.booking_seat_id ASC"
+        ) ?: [];
     } elseif ($hours_until_departure < 4) {
         $error_message = 'Journey changes are only allowed up to 4 hours before departure.';
     } else {
@@ -171,6 +201,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+}
+
+// Pick up PRG flash from passenger-update redirect
+$passenger_flash = '';
+if (!empty($_SESSION['booking_update_flash'])) {
+    $passenger_flash = $_SESSION['booking_update_flash'];
+    unset($_SESSION['booking_update_flash']);
 }
 ?>
 <!DOCTYPE html>
@@ -222,33 +259,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <i class="bi bi-arrow-left"></i> Back to Bookings
         </a>
 
+        <?php if ($passenger_flash): ?>
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <?= htmlspecialchars($passenger_flash) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($error_message): ?>
+            <div class="alert alert-danger mb-3"><?= htmlspecialchars($error_message) ?></div>
+        <?php endif; ?>
+
+        <?php if ($success_message): ?>
+            <div class="alert alert-success mb-3">
+                <?= htmlspecialchars($success_message) ?><br>
+                <small><?= strpos($success_message, 'Additional payment') !== false ? 'Redirecting to payment...' : 'Redirecting to your updated ticket...' ?></small>
+            </div>
+        <?php endif; ?>
+
+        <!-- ── Section 1: Edit passenger details (always shown for non-cancelled) ── -->
+        <?php if (!empty($passengers)): ?>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header" style="background:#155e2a; color:#fff;">
+                <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Edit Passenger Details</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="helper-text mb-3">
+                    You can update passenger names, ages, and genders at any time before departure,
+                    regardless of whether a journey change is available.
+                </p>
+                <form method="POST" id="passengerForm">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                    <input type="hidden" name="update_passengers" value="1">
+
+                    <?php foreach ($passengers as $idx => $passenger): ?>
+                    <div class="passenger-box mb-3">
+                        <input type="hidden" name="passengers[<?= (int)$passenger['booking_seat_id'] ?>][booking_seat_id]"
+                               value="<?= (int)$passenger['booking_seat_id'] ?>">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="mix-chip <?= 'mix-' . htmlspecialchars($passenger['seat_type'] ?? 'economy') ?>">
+                                <?= htmlspecialchars($passenger['seat_number'] ?? '') ?>
+                                &nbsp;|&nbsp;<?= ucfirst($passenger['seat_type'] ?? 'economy') ?>
+                            </span>
+                            <span class="helper-text">Passenger <?= $idx + 1 ?></span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold" style="font-size:.83rem;">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm"
+                                       name="passengers[<?= (int)$passenger['booking_seat_id'] ?>][name]"
+                                       value="<?= htmlspecialchars($passenger['passenger_name'] ?? '') ?>"
+                                       required maxlength="100" placeholder="Full name">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold" style="font-size:.83rem;">Age</label>
+                                <input type="number" class="form-control form-control-sm"
+                                       name="passengers[<?= (int)$passenger['booking_seat_id'] ?>][age]"
+                                       value="<?= htmlspecialchars($passenger['passenger_age'] ?? '') ?>"
+                                       min="1" max="120" placeholder="e.g. 30">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" style="font-size:.83rem;">Gender</label>
+                                <select class="form-select form-select-sm"
+                                        name="passengers[<?= (int)$passenger['booking_seat_id'] ?>][gender]">
+                                    <option value="">— Select —</option>
+                                    <option value="M"     <?= ($passenger['passenger_gender'] ?? '') === 'M'     ? 'selected' : '' ?>>Male</option>
+                                    <option value="F"     <?= ($passenger['passenger_gender'] ?? '') === 'F'     ? 'selected' : '' ?>>Female</option>
+                                    <option value="Other" <?= ($passenger['passenger_gender'] ?? '') === 'Other' ? 'selected' : '' ?>>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+
+                    <div class="mt-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-person-check me-1"></i>Save Passenger Details
+                        </button>
+                        <a href="booking_details.php?id=<?= $booking_id ?>" class="btn btn-outline-secondary">View Booking</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- ── Section 2: Change journey (only available > 4 hrs before departure) ── -->
         <div class="card shadow-sm border-0">
             <div class="card-header" style="background:#1a3c6e; color:#fff;">
-                <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Change Journey</h4>
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Change Journey</h5>
             </div>
             <div class="card-body p-4">
 
-                <?php if ($error_message): ?>
-                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
-                <?php endif; ?>
-
-                <?php if ($success_message): ?>
-                    <div class="alert alert-success">
-                        <?= htmlspecialchars($success_message) ?><br>
-                        <small>
-                            <?= strpos($success_message, 'Additional payment') !== false ? 'Redirecting to payment...' : 'Redirecting to your updated ticket...' ?>
-                        </small>
-                    </div>
-                <?php endif; ?>
-
                 <?php if (!$current_route): ?>
                     <div class="alert alert-danger">Current route details could not be loaded for this booking.</div>
+
                 <?php elseif ($hours_until_departure < 4): ?>
-                    <div class="alert alert-danger mb-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-lock-fill me-2"></i>
                         <strong>Journey changes are locked.</strong>
-                        You can update your booking only until 4 hours before departure.
+                        You can request a journey change only up to 4 hours before departure.
+                        Your booking departs in <strong><?= htmlspecialchars(format_time_remaining($hours_until_departure)) ?></strong>.
                     </div>
+
                 <?php else: ?>
 
                 <div class="current-route-card">
@@ -257,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h6 class="mb-2" style="color:#1a3c6e;"><i class="bi bi-ticket-perforated me-1"></i>Current Booking</h6>
                             <div><strong>Booking Ref:</strong> <?= htmlspecialchars($booking['booking_reference']) ?></div>
                             <div><strong>Train:</strong> <?= htmlspecialchars($current_route['train_name']) ?> (<?= htmlspecialchars($current_route['train_number']) ?>)</div>
-                            <div><strong>Route:</strong> <?= htmlspecialchars($current_route['departure_city']) ?> to <?= htmlspecialchars($current_route['arrival_city']) ?></div>
+                            <div><strong>Route:</strong> <?= htmlspecialchars($current_route['departure_city']) ?> → <?= htmlspecialchars($current_route['arrival_city']) ?></div>
                             <div><strong>Departure:</strong> <?= date('D, d M Y H:i', $departure_timestamp) ?></div>
                         </div>
                         <div class="text-sm-end">
@@ -266,30 +379,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="helper-text mt-1">Time remaining: <strong><?= htmlspecialchars(format_time_remaining($hours_until_departure)) ?></strong></div>
                         </div>
                     </div>
-
-                    <?php if (!empty($passengers)): ?>
-                    <hr>
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        <?php foreach ($seat_mix as $seat_type => $count): ?>
-                            <?php if ($count > 0): ?>
-                            <span class="mix-chip mix-<?= htmlspecialchars($seat_type) ?>"><?= ucfirst($seat_type) ?> x <?= $count ?></span>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="passenger-box">
-                        <div class="helper-text mb-2">Your passenger names stay the same and matching seat classes will be reassigned automatically on the new journey.</div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <?php foreach ($passengers as $passenger): ?>
-                            <span class="seat-chip">
-                                <?= htmlspecialchars($passenger['seat_number']) ?>
-                                <span style="color:#94a3b8;">/</span>
-                                <?= htmlspecialchars($passenger['passenger_name']) ?>
-                                <span style="color:#94a3b8;">(<?= ucfirst($passenger['seat_type']) ?>)</span>
-                            </span>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
                 </div>
 
                 <div class="deadline-warn mb-3">
@@ -299,7 +388,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <?php if (!empty($compatible_routes)): ?>
-                    <h6 class="mb-2">Choose a compatible replacement journey</h6>
+                    <h6 class="mb-2">Choose a replacement journey</h6>
                     <p class="helper-text mb-3">Only routes that can preserve your current seat-class mix are shown below.</p>
 
                     <form method="POST" id="journeyUpdateForm">
@@ -356,23 +445,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="booking_details.php?id=<?= $booking_id ?>" class="btn btn-outline-secondary">Keep Current Journey</a>
                         </div>
                     </form>
+
                 <?php else: ?>
-                    <div class="alert alert-warning mb-0">
-                        <i class="bi bi-exclamation-circle me-1"></i>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
                         <?php if ($route_search_count > 0): ?>
-                            No compatible alternatives were found that can preserve your current seat classes between
+                            No compatible alternative trains were found between
                             <strong><?= htmlspecialchars($current_route['departure_city']) ?></strong> and
-                            <strong><?= htmlspecialchars($current_route['arrival_city']) ?></strong>.
+                            <strong><?= htmlspecialchars($current_route['arrival_city']) ?></strong> that match your seat classes.
+                            You can still edit passenger details above.
                         <?php else: ?>
-                            No future journeys are currently available for this route.
+                            No other scheduled trains are currently available for this route.
+                            If you need to cancel your booking you can do so from
+                            <a href="booking_cancel.php?id=<?= $booking_id ?>">here</a>.
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 <?php endif; ?>
 
-            </div>
-        </div>
-    </div>
+            </div><!-- /card-body -->
+        </div><!-- /card -->
+
+    </div><!-- /page-wrap -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -383,9 +477,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 options.forEach(function (item) { item.classList.remove('selected'); });
                 option.classList.add('selected');
                 var radio = option.querySelector('input[type="radio"]');
-                if (radio) {
-                    radio.checked = true;
-                }
+                if (radio) { radio.checked = true; }
             });
         });
     }());

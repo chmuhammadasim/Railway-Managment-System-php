@@ -122,8 +122,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_cancel'])) {
                     'is_unpaid' => $result['is_unpaid'],
                 ])
             );
-            $success_msg = $result['message'];
-            $result_data = $result;
+            // PRG: redirect so a page refresh doesn't re-submit the form
+            // and so bookings.php shows the freshly-updated cancelled status.
+            unset($_SESSION['booking_cancel_csrf']);
+            $_SESSION['cancel_flash'] = [
+                'booking_reference' => $booking['booking_reference'],
+                'refund_amount'     => $result['refund_amount'],
+                'cancel_fee'        => $result['cancel_fee'],
+                'tier_label'        => $result['tier_label'],
+                'is_unpaid'         => $result['is_unpaid'],
+            ];
+            header('Location: bookings.php');
+            exit();
         } else {
             $error_msg = $result['message'];
         }

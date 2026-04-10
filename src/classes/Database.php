@@ -26,7 +26,35 @@ class Database {
         // Set charset to utf8
         $this->connection->set_charset('utf8');
 
+        // Ensure cancellation columns exist on the bookings table.
+        // The original schema added them via MariaDB-only ALTER TABLE … ADD COLUMN IF NOT EXISTS.
+        // On MySQL 8 those statements silently fail, so we apply the migration here instead.
+        $this->ensureCancellationColumns();
+
         return $this->connection;
+    }
+
+    /**
+     * Idempotent migration: add cancellation columns to bookings if missing.
+     * Safe to call on every connect – checks information_schema first.
+     */
+    private function ensureCancellationColumns(): void {
+        $db = $this->connection->real_escape_string($this->db_name);
+        $columns = [
+            'cancellation_reason' => "ALTER TABLE bookings ADD COLUMN cancellation_reason VARCHAR(255) DEFAULT NULL",
+            'cancellation_fee'    => "ALTER TABLE bookings ADD COLUMN cancellation_fee    DECIMAL(10,2) DEFAULT 0.00",
+            'refund_amount'       => "ALTER TABLE bookings ADD COLUMN refund_amount       DECIMAL(10,2) DEFAULT 0.00",
+            'cancelled_at'        => "ALTER TABLE bookings ADD COLUMN cancelled_at        DATETIME DEFAULT NULL",
+        ];
+        foreach ($columns as $col => $ddl) {
+            $check = $this->connection->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = '{$db}' AND TABLE_NAME = 'bookings' AND COLUMN_NAME = '{$col}'"
+            );
+            if ($check && $check->num_rows === 0) {
+                $this->connection->query($ddl);
+            }
+        }
     }
 
     public function getConnection() {
