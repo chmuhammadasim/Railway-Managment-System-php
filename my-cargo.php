@@ -312,6 +312,48 @@ $cities = ['Karachi','Lahore','Islamabad','Rawalpindi','Peshawar','Quetta','Mult
         .char-counter { font-size: .69rem; color: #94a3b8; }
         .char-counter.at-limit { color: #dc2626; font-weight: 700; }
         .fee-breakdown { font-size: .68rem; color: #065f46; margin-top: .2rem; font-weight: 600; }
+        /* ── Booking Wizard ───────────────────────────────────────────── */
+        .wiz-bar { display:flex; align-items:flex-start; padding:.3rem 0 1.25rem; gap:0; }
+        .wiz-step { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+        .wiz-step:not(:last-child)::after { content:''; position:absolute; top:17px; left:calc(50% + 18px); right:calc(-50% + 18px); height:2.5px; background:#e2e8f0; z-index:0; border-radius:2px; transition:background .3s; }
+        .wiz-step.done::after { background:linear-gradient(90deg,#10b981,#34d399); }
+        .wiz-dot { width:34px; height:34px; border-radius:50%; border:2.5px solid #e2e8f0; background:#f8fafc; display:flex; align-items:center; justify-content:center; font-size:.82rem; font-weight:800; color:#94a3b8; z-index:1; position:relative; transition:all .25s; flex-shrink:0; }
+        .wiz-step.active .wiz-dot { background:#f59e0b; border-color:#f59e0b; color:#fff; box-shadow:0 0 0 4px rgba(245,158,11,.2); }
+        .wiz-step.done .wiz-dot { background:#10b981; border-color:#10b981; color:#fff; }
+        .wiz-step-label { font-size:.62rem; color:#94a3b8; margin-top:.35rem; text-align:center; font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+        .wiz-step.active .wiz-step-label { color:#b45309; }
+        .wiz-step.done .wiz-step-label { color:#10b981; }
+        .wiz-panel { display:none; animation:wizIn .22s ease; }
+        .wiz-panel.active { display:block; }
+        @keyframes wizIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+        /* Mode selection cards */
+        .mode-sel-card { cursor:pointer; border:2.5px solid #e2e8f0; border-radius:16px; padding:1.5rem 1.1rem; text-align:center; transition:all .2s; background:#f8fafc; position:relative; height:100%; }
+        .mode-sel-card:hover { border-color:#f59e0b; background:#fefce8; }
+        .mode-sel-card.selected { border-color:#f59e0b; background:#fefce8; box-shadow:0 0 0 4px rgba(245,158,11,.15); }
+        .mode-sel-card.selected-travel { border-color:#7c3aed; background:#faf5ff; box-shadow:0 0 0 4px rgba(124,58,237,.12); }
+        .mode-sel-icon { font-size:2.8rem; margin-bottom:.55rem; display:block; }
+        .mode-sel-title { font-size:1.05rem; font-weight:800; color:#1e293b; }
+        .mode-sel-desc { font-size:.79rem; color:#6b7280; margin-top:.35rem; line-height:1.45; }
+        .mode-sel-badge { position:absolute; top:.65rem; right:.75rem; font-size:.64rem; font-weight:700; padding:.22em .75em; border-radius:999px; background:#7c3aed; color:#fff; }
+        /* Weight chips */
+        .wt-chips { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.5rem; }
+        .wt-chip { padding:.28rem .85rem; border-radius:20px; border:1.5px solid #e2e8f0; background:#f8fafc; font-size:.75rem; font-weight:700; cursor:pointer; transition:all .15s; color:#64748b; user-select:none; }
+        .wt-chip:hover { border-color:#f59e0b; color:#92400e; background:#fefce8; }
+        .wt-chip.active { background:#f59e0b; border-color:#f59e0b; color:#fff; }
+        /* Cargo type description line */
+        .ct-desc { font-size:.6rem; color:#6b7280; margin-top:.15rem; line-height:1.3; }
+        /* Review table */
+        .review-table { width:100%; border-collapse:separate; border-spacing:0; }
+        .review-table td { padding:.42rem .75rem; font-size:.84rem; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+        .review-table tr:last-child td { border-bottom:none; }
+        .rtl { color:#64748b; width:42%; white-space:nowrap; }
+        .rtv { font-weight:700; color:#1e293b; }
+        .review-total-row td { background:linear-gradient(135deg,#ecfdf5,#d1fae5) !important; }
+        .review-total-row .rtv { color:#059669; font-size:1rem; }
+        /* Field validation */
+        .field-err-msg { color:#dc2626; font-size:.73rem; margin-top:.25rem; display:none; }
+        .field-err-msg.show { display:block; }
+        input.field-err, select.field-err, textarea.field-err { border-color:#ef4444 !important; }
     </style>
 </head>
 <body>
@@ -615,47 +657,702 @@ $cities = ['Karachi','Lahore','Islamabad','Rawalpindi','Peshawar','Quetta','Mult
 </div><!-- /content-area -->
 
 <!-- ═══════════════════════════════════════════════
-     BOOK NEW SHIPMENT MODAL
+     BOOK NEW SHIPMENT MODAL — 4-Step Wizard
 ════════════════════════════════════════════════ -->
 <div class="modal fade" id="bookModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header" id="bookModalHeader" style="background:#f59e0b;">
-                <h5 class="modal-title fw-bold" id="bookModalTitle">
-                    <i class="bi bi-box-seam me-2"></i>Book New Cargo Shipment
-                </h5>
+    <div class="modal-dialog modal-xl ">
+        <div class="modal-content border-0" style="border-radius:18px; ">
+
+            <!-- Header -->
+            <div class="modal-header" id="bookModalHeader" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;padding:1.1rem 1.5rem;">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="bookModalTitle">
+                        <i class="bi bi-box-seam me-2"></i>Book New Shipment
+                    </h5>
+                    <div id="wizStepLabel" style="font-size:.74rem;color:rgba(0,0,0,.55);margin-top:.15rem;">Step 1 of 4 — Choose Shipment Mode</div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST">
+
+            <form method="POST" id="bookForm">
                 <input type="hidden" name="action" value="book">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                 <input type="hidden" name="shipment_type" id="hiddenShipType" value="cargo_delivery">
 
-                <div class="modal-body">
-                    <!-- Mode toggle -->
-                    <div class="d-flex gap-2 mb-4">
-                        <button type="button" id="btnModeCargo" class="btn btn-warning fw-bold flex-fill mode-btn active-mode" onclick="setShipMode('cargo_delivery')">
-                            <i class="bi bi-box-seam me-2"></i>Cargo Delivery
-                            <div style="font-size:.72rem;font-weight:400;opacity:.8;">Send goods independently</div>
-                        </button>
-                        <button type="button" id="btnModeTravel" class="btn btn-outline-secondary fw-bold flex-fill mode-btn" onclick="setShipMode('travelling')">
-                            <i class="bi bi-person-luggage me-2"></i>Travelling with Cargo
-                            <div style="font-size:.72rem;font-weight:400;opacity:.8;">I'm the passenger carrying this cargo &mdash; <strong>20% discount</strong></div>
-                        </button>
+                <div class="modal-body" style="padding:1.5rem 1.4rem;">
+
+                    <!-- Wizard step bar -->
+                    <div class="wiz-bar">
+                        <div class="wiz-step active" id="ws1"><div class="wiz-dot">1</div><div class="wiz-step-label">Mode</div></div>
+                        <div class="wiz-step" id="ws2"><div class="wiz-dot">2</div><div class="wiz-step-label">Details</div></div>
+                        <div class="wiz-step" id="ws3"><div class="wiz-dot">3</div><div class="wiz-step-label">Cargo</div></div>
+                        <div class="wiz-step" id="ws4"><div class="wiz-dot">4</div><div class="wiz-step-label">Review</div></div>
                     </div>
 
-                    <div class="row g-3">
-                        <!-- Cargo: Sender -->
+                    <!-- ─────────────────────────────────────────────────
+                         STEP 1 — Choose Shipment Mode
+                    ───────────────────────────────────────────────── -->
+                    <div class="wiz-panel active" id="panel1">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="mode-sel-card selected" id="modeCardCargo" onclick="selectMode('cargo_delivery')">
+                                    <span class="mode-sel-icon"><i class="bi bi-box-seam text-warning"></i></span>
+                                    <div class="mode-sel-title">Cargo Delivery</div>
+                                    <div class="mode-sel-desc">Send goods independently. Specify sender &amp; receiver details for point-to-point delivery.</div>
+                                    <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
+                                        <span style="font-size:.7rem;background:#fef3c7;color:#92400e;padding:.2em .7em;border-radius:20px;font-weight:700;">General · Fragile · Perishable</span>
+                                        <span style="font-size:.7rem;background:#fee2e2;color:#991b1b;padding:.2em .7em;border-radius:20px;font-weight:700;">Livestock · Hazardous</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mode-sel-card" id="modeCardTravel" onclick="selectMode('travelling')">
+                                    <span class="mode-sel-badge">20% OFF</span>
+                                    <span class="mode-sel-icon"><i class="bi bi-person-luggage" style="color:#7c3aed;"></i></span>
+                                    <div class="mode-sel-title">Travelling with Cargo</div>
+                                    <div class="mode-sel-desc">You're the passenger carrying this cargo. A 20% luggage discount is applied automatically to your fee.</div>
+                                    <div class="mt-2">
+                                        <span style="font-size:.7rem;background:#ede9fe;color:#5b21b6;padding:.2em .7em;border-radius:20px;font-weight:700;"><i class="bi bi-tag-fill me-1"></i>20% Discount Applied</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Rate overview -->
+                        <div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                            <div class="fw-bold text-muted mb-2" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;"><i class="bi bi-info-circle me-1"></i>Rate Overview</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span style="font-size:.76rem;padding:.28rem .8rem;border-radius:8px;background:#fff;border:1px solid #e2e8f0;color:#1e293b;"><i class="bi bi-box-seam me-1 text-secondary"></i>General — Rs 50/kg</span>
+                                <span style="font-size:.76rem;padding:.28rem .8rem;border-radius:8px;background:#fff;border:1px solid #e2e8f0;color:#0891b2;"><i class="bi bi-gem me-1"></i>Fragile — Rs 70/kg</span>
+                                <span style="font-size:.76rem;padding:.28rem .8rem;border-radius:8px;background:#fff;border:1px solid #e2e8f0;color:#d97706;"><i class="bi bi-thermometer-half me-1"></i>Perishable — Rs 80/kg</span>
+                                <span style="font-size:.76rem;padding:.28rem .8rem;border-radius:8px;background:#fff;border:1px solid #e2e8f0;color:#16a34a;"><i class="bi bi-tree me-1"></i>Livestock — Rs 100/kg</span>
+                                <span style="font-size:.76rem;padding:.28rem .8rem;border-radius:8px;background:#fff;border:1px solid #e2e8f0;color:#dc2626;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Hazardous — Rs 125/kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ─────────────────────────────────────────────────
+                         STEP 2 — Contact Details
+                    ───────────────────────────────────────────────── -->
+                    <div class="wiz-panel" id="panel2">
+
+                        <!-- Cargo delivery: Sender + Receiver -->
                         <div id="senderSection">
-                            <div class="row g-3">
-                                <div class="col-12"><div class="section-head section-head-blue"><i class="bi bi-person-fill"></i>Sender Details</div></div>
+                            <div class="section-head section-head-blue"><i class="bi bi-person-fill"></i>Sender Details</div>
+                            <div class="row g-3 mb-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Your Name (Sender) *</label>
-                                    <input type="text" name="sender_name" id="senderName" class="form-control" required value="<?= htmlspecialchars($user['full_name'] ?? '') ?>">
+                                    <label class="form-label fw-semibold">Sender Name *</label>
+                                    <input type="text" name="sender_name" id="senderName" class="form-control" placeholder="Full name" value="<?= htmlspecialchars($user['full_name'] ?? '') ?>">
+                                    <div class="field-err-msg" id="err-sender_name">Sender name is required.</div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Phone</label>
-                                    <input type="text" name="sender_phone" class="form-control" placeholder="+92-300-0000000" value="<?= htmlspecialchars($user['phone'] ?? '') ?>">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="text" name="sender_phone" class="form-control" placeholder="+92-300-0000000" value="<?= htmlspecialchars($user['phone'] ?? '') ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sender Address</label>
+                                    <input type="text" name="sender_address" class="form-control" placeholder="House/Street, City">
+                                </div>
+                            </div>
+                            <div class="section-head section-head-green"><i class="bi bi-person-check-fill"></i>Receiver Details</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Name *</label>
+                                    <input type="text" name="receiver_name" id="receiverName" class="form-control" placeholder="Full name">
+                                    <div class="field-err-msg" id="err-receiver_name">Receiver name is required.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Phone</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="text" name="receiver_phone" class="form-control" placeholder="+92-300-0000000">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receiver Address</label>
+                                    <input type="text" name="receiver_address" class="form-control" placeholder="House/Street, City">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Travelling: Passenger -->
+                        <div id="passengerSection" style="display:none;">
+                            <div class="alert d-flex align-items-center gap-2 mb-3" style="background:#f5f3ff;border:1px solid #c4b5fd;font-size:.83rem;border-radius:10px;padding:.75rem 1rem;">
+                                <i class="bi bi-tag-fill fs-5" style="color:#7c3aed;flex-shrink:0;"></i>
+                                <div>You're travelling with this cargo — <strong>20% luggage discount</strong> is applied automatically!</div>
+                            </div>
+                            <div class="section-head section-head-purple"><i class="bi bi-person-fill"></i>Passenger Details</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Full Name *</label>
+                                    <input type="text" name="passenger_name" id="passengerName" class="form-control" placeholder="Full name" value="<?= htmlspecialchars($user['full_name'] ?? '') ?>">
+                                    <div class="field-err-msg" id="err-passenger_name">Passenger name is required.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Phone</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="text" name="passenger_phone" class="form-control" placeholder="+92-300-0000000" value="<?= htmlspecialchars($user['phone'] ?? '') ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">CNIC / Passport No.</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                                        <input type="text" name="passenger_cnic" class="form-control" placeholder="42101-1234567-9">
+                                    </div>
+                                </div>
+                                <?php if (!empty($my_booking_refs)): ?>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Link to a Booking <span class="text-muted fw-normal">(optional)</span></label>
+                                    <select name="linked_booking_ref" class="form-select">
+                                        <option value="">— Select your booking —</option>
+                                        <?php foreach ($my_booking_refs as $br): ?>
+                                        <option value="<?= htmlspecialchars($br['booking_reference']) ?>">
+                                            <?= htmlspecialchars($br['booking_reference']) ?> —
+                                            <?= htmlspecialchars($br['departure_city']) ?> → <?= htmlspecialchars($br['arrival_city']) ?>
+                                            (<?= date('d M Y', strtotime($br['journey_date'])) ?>)
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <?php else: ?>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Booking Reference <span class="text-muted fw-normal">(optional)</span></label>
+                                    <input type="text" name="linked_booking_ref" class="form-control" placeholder="e.g. RWY20250401120000001">
+                                </div>
+                                <?php endif; ?>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Cargo Description</label>
+                                    <input type="text" name="sender_address" class="form-control" placeholder="e.g. Personal luggage, merchandise">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ─────────────────────────────────────────────────
+                         STEP 3 — Cargo Information
+                    ───────────────────────────────────────────────── -->
+                    <div class="wiz-panel" id="panel3">
+                        <div class="row g-3">
+
+                            <!-- Route & schedule -->
+                            <div class="col-12"><div class="section-head section-head-amber"><i class="bi bi-geo-alt-fill"></i>Route &amp; Schedule</div></div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Origin City *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                    <input type="text" name="origin_city" id="originCity" class="form-control" list="city-list" placeholder="e.g. Karachi" oninput="updateFee()">
+                                </div>
+                                <div class="field-err-msg" id="err-origin_city">Origin city is required.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Destination City *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
+                                    <input type="text" name="destination_city" id="destCity" class="form-control" list="city-list" placeholder="e.g. Lahore" oninput="updateFee()">
+                                </div>
+                                <div class="field-err-msg" id="err-dest_city">Destination city is required.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Train Route <span class="text-muted fw-normal">(optional)</span></label>
+                                <select name="route_id" id="routeSelect" class="form-select" onchange="autoFillCities(this)">
+                                    <option value="">— Auto-fill cities from route —</option>
+                                    <?php foreach ($routes as $r): ?>
+                                    <option value="<?= $r['route_id'] ?>"
+                                        data-origin="<?= htmlspecialchars($r['departure_city']) ?>"
+                                        data-dest="<?= htmlspecialchars($r['arrival_city']) ?>">
+                                        <?= htmlspecialchars($r['departure_city'].' → '.$r['arrival_city'].' ('.date('d M', strtotime($r['journey_date'])).')') ?>
+                                        [<?= htmlspecialchars($r['train_name']) ?>]
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Est. Delivery Date</label>
+                                <input type="date" name="estimated_delivery" class="form-control" min="<?= date('Y-m-d') ?>">
+                            </div>
+
+                            <!-- Cargo type cards -->
+                            <div class="col-12"><div class="section-head section-head-blue mt-1"><i class="bi bi-box-seam-fill"></i>Cargo Type &amp; Weight</div></div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Cargo Type *</label>
+                                <div class="cargo-type-grid">
+                                    <label class="cargo-card">
+                                        <input type="radio" name="cargo_type" value="general" checked onchange="updateFee()">
+                                        <div class="cargo-card-inner">
+                                            <i class="bi bi-box-seam ct-icon text-secondary"></i>
+                                            <div class="ct-name">General</div>
+                                            <div class="ct-rate">Rs 50/kg</div>
+                                            <div class="ct-desc">Standard goods, no special handling</div>
+                                        </div>
+                                    </label>
+                                    <label class="cargo-card">
+                                        <input type="radio" name="cargo_type" value="fragile" onchange="updateFee()">
+                                        <div class="cargo-card-inner">
+                                            <i class="bi bi-gem ct-icon" style="color:#06b6d4"></i>
+                                            <div class="ct-name">Fragile</div>
+                                            <div class="ct-rate">Rs 70/kg</div>
+                                            <div class="ct-desc">Glass, electronics, antiques</div>
+                                        </div>
+                                    </label>
+                                    <label class="cargo-card">
+                                        <input type="radio" name="cargo_type" value="perishable" onchange="updateFee()">
+                                        <div class="cargo-card-inner">
+                                            <i class="bi bi-thermometer-half ct-icon text-warning"></i>
+                                            <div class="ct-name">Perishable</div>
+                                            <div class="ct-rate">Rs 80/kg</div>
+                                            <div class="ct-desc">Food, medicine, cold chain</div>
+                                        </div>
+                                    </label>
+                                    <label class="cargo-card">
+                                        <input type="radio" name="cargo_type" value="livestock" onchange="updateFee()">
+                                        <div class="cargo-card-inner">
+                                            <i class="bi bi-tree ct-icon text-success"></i>
+                                            <div class="ct-name">Livestock</div>
+                                            <div class="ct-rate">Rs 100/kg</div>
+                                            <div class="ct-desc">Animals, plants, seeds</div>
+                                        </div>
+                                    </label>
+                                    <label class="cargo-card">
+                                        <input type="radio" name="cargo_type" value="hazardous" onchange="updateFee()">
+                                        <div class="cargo-card-inner">
+                                            <i class="bi bi-exclamation-triangle-fill ct-icon text-danger"></i>
+                                            <div class="ct-name">Hazardous</div>
+                                            <div class="ct-rate">Rs 125/kg</div>
+                                            <div class="ct-desc">Chemicals, flammables</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Weight with quick chips -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Weight (kg) *</label>
+                                <div class="wt-chips">
+                                    <span class="wt-chip" onclick="setWeight(5)">5 kg</span>
+                                    <span class="wt-chip" onclick="setWeight(10)">10 kg</span>
+                                    <span class="wt-chip" onclick="setWeight(25)">25 kg</span>
+                                    <span class="wt-chip" onclick="setWeight(50)">50 kg</span>
+                                    <span class="wt-chip" onclick="setWeight(100)">100 kg</span>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-speedometer2"></i></span>
+                                    <input type="number" name="weight_kg" id="weightInput" class="form-control" min="0.1" max="5000" step="0.1" placeholder="e.g. 10.5" oninput="updateFee();updateWeightChips();">
+                                    <span class="input-group-text">kg</span>
+                                </div>
+                                <div class="field-err-msg" id="err-weight">Please enter a valid weight (> 0).</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Declared Value <span class="text-muted fw-normal">(Rs)</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs</span>
+                                    <input type="number" name="declared_value" class="form-control" min="0" step="1" placeholder="e.g. 50000">
+                                </div>
+                                <div style="font-size:.7rem;color:#6b7280;margin-top:.3rem;"><i class="bi bi-shield-check me-1 text-success"></i>Used for insurance estimation (optional)</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Live Fee Estimate</label>
+                                <div class="quote-box">
+                                    <div class="fee-label"><i class="bi bi-calculator me-1"></i>Shipping Cost</div>
+                                    <div class="fee-big" id="feeDisplay">Rs 0</div>
+                                    <div class="fee-breakdown" id="feeBreakdown" style="display:none;"></div>
+                                    <div class="discount-tag" id="discountNote" style="display:none;"><i class="bi bi-tag-fill me-1"></i>20% luggage discount applied</div>
+                                </div>
+                            </div>
+
+                            <!-- Special instructions -->
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label fw-semibold mb-0">Special Instructions <span class="text-muted fw-normal">(optional)</span></label>
+                                    <span class="char-counter" id="instrCharCount">200 chars left</span>
+                                </div>
+                                <textarea name="special_instructions" class="form-control mt-1" rows="2" maxlength="200" placeholder="Fragile handling, temperature requirements, security seal needed, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ─────────────────────────────────────────────────
+                         STEP 4 — Review & Confirm
+                    ───────────────────────────────────────────────── -->
+                    <div class="wiz-panel" id="panel4">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25rem;flex-shrink:0;">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color:#1e293b;">Review your shipment</div>
+                                <div style="font-size:.79rem;color:#6b7280;">Verify all details before confirming your booking</div>
+                            </div>
+                        </div>
+
+                        <div id="reviewModeBadge" class="mb-3"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px; ">
+                                    <div class="px-3 py-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">
+                                        <i class="bi bi-person-lines-fill me-1"></i>Contact Details
+                                    </div>
+                                    <table class="review-table">
+                                        <tr><td class="rtl">Sender / Passenger</td><td class="rtv" id="rev-sender">—</td></tr>
+                                        <tr><td class="rtl">Receiver</td><td class="rtv" id="rev-receiver">—</td></tr>
+                                        <tr><td class="rtl">Phone</td><td class="rtv" id="rev-phone">—</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px; ">
+                                    <div class="px-3 py-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>Route &amp; Schedule
+                                    </div>
+                                    <table class="review-table">
+                                        <tr><td class="rtl">Route</td><td class="rtv" id="rev-route">—</td></tr>
+                                        <tr><td class="rtl">Est. Delivery</td><td class="rtv" id="rev-delivery">—</td></tr>
+                                        <tr><td class="rtl">Train Route</td><td class="rtv" id="rev-train">—</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px; ">
+                                    <div class="px-3 py-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">
+                                        <i class="bi bi-box-seam me-1"></i>Cargo Details &amp; Pricing
+                                    </div>
+                                    <table class="review-table">
+                                        <tr><td class="rtl">Cargo Type</td><td class="rtv" id="rev-cargo-type">—</td></tr>
+                                        <tr><td class="rtl">Weight</td><td class="rtv" id="rev-weight">—</td></tr>
+                                        <tr><td class="rtl">Base Amount</td><td class="rtv" id="rev-base">—</td></tr>
+                                        <tr id="rev-disc-row" style="display:none;">
+                                            <td class="rtl" style="color:#7c3aed;">Luggage Discount (20%)</td>
+                                            <td class="rtv" style="color:#7c3aed;" id="rev-disc">—</td>
+                                        </tr>
+                                        <tr class="review-total-row">
+                                            <td class="rtl fw-bold" style="color:#065f46;">Total Shipping Fee</td>
+                                            <td class="rtv" id="rev-total" style="color:#059669;">—</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-12" id="rev-instructions-row" style="display:none;">
+                                <div class="d-flex align-items-start gap-2 p-3 rounded-3" style="background:#fefce8;border:1px solid #fde68a;">
+                                    <i class="bi bi-sticky-fill text-warning fs-5 flex-shrink-0"></i>
+                                    <div>
+                                        <div style="font-size:.72rem;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:.2rem;">Special Instructions</div>
+                                        <div style="font-size:.83rem;color:#78350f;" id="rev-instructions"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success mt-3 py-2 d-flex align-items-center gap-2" style="font-size:.82rem;">
+                            <i class="bi bi-shield-fill-check flex-shrink-0 fs-5"></i>
+                            <div>Your details are secure. A unique tracking number will be generated upon confirmation.</div>
+                        </div>
+                    </div>
+
+                    <datalist id="city-list">
+                        <?php foreach ($cities as $c) echo "<option value=\"{$c}\">"; ?>
+                    </datalist>
+                </div><!-- /modal-body -->
+
+                <div class="modal-footer" style="border-top:1px solid #f1f5f9;padding:.9rem 1.4rem;">
+                    <button type="button" class="btn btn-outline-secondary me-auto" id="wizBackBtn" style="display:none;" onclick="wizBack()">
+                        <i class="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="wizCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-warning fw-bold px-4" id="wizNextBtn" onclick="wizNext()">
+                        Next <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success fw-bold px-4" id="submitBtn" style="display:none;">
+                        <i class="bi bi-send me-1"></i>Confirm &amp; Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ── Wizard state ─────────────────────────────────── */
+var currentMode = 'cargo_delivery';
+var currentStep = 1;
+var rates = {general:50, fragile:70, perishable:80, livestock:100, hazardous:125};
+
+function getCargoType() {
+    var r = document.querySelector('input[name=cargo_type]:checked');
+    return r ? r.value : 'general';
+}
+
+/* ── Mode selection ───────────────────────────────── */
+function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById('hiddenShipType').value = mode;
+    var cc = document.getElementById('modeCardCargo');
+    var ct = document.getElementById('modeCardTravel');
+    cc.classList.remove('selected','selected-travel');
+    ct.classList.remove('selected','selected-travel');
+    if (mode === 'travelling') { ct.classList.add('selected-travel'); }
+    else                       { cc.classList.add('selected'); }
+}
+
+/* ── Step navigation ──────────────────────────────── */
+function wizGotoPanel(step) {
+    for (var i = 1; i <= 4; i++) {
+        var p = document.getElementById('panel' + i);
+        if (p) p.classList.toggle('active', i === step);
+    }
+    for (var j = 1; j <= 4; j++) {
+        var ws = document.getElementById('ws' + j);
+        if (!ws) continue;
+        ws.classList.remove('active','done');
+        if (j < step)      ws.classList.add('done');
+        else if (j === step) ws.classList.add('active');
+    }
+    var labels = {1:'Step 1 of 4 — Choose Shipment Mode',2:'Step 2 of 4 — Contact Details',3:'Step 3 of 4 — Cargo Information',4:'Step 4 of 4 — Review & Confirm'};
+    var sl = document.getElementById('wizStepLabel');
+    if (sl) sl.textContent = labels[step] || '';
+
+    var mh = document.getElementById('bookModalHeader');
+    if (mh) {
+        if (step === 4)                            mh.style.background = 'linear-gradient(135deg,#10b981,#34d399)';
+        else if (currentMode === 'travelling')     mh.style.background = 'linear-gradient(135deg,#7c3aed,#8b5cf6)';
+        else                                       mh.style.background = 'linear-gradient(135deg,#f59e0b,#fbbf24)';
+    }
+
+    var backBtn   = document.getElementById('wizBackBtn');
+    var cancelBtn = document.getElementById('wizCancelBtn');
+    var nextBtn   = document.getElementById('wizNextBtn');
+    var submitBtn = document.getElementById('submitBtn');
+    if (backBtn)   backBtn.style.display   = step > 1   ? '' : 'none';
+    if (cancelBtn) cancelBtn.style.display = step === 1 ? '' : 'none';
+    if (nextBtn)   nextBtn.style.display   = step < 4   ? '' : 'none';
+    if (submitBtn) submitBtn.style.display = step === 4 ? '' : 'none';
+
+    if (step === 2) {
+        var isTravelling = currentMode === 'travelling';
+        document.getElementById('senderSection').style.display    = isTravelling ? 'none' : '';
+        document.getElementById('passengerSection').style.display = isTravelling ? ''     : 'none';
+        var sn = document.getElementById('senderName');
+        var pn = document.getElementById('passengerName');
+        var rn = document.getElementById('receiverName');
+        if (sn) sn.required = !isTravelling;
+        if (pn) pn.required =  isTravelling;
+        if (rn) rn.required = !isTravelling;
+    }
+    if (step === 3) {
+        var dn = document.getElementById('discountNote');
+        if (dn) dn.style.display = currentMode === 'travelling' ? '' : 'none';
+        updateFee();
+    }
+    if (step === 4) buildReview();
+    currentStep = step;
+}
+
+function wizNext() { if (validateStep(currentStep) && currentStep < 4) wizGotoPanel(currentStep + 1); }
+function wizBack() { if (currentStep > 1) wizGotoPanel(currentStep - 1); }
+
+/* ── Per-step validation ──────────────────────────── */
+function validateStep(step) {
+    var ok = true;
+    if (step === 2) {
+        if (currentMode === 'cargo_delivery') {
+            var sn = document.getElementById('senderName');
+            var rn = document.getElementById('receiverName');
+            if (sn && !sn.value.trim()) { showErr('err-sender_name',   sn); ok = false; } else if (sn) clearErr('err-sender_name',   sn);
+            if (rn && !rn.value.trim()) { showErr('err-receiver_name', rn); ok = false; } else if (rn) clearErr('err-receiver_name', rn);
+        } else {
+            var pn = document.getElementById('passengerName');
+            if (pn && !pn.value.trim()) { showErr('err-passenger_name', pn); ok = false; } else if (pn) clearErr('err-passenger_name', pn);
+        }
+    }
+    if (step === 3) {
+        var oc = document.getElementById('originCity');
+        var dc = document.getElementById('destCity');
+        var wi = document.getElementById('weightInput');
+        if (oc && !oc.value.trim())           { showErr('err-origin_city', oc); ok = false; } else if (oc) clearErr('err-origin_city', oc);
+        if (dc && !dc.value.trim())           { showErr('err-dest_city',   dc); ok = false; } else if (dc) clearErr('err-dest_city',   dc);
+        if (wi && !(parseFloat(wi.value) > 0)){ showErr('err-weight',      wi); ok = false; } else if (wi) clearErr('err-weight',      wi);
+    }
+    return ok;
+}
+
+function showErr(id, field) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('show');
+    if (field) field.classList.add('field-err');
+}
+function clearErr(id, field) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+    if (field) field.classList.remove('field-err');
+}
+
+/* ── Review summary builder ───────────────────────── */
+function buildReview() {
+    var isTravelling = currentMode === 'travelling';
+    var senderEl  = isTravelling ? document.getElementById('passengerName') : document.getElementById('senderName');
+    var senderVal = senderEl ? senderEl.value : '—';
+    var recvEl    = document.querySelector('input[name=receiver_name]');
+    var recvVal   = isTravelling ? '(Same as passenger)' : (recvEl ? recvEl.value || '—' : '—');
+    var phoneEl   = isTravelling ? document.querySelector('input[name=passenger_phone]') : document.querySelector('input[name=sender_phone]');
+    var phoneVal  = phoneEl ? phoneEl.value || '—' : '—';
+    var origin    = (document.getElementById('originCity')  || {}).value || '—';
+    var dest      = (document.getElementById('destCity')    || {}).value || '—';
+    var delEl     = document.querySelector('input[name=estimated_delivery]');
+    var delVal    = (delEl && delEl.value) ? new Date(delEl.value).toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}) : 'Not specified';
+    var routeSel  = document.getElementById('routeSelect');
+    var trainTxt  = (routeSel && routeSel.selectedIndex > 0) ? routeSel.options[routeSel.selectedIndex].text : 'Not specified';
+    var t         = getCargoType();
+    var w         = parseFloat((document.getElementById('weightInput') || {}).value) || 0;
+    var base      = Math.round(w * (rates[t] || 50) * 100) / 100;
+    var fee       = isTravelling ? Math.round(base * 0.80 * 100) / 100 : base;
+    var instrEl   = document.querySelector('textarea[name=special_instructions]');
+    var instr     = instrEl ? instrEl.value : '';
+
+    var mb = document.getElementById('reviewModeBadge');
+    if (mb) mb.innerHTML = isTravelling
+        ? '<span style="background:#ede9fe;color:#5b21b6;border-radius:20px;padding:.3em 1em;font-size:.78rem;font-weight:700;"><i class="bi bi-person-luggage me-1"></i>Travelling with Cargo — 20% Discount</span>'
+        : '<span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:.3em 1em;font-size:.78rem;font-weight:700;"><i class="bi bi-box-seam me-1"></i>Cargo Delivery</span>';
+
+    setText('rev-sender',     senderVal || '—');
+    setText('rev-receiver',   recvVal);
+    setText('rev-phone',      phoneVal);
+    setText('rev-route',      (origin !== '—' && dest !== '—') ? origin + ' → ' + dest : origin + dest);
+    setText('rev-delivery',   delVal);
+    setText('rev-train',      trainTxt);
+    setText('rev-cargo-type', t.charAt(0).toUpperCase() + t.slice(1) + ' (Rs ' + (rates[t]||50) + '/kg)');
+    setText('rev-weight',     w ? w + ' kg' : '—');
+    setText('rev-base',       w ? 'Rs ' + base.toLocaleString('en-PK',{minimumFractionDigits:2}) : '—');
+    setText('rev-total',      w ? 'Rs ' + fee.toLocaleString('en-PK',{minimumFractionDigits:2})  : '—');
+
+    var discRow = document.getElementById('rev-disc-row');
+    if (discRow) {
+        discRow.style.display = (isTravelling && w > 0) ? '' : 'none';
+        if (isTravelling && w > 0) setText('rev-disc', '− Rs ' + (base - fee).toLocaleString('en-PK',{minimumFractionDigits:2}));
+    }
+    var instrRow = document.getElementById('rev-instructions-row');
+    var instrTxt = document.getElementById('rev-instructions');
+    if (instrRow) instrRow.style.display = instr.trim() ? '' : 'none';
+    if (instrTxt) instrTxt.textContent = instr;
+}
+
+function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val || '—';
+}
+
+/* ── Auto-fill cities from route ──────────────────── */
+function autoFillCities(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    var oc  = document.getElementById('originCity');
+    var dc  = document.getElementById('destCity');
+    if (opt.getAttribute('data-origin') && oc) oc.value = opt.getAttribute('data-origin');
+    if (opt.getAttribute('data-dest')   && dc) dc.value = opt.getAttribute('data-dest');
+    updateFee();
+}
+
+/* ── Fee calculator ───────────────────────────────── */
+function updateFee() {
+    var wi   = document.getElementById('weightInput');
+    var w    = parseFloat(wi ? wi.value : 0) || 0;
+    var t    = getCargoType();
+    var base = Math.round(w * (rates[t] || 50) * 100) / 100;
+    var fee  = currentMode === 'travelling' ? Math.round(base * 0.80 * 100) / 100 : base;
+    var fd   = document.getElementById('feeDisplay');
+    if (fd) fd.textContent = 'Rs ' + fee.toLocaleString('en-PK',{minimumFractionDigits:2});
+    var bd = document.getElementById('feeBreakdown');
+    if (bd) {
+        if (w > 0) {
+            bd.textContent  = w + ' kg × Rs ' + (rates[t]||50) + '/kg' + (currentMode==='travelling' ? ' − 20%' : '');
+            bd.style.display = '';
+        } else {
+            bd.style.display = 'none';
+        }
+    }
+}
+
+/* ── Weight quick-select chips ────────────────────── */
+function setWeight(w) {
+    var wi = document.getElementById('weightInput');
+    if (wi) { wi.value = w; updateFee(); updateWeightChips(); }
+}
+function updateWeightChips() {
+    var w = parseFloat((document.getElementById('weightInput') || {}).value);
+    document.querySelectorAll('.wt-chip').forEach(function(c) {
+        c.classList.toggle('active', parseFloat(c.textContent) === w);
+    });
+}
+
+/* ── Special instructions counter ────────────────── */
+(function() {
+    var ta = document.querySelector('textarea[name=special_instructions]');
+    var cc = document.getElementById('instrCharCount');
+    if (ta && cc) {
+        ta.addEventListener('input', function() {
+            var left = 200 - this.value.length;
+            cc.textContent = left + ' chars left';
+            cc.className = 'char-counter' + (left < 20 ? ' at-limit' : '');
+        });
+    }
+})();
+
+/* ── Reset on modal open ──────────────────────────── */
+document.getElementById('bookModal').addEventListener('show.bs.modal', function() {
+    currentMode = 'cargo_delivery';
+    document.getElementById('hiddenShipType').value = 'cargo_delivery';
+    var mcc = document.getElementById('modeCardCargo');
+    var mct = document.getElementById('modeCardTravel');
+    if (mcc) { mcc.classList.add('selected');   mcc.classList.remove('selected-travel'); }
+    if (mct) { mct.classList.remove('selected','selected-travel'); }
+    wizGotoPanel(1);
+    var wi = document.getElementById('weightInput');
+    if (wi) wi.value = '';
+    document.querySelectorAll('.wt-chip').forEach(function(c) { c.classList.remove('active'); });
+    var fd = document.getElementById('feeDisplay');  if (fd) fd.textContent = 'Rs 0';
+    var bd = document.getElementById('feeBreakdown'); if (bd) bd.style.display = 'none';
+    var cc = document.getElementById('instrCharCount'); if (cc) { cc.textContent = '200 chars left'; cc.className = 'char-counter'; }
+    document.querySelectorAll('.field-err-msg').forEach(function(e) { e.classList.remove('show'); });
+    document.querySelectorAll('.field-err').forEach(function(e) { e.classList.remove('field-err'); });
+    // Reset fields
+    var f = document.getElementById('bookForm');
+    if (f) {
+        ['originCity','destCity'].forEach(function(id){ var el=f.querySelector('#'+id); if(el) el.value=''; });
+        var rs=f.querySelector('#routeSelect');           if(rs) rs.value='';
+        var de=f.querySelector('[name=estimated_delivery]'); if(de) de.value='';
+        var dv=f.querySelector('[name=declared_value]');  if(dv) dv.value='';
+        var si=f.querySelector('textarea[name=special_instructions]'); if(si) si.value='';
+        var rn=f.querySelector('#receiverName');          if(rn) rn.value='';
+        var rp=f.querySelector('[name=receiver_phone]');  if(rp) rp.value='';
+        var ra=f.querySelector('[name=receiver_address]');if(ra) ra.value='';
+        var cg=f.querySelector('input[name=cargo_type][value=general]'); if(cg) cg.checked=true;
+    }
+});
+
+/* ── Tracking number copy ─────────────────────────── */
+function copyTrack(el, code) {
+    navigator.clipboard.writeText(code).then(function() {
+        var orig = el.innerHTML;
+        el.innerHTML = '<i class="bi bi-check-lg me-1"></i>' + code + ' ✔';
+        el.style.background = '#dcfce7'; el.style.color = '#15803d'; el.style.borderColor = '#86efac';
+        setTimeout(function() { el.innerHTML = orig; el.style.background = ''; el.style.color = ''; el.style.borderColor = ''; }, 1800);
+    }).catch(function() {});
+}
+
+/* ── Prevent double-submit ────────────────────────── */
+document.querySelector('#bookModal form').addEventListener('submit', function() {
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Booking…';
+});
+</script>
+
+<?php require_once 'inc/footer.php'; ?>>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Sender Address</label>
