@@ -349,6 +349,7 @@ require_once 'inc/header.php';
             <div class="card-body p-3">
                 <form method="POST" id="cancelForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                    <input type="hidden" name="confirm_cancel" value="1">
 
                     <div class="mb-3">
                         <label for="reason" class="form-label fw-semibold" style="font-size:.88rem;">
@@ -384,7 +385,7 @@ require_once 'inc/header.php';
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" name="confirm_cancel" value="1" class="btn btn-danger" id="cancelBtn" disabled>
+                        <button type="submit" class="btn btn-danger" id="cancelBtn" disabled>
                             <i class="bi bi-x-circle me-1"></i>Confirm Cancellation
                         </button>
                         <a href="booking_details.php?id=<?= $booking_id ?>" class="btn btn-outline-secondary">Keep My Booking</a>

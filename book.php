@@ -260,13 +260,13 @@ require_once 'inc/header.php';
 .bk-steps { display:flex; gap:0; align-items:center; margin-bottom:1.25rem; }
 .bk-step  { display:flex; flex-direction:column; align-items:center; gap:.3rem; flex-shrink:0; }
 .bk-circle { width:36px; height:36px; border-radius:50%; border:2.5px solid #dee2e6; display:flex; align-items:center; justify-content:center; font-size:.88rem; background:#fff; color:#adb5bd; transition:all .3s; }
-.bk-step.active .bk-circle { border-color:#2563eb; color:#2563eb; }
-.bk-step.done   .bk-circle { background:#2563eb; border-color:#2563eb; color:#fff; }
+.bk-step.active .bk-circle { background:#2563eb; border-color:#2563eb; color:#fff; box-shadow:0 0 0 4px rgba(37,99,235,.15); }
+.bk-step.done   .bk-circle { background:#10b981; border-color:#10b981; color:#fff; }
 .bk-step-label  { font-size:.7rem; font-weight:600; color:#9ca3af; white-space:nowrap; }
-.bk-step.active .bk-step-label,
-.bk-step.done   .bk-step-label { color:#2563eb; }
+.bk-step.active .bk-step-label { color:#2563eb; }
+.bk-step.done   .bk-step-label { color:#10b981; }
 .bk-connector { flex:1; height:2.5px; background:#dee2e6; }
-.bk-connector.done { background:#2563eb; }
+.bk-connector.done { background:#10b981; }
 
 /* Selection bar */
 .sel-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1.35rem; background:#f0fdf4; border-bottom:1px solid #bbf7d0; }

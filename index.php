@@ -972,7 +972,7 @@ document.getElementById('swapCities')?.addEventListener('click', function () {
         const tick = now => {
             const t = Math.min((now - start) / dur, 1);
             const ease = 1 - Math.pow(1 - t, 3);
-            el.textContent = fmt(Math.round(ease * target));
+            el.textContent = fmt(Math.round(ease * target)) + '+';
             if (t < 1) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);

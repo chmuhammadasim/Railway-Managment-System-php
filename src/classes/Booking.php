@@ -921,6 +921,225 @@ class Booking {
         return ['success' => true, 'message' => 'Passenger details updated successfully.'];
     }
 
+    /**
+     * Flexible journey-change preview — allows different cities, different seat count,
+     * and per-passenger seat-class selection.
+     *
+     * $new_passengers  array of:
+     *   ['passenger_name'=>string, 'passenger_age'=>int|null,
+     *    'passenger_gender'=>string, 'seat_type'=>'economy'|'premium'|'luxury']
+     *
+     * Returns same shape as getJourneyChangePreview() plus 'new_passengers'.
+     */
+    public function getFlexibleJourneyPreview(int $booking_id, int $new_route_id, int $user_id, array $new_passengers): array {
+        $booking = $this->getBookingById($booking_id);
+        if (!$booking) {
+            return ['success' => false, 'message' => 'Booking not found.'];
+        }
+        if ((int)$booking['user_id'] !== $user_id) {
+            return ['success' => false, 'message' => 'Unauthorised.'];
+        }
+        if ($booking['booking_status'] === BOOKING_CANCELLED) {
+            return ['success' => false, 'message' => 'Cancelled bookings cannot be changed.'];
+        }
+
+        $current_route = $this->getRouteContext($booking['route_id']);
+        if (!$current_route) {
+            return ['success' => false, 'message' => 'Current route could not be loaded.'];
+        }
+
+        $hours_until_departure = ($this->getRouteDepartureTimestamp($current_route) - time()) / 3600;
+        if ($hours_until_departure < 4) {
+            return ['success' => false, 'message' => 'Journey changes are only allowed up to 4 hours before departure.'];
+        }
+
+        if ($new_route_id === (int)$booking['route_id']) {
+            return ['success' => false, 'message' => 'Please choose a different journey option.'];
+        }
+
+        $new_route = $this->getRouteContext($new_route_id);
+        if (!$new_route || $new_route['status'] !== 'scheduled') {
+            return ['success' => false, 'message' => 'Selected route is not available.'];
+        }
+        if ($this->getRouteDepartureTimestamp($new_route) <= time()) {
+            return ['success' => false, 'message' => 'Selected route has already departed.'];
+        }
+
+        $num_seats = count($new_passengers);
+        if ($num_seats < 1) {
+            return ['success' => false, 'message' => 'At least one passenger is required.'];
+        }
+        if ($num_seats > 6) {
+            return ['success' => false, 'message' => 'Maximum 6 passengers per booking.'];
+        }
+
+        // Validate seat types
+        $allowed_types = ['economy', 'premium', 'luxury'];
+        foreach ($new_passengers as $i => $np) {
+            if (!in_array($np['seat_type'] ?? 'economy', $allowed_types, true)) {
+                $new_passengers[$i]['seat_type'] = 'economy';
+            }
+        }
+
+        // Build synthetic passenger list for seat selection (each row needs seat_type)
+        $synthetic = [];
+        foreach ($new_passengers as $i => $np) {
+            $synthetic[] = [
+                'booking_seat_id' => 0,
+                'seat_id'         => 0,
+                'passenger_name'  => $np['passenger_name'] ?? ('Passenger ' . ($i + 1)),
+                'passenger_age'   => $np['passenger_age'] ?? null,
+                'passenger_gender'=> $np['passenger_gender'] ?? 'Other',
+                'seat_number'     => '',
+                'seat_type'       => $np['seat_type'] ?? 'economy',
+            ];
+        }
+
+        $this->ensureRouteSeatsExist($new_route);
+        $allocation = $this->selectReplacementSeats($new_route_id, $synthetic);
+        if (!$allocation['success']) {
+            return ['success' => false, 'message' => $allocation['message']];
+        }
+
+        $seat_mix     = $this->getSeatMix($synthetic);
+        $new_fare     = round((float)$new_route['base_fare'] * $seat_mix['multiplier_total'], 2);
+        $current_fare = round((float)$booking['total_fare'], 2);
+        $settled      = $this->getCompletedPaymentsTotal($booking_id);
+        $amount_due   = round(max($new_fare - $settled, 0), 2);
+        $credit       = round(max($settled - $new_fare, 0), 2);
+
+        return [
+            'success'            => true,
+            'booking'            => $booking,
+            'current_route'      => $current_route,
+            'new_route'          => $new_route,
+            'new_passengers'     => $synthetic,
+            'seat_mix'           => $seat_mix['counts'],
+            'current_fare'       => $current_fare,
+            'new_fare'           => $new_fare,
+            'fare_delta'         => round($new_fare - $current_fare, 2),
+            'settled_amount'     => $settled,
+            'amount_due'         => $amount_due,
+            'credit_amount'      => $credit,
+            'requires_payment'   => $amount_due > 0.009,
+            'hours_until_departure' => $hours_until_departure,
+            'allocation'         => $allocation,
+        ];
+    }
+
+    /**
+     * Execute a flexible journey change: different route (any city), different seat count,
+     * different seat classes, different passengers.
+     */
+    public function updateBookingJourneyFlex(int $booking_id, int $new_route_id, int $user_id, array $new_passengers): array {
+        $preview = $this->getFlexibleJourneyPreview($booking_id, $new_route_id, $user_id, $new_passengers);
+        if (!$preview['success']) {
+            return ['success' => false, 'message' => $preview['message']];
+        }
+
+        $booking      = $preview['booking'];
+        $current_route = $preview['current_route'];
+        $new_route    = $preview['new_route'];
+        $synthetic    = $preview['new_passengers'];
+        $allocation   = $this->selectReplacementSeats($new_route_id, $synthetic);
+        if (!$allocation['success']) {
+            return ['success' => false, 'message' => $allocation['message']];
+        }
+
+        $num_seats_new  = count($synthetic);
+        $num_seats_old  = (int)$booking['number_of_seats'];
+        $old_route_id   = (int)$current_route['route_id'];
+        $new_fare       = (float)$preview['new_fare'];
+
+        // Get old seat IDs
+        $old_seat_rows = $this->db->select("SELECT seat_id FROM booking_seats WHERE booking_id = {$booking_id}");
+        $old_seat_ids  = array_map('intval', array_column($old_seat_rows ?: [], 'seat_id'));
+        $new_seat_ids  = array_map('intval', array_column($allocation['assignments'], 'seat_id'));
+
+        $booking_status = $preview['requires_payment'] ? BOOKING_PENDING : BOOKING_CONFIRMED;
+        $payment_status = $preview['requires_payment'] ? PAYMENT_PENDING : PAYMENT_COMPLETED;
+
+        $conn = $this->db->getConnection();
+        $conn->begin_transaction();
+
+        try {
+            // Release old seats
+            if (!empty($old_seat_ids)) {
+                $conn->query('UPDATE seats SET status = \'available\' WHERE seat_id IN (' . implode(',', $old_seat_ids) . ')');
+            }
+            $conn->query("UPDATE routes SET available_seats = available_seats + {$num_seats_old} WHERE route_id = {$old_route_id}");
+            $this->syncRouteAvailableSeats($old_route_id);
+
+            // Reserve new seats
+            if (!empty($new_seat_ids)) {
+                if (!$conn->query('UPDATE seats SET status = \'booked\' WHERE seat_id IN (' . implode(',', $new_seat_ids) . ') AND status = \'available\'')) {
+                    throw new \RuntimeException('Failed to reserve new seats.');
+                }
+                if ((int)$conn->affected_rows !== count($new_seat_ids)) {
+                    throw new \RuntimeException('Some new seats were just taken. Please try again.');
+                }
+            }
+            $conn->query("UPDATE routes SET available_seats = available_seats - {$num_seats_new} WHERE route_id = {$new_route_id}");
+            $this->syncRouteAvailableSeats($new_route_id);
+
+            // Delete old booking_seats rows and insert new ones
+            $conn->query("DELETE FROM booking_seats WHERE booking_id = {$booking_id}");
+
+            foreach ($allocation['assignments'] as $i => $asgn) {
+                $np       = $synthetic[$i];
+                $name_e   = $conn->real_escape_string(trim($np['passenger_name'] ?? 'Passenger'));
+                $age_sql  = ($np['passenger_age'] !== null && $np['passenger_age'] !== '') ? (int)$np['passenger_age'] : 'NULL';
+                $genders  = ['M', 'F', 'Other'];
+                $gender   = in_array($np['passenger_gender'] ?? '', $genders, true) ? $np['passenger_gender'] : 'Other';
+                $gender_e = $conn->real_escape_string($gender);
+                if (!$conn->query(
+                    "INSERT INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender)
+                     VALUES ({$booking_id}, {$asgn['seat_id']}, '{$name_e}', {$age_sql}, '{$gender_e}')"
+                )) {
+                    throw new \RuntimeException('Failed to create passenger seat records.');
+                }
+            }
+
+            // Update booking header
+            if (!$conn->query(
+                "UPDATE bookings SET
+                    route_id        = {$new_route_id},
+                    journey_date    = '" . $conn->real_escape_string($new_route['journey_date']) . "',
+                    number_of_seats = {$num_seats_new},
+                    total_fare      = {$new_fare},
+                    booking_status  = '{$booking_status}',
+                    payment_status  = '{$payment_status}'
+                 WHERE booking_id   = {$booking_id}"
+            )) {
+                throw new \RuntimeException('Failed to update booking record.');
+            }
+
+            $conn->commit();
+        } catch (\Throwable $e) {
+            $conn->rollback();
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        $this->triggerWaitlistProcessing($old_route_id);
+
+        if ($preview['requires_payment']) {
+            $msg = 'Booking updated. Additional payment of Rs ' . number_format($preview['amount_due'], 2) . ' is required to confirm.';
+        } elseif ($preview['credit_amount'] > 0.009) {
+            $msg = 'Booking updated. New route costs Rs ' . number_format($preview['credit_amount'], 2) . ' less — no extra payment needed.';
+        } else {
+            $msg = 'Booking updated successfully.';
+        }
+
+        return [
+            'success'          => true,
+            'message'          => $msg,
+            'new_fare'         => $new_fare,
+            'amount_due'       => $preview['amount_due'],
+            'credit_amount'    => $preview['credit_amount'],
+            'requires_payment' => $preview['requires_payment'],
+        ];
+    }
+
     // Get all bookings (Admin)
     public function getAllBookings($filter = array()) {
         $query = "SELECT b.*, u.username, u.full_name, r.departure_city, r.arrival_city, t.train_name 
