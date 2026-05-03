@@ -765,6 +765,7 @@ $maintenanceBadgeMap = [
 ];
 
 $pageTitle = 'Operations Hub';
+$hideMainNavbar = true;
 require_once 'inc/header.php';
 ?>
 
@@ -778,7 +779,6 @@ require_once 'inc/header.php';
     background: linear-gradient(135deg, #10203d 0%, #16335f 55%, #2753a6 100%);
     color: #fff;
     padding: 2.4rem 0 4rem;
-    position: relative;
     overflow: hidden;
 }
 .ops-hero::before {
@@ -1058,9 +1058,143 @@ require_once 'inc/header.php';
         padding: 1rem;
     }
 }
+
+/* ── Sidebar shell ─────────────────────────────── */
+.ops-wrap { display:flex; min-height:calc(100vh - 64px); }
+.ops-sidebar {
+    width:230px; flex-shrink:0;
+    background:linear-gradient(180deg,#1a2e4a 0%,#0f1e32 100%);
+    color:#c8d6e8; display:flex; flex-direction:column;
+    position:sticky; overflow-y:auto;
+    z-index:10;
+}
+.ops-sidebar .sb-brand { padding:1.2rem 1.4rem .9rem; border-bottom:1px solid rgba(255,255,255,.08); }
+.ops-sidebar .sb-brand span { font-size:.68rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.5; display:block; margin-bottom:.25rem; }
+.ops-sidebar .sb-brand strong { font-size:.95rem; color:#fff; }
+.ops-sidebar nav { flex:1; padding:.6rem 0; }
+.ops-sidebar nav a {
+    display:flex; align-items:center; gap:.7rem;
+    padding:.6rem 1.4rem; color:#c8d6e8; text-decoration:none;
+    font-size:.85rem; font-weight:500; transition:all .2s;
+    border-left:3px solid transparent;
+}
+.ops-sidebar nav a:hover, .ops-sidebar nav a.active {
+    background:rgba(255,255,255,.07); color:#fff; border-left-color:#3b82f6;
+}
+.ops-sidebar nav a i { font-size:.95rem; width:1rem; text-align:center; }
+.ops-sidebar .sb-sep { padding:.45rem 1.4rem .2rem; font-size:.65rem; text-transform:uppercase; letter-spacing:1.5px; opacity:.4; margin-top:.4rem; }
+.ops-sidebar .sb-user { padding:.9rem 1.4rem; border-top:1px solid rgba(255,255,255,.08); display:flex; align-items:center; gap:.65rem; }
+.ops-sidebar .sb-user .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#6366f1); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; color:#fff; flex-shrink:0; }
+.ops-sidebar .sb-user .info small { display:block; font-size:.68rem; opacity:.5; }
+.ops-sidebar .sb-user .info strong { font-size:.78rem; color:#fff; }
+/* Employee sidebar accent */
+.ops-sidebar.emp { background:linear-gradient(180deg,#134e4a 0%,#0d3330 100%); }
+.ops-sidebar.emp .sb-brand strong { color:#6ee7b7; }
+.ops-sidebar.emp nav a:hover, .ops-sidebar.emp nav a.active { border-left-color:#34d399; }
+/* User sidebar accent */
+.ops-sidebar.usr { background:linear-gradient(180deg,#1e1b4b 0%,#312e81 100%); }
+.ops-sidebar.usr nav a:hover, .ops-sidebar.usr nav a.active { border-left-color:#818cf8; }
+.ops-main { flex:1; overflow-x:hidden; min-width:0; }
+@media(max-width:900px) { .ops-sidebar { display:none; } }
 </style>
 
-<div class="ops-page">
+<div class="ops-wrap">
+
+<?php if ($role === ROLE_ADMIN): ?>
+<!-- ══ ADMIN SIDEBAR ══════════════════════════════ -->
+<aside class="ops-sidebar">
+    <div class="sb-brand">
+        <span>Management Panel</span>
+        <strong><i class="bi bi-train-front-fill me-1"></i> Railway Admin</strong>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="admin-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="reports.php"><i class="bi bi-bar-chart-line"></i> Reports</a>
+        <a href="audit-logs.php"><i class="bi bi-journal-text"></i> Audit Logs</a>
+        <div class="sb-sep">Operations</div>
+        <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
+        <a href="manage-routes.php"><i class="bi bi-signpost-split"></i> Routes</a>
+        <a href="manage-bookings.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
+        <a href="manage-payments.php"><i class="bi bi-credit-card"></i> Payments</a>
+        <a href="cargo-shipments.php"><i class="bi bi-box-seam"></i> Cargo</a>
+        <a href="operations-hub.php" class="active"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">People</div>
+        <a href="manage-users.php"><i class="bi bi-people"></i> Users</a>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        <div class="sb-sep">Account</div>
+        <a href="profile.php"><i class="bi bi-person-gear"></i> Profile</a>
+        <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="sb-user">
+        <div class="avatar"><?= strtoupper(substr($user['full_name'] ?? 'A', 0, 1)) ?></div>
+        <div class="info">
+            <strong><?= htmlspecialchars($user['full_name'] ?? 'Admin') ?></strong>
+            <small>Administrator</small>
+        </div>
+    </div>
+</aside>
+
+<?php elseif ($role === ROLE_EMPLOYEE): ?>
+<!-- ══ EMPLOYEE SIDEBAR ═══════════════════════════ -->
+<aside class="ops-sidebar emp">
+    <div class="sb-brand">
+        <span>Employee Panel</span>
+        <strong><i class="bi bi-train-front-fill me-1"></i> Railway Staff</strong>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sb-sep">Operations</div>
+        <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
+        <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
+        <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <a href="operations-hub.php" class="active"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">Account</div>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> Profile</a>
+        <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="sb-user">
+        <div class="avatar"><?= strtoupper(substr($user['full_name'] ?? 'E', 0, 1)) ?></div>
+        <div class="info">
+            <strong><?= htmlspecialchars($user['full_name'] ?? 'Employee') ?></strong>
+            <small>Staff Member</small>
+        </div>
+    </div>
+</aside>
+
+<?php else: ?>
+<!-- ══ USER SIDEBAR ═══════════════════════════════ -->
+<aside class="ops-sidebar usr">
+    <div class="sb-brand">
+        <span>Passenger Portal</span>
+        <strong><i class="bi bi-train-front-fill me-1"></i> My Travel</strong>
+    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="dashboard.php"><i class="bi bi-house"></i> Dashboard</a>
+        <a href="index.php"><i class="bi bi-search"></i> Search Trains</a>
+        <div class="sb-sep">My Trips</div>
+        <a href="bookings.php"><i class="bi bi-ticket-perforated"></i> My Bookings</a>
+        <a href="my-cargo.php"><i class="bi bi-box-seam"></i> My Cargo</a>
+        <a href="operations-hub.php" class="active"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">Account</div>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> Profile</a>
+        <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="sb-user">
+        <div class="avatar"><?= strtoupper(substr($user['full_name'] ?? 'U', 0, 1)) ?></div>
+        <div class="info">
+            <strong><?= htmlspecialchars($user['full_name'] ?? 'Passenger') ?></strong>
+            <small>Passenger</small>
+        </div>
+    </div>
+</aside>
+<?php endif; ?>
+
+<div class="ops-main">
     <section class="ops-hero">
         <div class="container">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
@@ -1921,6 +2055,7 @@ require_once 'inc/header.php';
         <option value="<?= htmlspecialchars($station['city']) ?>"><?= htmlspecialchars($station['station_code'] . ' | ' . $station['station_name']) ?></option>
         <?php endforeach; ?>
     </datalist>
-</div>
+</div><!-- /.ops-main -->
+</div><!-- /.ops-wrap -->
 
 <?php require_once 'inc/footer.php'; ?>
