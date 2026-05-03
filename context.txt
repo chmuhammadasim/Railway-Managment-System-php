@@ -1,0 +1,1019 @@
+PROJECT CONTEXT: RAILWAY MANAGEMENT SYSTEM (PHP)
+
+1. PROJECT IDENTITY
+
+Project name:
+Railway Management System / Pakistan Railways Management System
+
+Project type:
+Web-based railway booking and operations management system built as a PHP monolith.
+
+Primary purpose:
+This project supports passenger ticket booking, payment, booking updates and cancellation, cargo handling, admin management, and employee railway operations from a single codebase.
+
+Primary user roles:
+- Passenger / user
+- Employee
+- Admin
+
+Main business areas:
+- Authentication and profile management
+- Public route search
+- Seat-based train booking
+- Payment handling
+- Booking history and ticket details
+- Booking cancellation with refunds
+- Journey change / booking update
+- Cargo shipment handling
+- Notifications
+- Admin dashboards and CRUD panels
+- Employee operations hub
+- Waitlist and seat assignment
+- Audit logging
+- Password reset by email
+- E-ticket email sending
+
+
+2. HIGH-LEVEL TECH STACK
+
+Backend:
+- PHP 8 style code
+- No full framework such as Laravel, Symfony, or CodeIgniter
+- Mostly procedural page controllers plus a few reusable classes
+- MySQLi for database access
+
+Database:
+- MySQL / MariaDB database named `railway_system`
+- SQL schema lives in `database/railway_schema.sql`
+- Demo/seed data is included in the schema file
+
+Frontend:
+- Server-rendered PHP + HTML
+- Bootstrap 5 from CDN
+- Bootstrap Icons from CDN
+- Google Fonts from CDN
+- Custom CSS in `public/css/style.css`
+- Several pages also contain large inline CSS blocks
+- Small vanilla JavaScript helpers in `public/js`
+
+Mail:
+- PHPMailer is vendored directly in `src/PHPMailer`
+- SMTP settings are loaded from `config/mail.php`
+
+Runtime environment:
+- Intended for XAMPP on Windows
+- Apache + MySQL
+- Repository located under `C:\xampp\htdocs\Railway-Managment-System-php`
+
+
+3. ARCHITECTURAL STYLE
+
+This project is not API-first and not component-driven. It is a classic PHP application where:
+- Root-level `.php` files act as page controllers and views
+- Each page manually includes config and required classes
+- Business logic is partly inside pages and partly inside classes under `src/classes`
+- Shared layout is included through `inc/header.php` and `inc/footer.php`
+- Pages perform access control checks directly
+- Pages often query the database directly for dashboards and listings
+- Reusable workflows such as booking, payments, operations, logging, and password reset are wrapped in classes
+
+Important architectural characteristics:
+- No Composer setup was found
+- No routing layer was found; URLs map directly to physical PHP files
+- No migrations framework was found; schema is mainly SQL-file based, with a few runtime safety migrations in PHP
+- No template engine was found; views are raw PHP templates
+- No asset build step was found; CSS and JS are served directly
+
+
+4. FOLDER AND FILE MAP
+
+Root page controllers:
+- `index.php` - public homepage and route search
+- `login.php` - login form and auth handling
+- `signup.php` - registration
+- `forgot_password.php` - password reset request and token flow
+- `dashboard.php` - passenger dashboard and role redirect entry
+- `book.php` - seat selection and booking creation
+- `bookings.php` - passenger booking history
+- `booking_details.php` - e-ticket details page
+- `booking_update.php` - passenger details update and journey change
+- `booking_cancel.php` - cancellation flow and refund preview
+- `payment.php` - payment handling
+- `my-cargo.php` - cargo flow for passenger
+- `notifications.php` - notification list
+- `profile.php` - profile update
+- `admin-dashboard.php` - admin KPIs
+- `manage-trains.php` - train CRUD
+- `manage-routes.php` - route CRUD
+- `manage-bookings.php` - booking management
+- `manage-users.php` - user and role management
+- `manage-payments.php` - payment ledger and refunds
+- `reports.php` - reporting
+- `audit-logs.php` - audit trail viewer
+- `cargo-shipments.php` - cargo admin/management
+- `employee-dashboard.php` - employee KPIs
+- `operations-hub.php` - employee/admin operational center
+- `assign-seats.php` - seat reservation management
+- `check-passengers.php` - passenger manifest/check-in
+- `my-trains.php` - train list and status management
+- `route-details-emp.php` - route operations detail
+- `booking-admin.php` and `booking-emp.php` - role-specific booking detail pages
+- `update_train_status.php` - AJAX endpoint for route/live status update
+- `send_ticket_email.php` - sends HTML e-ticket email
+- `logout.php` - logout
+
+Config:
+- `config/database.php` - constants, session start, role constants, booking/payment constants
+- `config/mail.php` - SMTP config returned as an array
+
+Database:
+- `database/railway_schema.sql` - full schema plus seed data
+
+Shared includes:
+- `inc/header.php`
+- `inc/footer.php`
+
+Business classes:
+- `src/classes/Database.php`
+- `src/classes/User.php`
+- `src/classes/Train.php`
+- `src/classes/Booking.php`
+- `src/classes/Payment.php`
+- `src/classes/Operations.php`
+- `src/classes/AuditLog.php`
+- `src/classes/PasswordReset.php`
+
+Mail vendor code:
+- `src/PHPMailer/PHPMailer.php`
+- `src/PHPMailer/SMTP.php`
+- `src/PHPMailer/Exception.php`
+
+Assets:
+- `public/css/style.css`
+- `public/js/admin-charts.js`
+- `public/js/employee-status.js`
+- `public/js/form-validation.js`
+- `public/js/search-filter.js`
+- `public/js/signup.js`
+- `public/js/toast.js`
+
+API:
+- `api/seat-availability.php` - JSON seat availability endpoint
+
+Utility/test files:
+- `test_login.php`
+- `test_password.php`
+
+
+5. CORE BOOTSTRAP PATTERN USED BY MOST PAGES
+
+Most pages follow this pattern:
+
+1. Include config and required classes:
+- `require_once 'config/database.php';`
+- `require_once 'src/classes/Database.php';`
+- `require_once 'src/classes/User.php';`
+- then any page-specific class files
+
+2. Enforce authentication or role access:
+- `User::isLoggedIn()`
+- check `$_SESSION['role']`
+
+3. Create and connect the database wrapper:
+- `$db = new Database();`
+- `$db->connect();`
+
+4. Handle POST actions or GET filters
+
+5. Query data and/or call business classes
+
+6. Set page variables:
+- `$pageTitle`
+- sometimes `$hideMainNavbar`
+- sometimes `$extraScripts`
+
+7. Render:
+- `require_once 'inc/header.php';`
+- page HTML/CSS/JS
+- `require_once 'inc/footer.php';`
+
+
+6. SHARED CONFIGURATION CONTEXT
+
+`config/database.php` currently contains:
+- DB host: `localhost`
+- DB user: `root`
+- DB pass: empty string by default
+- DB name: `railway_system`
+- DB port: `3306`
+- role constants: `ROLE_USER`, `ROLE_ADMIN`, `ROLE_EMPLOYEE`
+- booking status constants
+- payment status constants
+- `session_start()`
+
+Important note:
+- `config/database.php` also contains email constants and `SITE_URL`
+- however the password reset and ticket email features actually use `config/mail.php`
+- `SITE_URL` is set to `http://localhost/railway/`
+- the README and email/ticket paths expect the project to run under `/Railway-Managment-System-php/`
+- if any feature starts depending on `SITE_URL`, this mismatch should be corrected
+
+`config/mail.php` returns an array with:
+- host
+- port
+- encryption
+- username
+- password
+- from_email
+- from_name
+
+
+7. DATABASE WRAPPER CONTEXT
+
+`src/classes/Database.php` is a thin MySQLi wrapper.
+
+Responsibilities:
+- connect using constants from `config/database.php`
+- set charset to `utf8`
+- expose helper methods:
+  - `select()`
+  - `selectRow()`
+  - `insert()`
+  - `update()`
+  - `delete()`
+  - `query()`
+  - `countRows()`
+  - `getConnection()`
+  - `getLastId()`
+  - `getError()`
+
+Important runtime behavior:
+- `connect()` runs `ensureCancellationColumns()`
+- that method checks `information_schema` and adds missing booking cancellation columns if needed
+- this was added because some SQL syntax in the schema is MariaDB-friendly and not always safe on MySQL 8
+
+
+8. CORE BUSINESS CLASSES CONTEXT
+
+`User.php`
+- Registration
+- Login
+- Brute-force protection using `login_attempts`
+- Session population on successful login
+- Profile update
+- Password change
+- Basic static helpers for auth state and role checks
+
+`Train.php`
+- Read trains and routes
+- Create and update train records
+- Create route records
+- Create seats for a route
+- Seat generation pattern cycles seat types:
+  - economy
+  - economy
+  - premium
+  - luxury
+- Seat numbers are generated like A1-A6, B1-B6, etc.
+
+`Booking.php`
+- Creates booking references
+- Creates bookings with seat locking inside a transaction
+- Stores passenger details in `booking_seats`
+- Confirms bookings after payment
+- Returns booking details and listing data
+- Supports:
+  - cancellation
+  - refund preview
+  - passenger detail updates
+  - journey change to another compatible route
+- Triggers waitlist processing after seat release
+
+`Payment.php`
+- Creates payment records
+- Marks bookings paid/confirmed
+- Provides payment lookup and refund helpers
+
+`Operations.php`
+- Lazily ensures operational tables exist
+- Manages:
+  - stations
+  - live train status
+  - lost and found
+  - train maintenance
+  - crew assignments
+  - waitlist entries
+- Seeds station records from route cities
+- Auto-promotes waitlist entries into bookings when seats become available
+- Creates notifications and audit log entries
+
+`AuditLog.php`
+- Small static helper to write rows into `audit_logs`
+
+`PasswordReset.php`
+- Generates reset tokens
+- Stores hashed tokens in `password_reset_tokens`
+- Sends reset emails through PHPMailer
+- Validates and consumes tokens
+
+
+9. MAJOR USER FLOWS
+
+Public browsing flow:
+- `index.php` loads upcoming/scheduled routes
+- filters by departure city, arrival city, and journey date
+- shows counts such as active trains and confirmed bookings
+
+Authentication flow:
+- `signup.php` creates passenger accounts
+- `login.php` accepts username or email + password
+- successful login redirects to:
+  - `dashboard.php`, then
+  - `admin-dashboard.php` for admins
+  - `employee-dashboard.php` for employees
+  - passenger dashboard for users
+
+Booking flow:
+- user opens `book.php?route_id=...`
+- if route has no seats yet, seats are auto-generated
+- page renders seat map grouped by class
+- user selects up to 6 seats
+- passenger details are submitted
+- `Booking::createBooking()` runs in a transaction
+- booking is created as pending until payment completes
+- user is redirected to payment
+
+Payment flow:
+- `payment.php` simulates multiple payment methods
+- `Payment::processPayment()` inserts a payment row
+- booking becomes confirmed and payment status becomes completed
+
+Booking details flow:
+- `booking_details.php` shows train, route, seats, passenger, and payment data
+- can expose actions such as update, cancel, or pay
+
+Cancellation flow:
+- refund preview is based on hours before departure
+- unpaid reservation can be canceled without fee
+- paid booking may be refunded depending on timing
+- seats are released
+- route available seat count is synced
+- waitlist processing can be triggered
+
+Journey change flow:
+- booking can move to another route with same origin/destination
+- system tries to preserve seat-class mix
+- if new route costs more, additional payment is required
+- if new route costs less or equal, booking may confirm without extra charge
+
+Cargo flow:
+- passenger can create cargo shipment
+- shipment types include delivery and traveling-with-cargo
+- tracking number is generated
+- admin/staff can manage shipment lifecycle
+
+Operations flow:
+- `operations-hub.php` is the central operational page
+- admins and employees can work with operational modules
+- this page explicitly creates and verifies a CSRF token
+
+Email flows:
+- password reset email via `PasswordReset.php`
+- e-ticket email via `send_ticket_email.php`
+
+Real-time / AJAX flow:
+- `api/seat-availability.php` returns seat data as JSON for a route or a single seat
+- `update_train_status.php` updates route status and corresponding live train status
+
+
+10. IMPORTANT DATABASE TABLES
+
+Core tables:
+- `users`
+- `trains`
+- `routes`
+- `seats`
+- `bookings`
+- `booking_seats`
+- `payments`
+
+Operational/supporting tables:
+- `notifications`
+- `audit_logs`
+- `cargo_shipments`
+- `stations`
+- `live_train_status`
+- `lost_found_items`
+- `train_maintenance`
+- `crew_assignments`
+- `waitlist_entries`
+- `password_reset_tokens`
+- `login_attempts`
+
+Additional tables present in the schema:
+- `reviews`
+- `admin_logs`
+- `discounts`
+- `booking_discounts`
+
+Database design style:
+- mixed strict domain model plus dashboard/demo convenience data
+- many pages still perform raw SQL directly against these tables
+
+
+11. USER ROLE CONTEXT
+
+Passenger role:
+- search routes
+- book seats
+- pay
+- view and manage own bookings
+- view notifications
+- manage profile
+- create cargo records
+
+Employee role:
+- employee dashboard
+- passenger checking
+- seat assignment
+- route details
+- train status updates
+- operations hub
+
+Admin role:
+- admin dashboard
+- train CRUD
+- route CRUD
+- booking management
+- payment management
+- user management
+- reports
+- audit logs
+- cargo management
+- operations hub
+
+
+12. UI AND FRONTEND CONTEXT
+
+Observed UI style:
+- heavily server-rendered
+- many pages include large page-specific `<style>` blocks
+- custom modern dashboard/landing page styling
+- Bootstrap classes used for layout and utility styling
+- toast system is injected through footer
+
+Shared include behavior:
+- `inc/header.php` starts session if needed
+- loads fonts/CDN CSS and the global stylesheet
+- renders the navbar unless `$hideMainNavbar` is set
+- navbar changes according to logged-in role
+
+- `inc/footer.php` closes layout
+- loads Bootstrap bundle, toast JS, search/filter JS, form validation JS
+- loads page-specific scripts from `$extraScripts`
+
+
+13. SECURITY AND ACCESS CONTROL CONTEXT
+
+Observed security mechanisms:
+- login attempt throttling using `login_attempts`
+- bcrypt password hashing via `password_hash()` and `password_verify()`
+- session regeneration on successful login
+- role-based access checks in page controllers
+- prepared safety is mixed: some code uses escaping/manual SQL rather than prepared statements
+- explicit CSRF token logic was observed in `operations-hub.php`
+
+Things to keep in mind:
+- this project is not built around a central middleware layer
+- security checks are page-local
+- if new pages are added, auth and role checks must be added manually
+
+
+14. KNOWN IMPLEMENTATION NOTES AND QUIRKS
+
+Important quirks observed from the codebase:
+
+- The app is meant to run from `http://localhost/Railway-Managment-System-php/`, but `SITE_URL` in `config/database.php` points to `http://localhost/railway/`.
+
+- `Database::connect()` only auto-fixes cancellation columns on `bookings`; operational tables are created by `Operations::ensureSchema()` and password reset table is created by `PasswordReset::ensureTable()`.
+
+- `book.php` computes class-based fare multipliers in the page, but `Booking::createBooking()` itself starts with `base_fare * seat_count`. If you extend fare logic, review both places together.
+
+- The project mixes direct page SQL and class methods. This means changes to a business rule may need edits in multiple files, not only in one class.
+
+- PHPMailer is vendored locally; there is no Composer autoload flow.
+
+- Pages rely on physical file routing, so file names are part of the app's public contract.
+
+
+15. DEFAULT LOCAL SETUP CONTEXT
+
+Expected environment:
+- Windows with XAMPP
+- project folder under `C:\xampp\htdocs\Railway-Managment-System-php`
+- Apache and MySQL running
+
+Database:
+- create/import `railway_system`
+- import `database/railway_schema.sql`
+
+Default sample accounts noted in README:
+- Admin: `admin` / `password123`
+- Employee: `employee1` / `password123`
+- Passenger: `alikhan` / `password123`
+
+
+16. DETAILED STEPS TO GENERATE / RECREATE THIS PROJECT'S CODE
+
+The best way to generate this project again is to rebuild it in the same order the current codebase is logically structured.
+
+PHASE 1: DEFINE THE PRODUCT SCOPE
+
+1. Write the product scope first.
+- Decide the app is a railway management monolith.
+- Keep three roles: user, employee, admin.
+- List the required modules:
+  - authentication
+  - search
+  - booking
+  - seat allocation
+  - payments
+  - cargo
+  - notifications
+  - admin management
+  - employee operations
+  - audit logging
+  - password reset
+
+2. Decide the architecture style before generating code.
+- Use plain PHP files as routes/pages.
+- Use one database wrapper.
+- Use a small set of domain classes.
+- Use Bootstrap and vanilla JS.
+- Do not introduce a framework unless you are intentionally redesigning the app.
+
+
+PHASE 2: CREATE THE FOLDER STRUCTURE
+
+3. Create the folders exactly or very close to this shape:
+- `api/`
+- `config/`
+- `database/`
+- `inc/`
+- `public/css/`
+- `public/js/`
+- `src/classes/`
+- `src/PHPMailer/`
+
+4. Create the main root files:
+- `index.php`
+- `login.php`
+- `signup.php`
+- `forgot_password.php`
+- `dashboard.php`
+- `book.php`
+- `bookings.php`
+- `booking_details.php`
+- `booking_update.php`
+- `booking_cancel.php`
+- `payment.php`
+- `my-cargo.php`
+- `notifications.php`
+- `profile.php`
+- `admin-dashboard.php`
+- `employee-dashboard.php`
+- `manage-trains.php`
+- `manage-routes.php`
+- `manage-bookings.php`
+- `manage-users.php`
+- `manage-payments.php`
+- `reports.php`
+- `audit-logs.php`
+- `cargo-shipments.php`
+- `operations-hub.php`
+- `assign-seats.php`
+- `check-passengers.php`
+- `my-trains.php`
+- `route-details-emp.php`
+- `booking-admin.php`
+- `booking-emp.php`
+- `send_ticket_email.php`
+- `update_train_status.php`
+- `logout.php`
+
+
+PHASE 3: GENERATE THE DATABASE LAYER FIRST
+
+5. Generate `config/database.php`.
+- Add database constants
+- Add role constants
+- Add booking/payment status constants
+- Start session
+- Add error reporting for local development
+
+6. Generate `src/classes/Database.php`.
+- Use MySQLi
+- Add `connect()`
+- Add `select`, `selectRow`, `insert`, `update`, `delete`, `query`
+- Add `getConnection()`
+- Add any runtime safety migration logic you need
+
+7. Generate `database/railway_schema.sql`.
+- Start with base tables:
+  - `users`
+  - `trains`
+  - `routes`
+  - `seats`
+  - `bookings`
+  - `booking_seats`
+  - `payments`
+- Then add support tables:
+  - `notifications`
+  - `audit_logs`
+  - `cargo_shipments`
+  - `stations`
+  - `live_train_status`
+  - `lost_found_items`
+  - `train_maintenance`
+  - `crew_assignments`
+  - `waitlist_entries`
+  - `password_reset_tokens`
+  - `login_attempts`
+- Then add optional/reporting tables:
+  - `reviews`
+  - `admin_logs`
+  - `discounts`
+  - `booking_discounts`
+
+8. Seed the database.
+- Add at least:
+  - 1 admin
+  - 2 employees
+  - several passenger accounts
+  - trains
+  - routes
+  - seats or auto-seat generation logic
+  - bookings
+  - payments
+  - notifications
+  - audit logs
+  - operational sample records
+- Seeding is important because dashboards depend on data to feel complete.
+
+
+PHASE 4: GENERATE SHARED LAYOUT AND ASSETS
+
+9. Generate `inc/header.php`.
+- Start or resume session if needed
+- Set default page title
+- Load Bootstrap CSS, icons, font, and main stylesheet
+- Render a navbar
+- Make navbar role-aware
+
+10. Generate `inc/footer.php`.
+- Close main layout
+- Render footer
+- Load Bootstrap JS
+- Load toast/search/form helper scripts
+- Allow page-specific scripts via an array variable
+
+11. Generate shared assets.
+- `public/css/style.css`
+- `public/js/toast.js`
+- `public/js/search-filter.js`
+- `public/js/form-validation.js`
+- optionally role/page-specific JS files
+
+
+PHASE 5: GENERATE CORE BUSINESS CLASSES
+
+12. Generate `src/classes/User.php`.
+- registration
+- login
+- brute-force protection
+- session handling
+- profile updates
+- password change
+- helper methods for auth state
+
+13. Generate `src/classes/Train.php`.
+- read trains and routes
+- create/update trains
+- create routes
+- generate seat maps for routes
+
+14. Generate `src/classes/Booking.php`.
+- create booking reference
+- create booking inside transaction
+- reserve seats
+- store passenger rows
+- update/cancel booking
+- refund preview
+- journey change logic
+- passenger detail update logic
+
+15. Generate `src/classes/Payment.php`.
+- payment insertion
+- refund support
+- payment lookup helpers
+
+16. Generate `src/classes/AuditLog.php`.
+- static helper inserting into `audit_logs`
+
+17. Generate `src/classes/Operations.php`.
+- ensure tables exist if not already created
+- station management
+- live status management
+- waitlist logic
+- lost and found
+- maintenance
+- crew assignment
+- notifications
+- audit log integration
+
+18. Generate `src/classes/PasswordReset.php`.
+- token generation
+- token hashing/storage
+- email sending
+- validation/consumption
+
+
+PHASE 6: GENERATE AUTHENTICATION PAGES
+
+19. Generate `signup.php`.
+- form UI
+- validation
+- call `User::register()`
+
+20. Generate `login.php`.
+- username/email + password form
+- call `User::login()`
+- redirect based on role
+
+21. Generate `logout.php`.
+- destroy session and redirect
+
+22. Generate `forgot_password.php`.
+- request reset link by email
+- accept token
+- validate token
+- write new password
+
+
+PHASE 7: GENERATE PUBLIC SEARCH AND PASSENGER FLOW
+
+23. Generate `index.php`.
+- route search filters
+- route cards
+- app statistics
+- marketing/landing content
+
+24. Generate `dashboard.php`.
+- if role is admin or employee, redirect to their dashboards
+- otherwise show passenger stats and recent travel data
+
+25. Generate `book.php`.
+- load route
+- ensure seats exist
+- render seat map by class
+- collect passenger details
+- submit booking
+
+26. Generate `payment.php`.
+- support multiple dummy payment methods
+- validate fields
+- call `Payment::processPayment()`
+
+27. Generate `bookings.php`.
+- show user booking history
+- allow filtering/search
+
+28. Generate `booking_details.php`.
+- show full booking, seats, route, payment, and actions
+
+29. Generate `booking_update.php`.
+- passenger detail editing
+- journey change preview and commit
+
+30. Generate `booking_cancel.php`.
+- refund preview
+- cancellation reason
+- cancellation submit
+
+31. Generate `profile.php`.
+- profile update
+- password change
+
+32. Generate `notifications.php`.
+- show notifications
+- mark read / mark all read
+
+33. Generate `my-cargo.php`.
+- create and view user's cargo shipments
+
+
+PHASE 8: GENERATE ADMIN MODULES
+
+34. Generate `admin-dashboard.php`.
+- KPIs
+- activity sections
+- revenue summaries
+- recent data tables
+- chart data wiring
+
+35. Generate `manage-trains.php`.
+- CRUD for trains
+- status filters
+- search
+
+36. Generate `manage-routes.php`.
+- CRUD for routes
+- create seats when route is added
+
+37. Generate `manage-bookings.php`.
+- list all bookings
+- filter by status/payment/date
+- quick confirm/cancel actions
+
+38. Generate `manage-users.php`.
+- list users
+- role changes
+- active/inactive changes
+- delete option
+
+39. Generate `manage-payments.php`.
+- payment ledger
+- refund actions
+- revenue KPIs
+
+40. Generate `reports.php`.
+- revenue and booking reports by train/route/period
+
+41. Generate `audit-logs.php`.
+- paginated audit trail with filters
+
+42. Generate `cargo-shipments.php`.
+- full cargo shipment management
+
+
+PHASE 9: GENERATE EMPLOYEE AND OPERATIONS MODULES
+
+43. Generate `employee-dashboard.php`.
+- KPIs for today's operations
+- route schedule
+- recent bookings
+- upcoming routes
+
+44. Generate `operations-hub.php`.
+- tabs for:
+  - overview
+  - stations
+  - waitlist
+  - live status
+  - lost and found
+  - maintenance
+  - crew
+- include CSRF token support
+- allow both admin and employee where appropriate
+
+45. Generate `assign-seats.php`.
+- route/seat map management
+- reserve/unreserve
+- waitlist processing after seat release
+
+46. Generate `check-passengers.php`.
+- booking/passenger manifests
+- filtering
+- status review
+
+47. Generate `my-trains.php`.
+- employee train list and quick status updates
+
+48. Generate `route-details-emp.php`.
+- route details
+- seat map
+- route status handling
+
+49. Generate `update_train_status.php`.
+- accept AJAX POST
+- validate role
+- update route status and live status
+- write audit log
+
+
+PHASE 10: GENERATE INTEGRATION FEATURES
+
+50. Generate `api/seat-availability.php`.
+- auth-check the user
+- accept `route_id`
+- optionally accept `seat_id`
+- return JSON seat inventory and summary counts
+
+51. Generate mail support.
+- add PHPMailer library to `src/PHPMailer`
+- generate `config/mail.php`
+- generate `send_ticket_email.php`
+- connect ticket details to booking and payment data
+
+52. Add helper JS files.
+- admin charts
+- employee live-status refresh if needed
+- search/filter helpers
+
+
+PHASE 11: FOLLOW THE SAME PAGE CODING STYLE
+
+53. For each page, generate code in this order:
+- includes
+- auth/role checks
+- create/connect database
+- handle POST and redirects
+- fetch page data
+- set page vars
+- include header
+- render HTML + inline CSS if page-specific
+- include footer
+
+54. Keep business rules near the relevant class, but accept that this project style also uses page-level SQL.
+- If you want to match the current codebase closely, allow some page-local SQL.
+- If you want a cleaner rewrite, move more logic into classes.
+
+
+PHASE 12: VERIFY THE GENERATED PROJECT
+
+55. Import the schema into MySQL.
+
+56. Update:
+- `config/database.php`
+- `config/mail.php`
+
+57. Start Apache and MySQL.
+
+58. Open:
+- `http://localhost/Railway-Managment-System-php/`
+
+59. Verify these critical paths:
+- login works
+- role redirects work
+- route search works
+- seat map loads
+- booking is created
+- payment confirms booking
+- booking details load
+- cancellation releases seats
+- waitlist processing works
+- operations hub loads
+- admin dashboard loads with seeded data
+- ticket email and password reset email work if SMTP is configured
+
+60. Fix any schema/runtime mismatch discovered during testing.
+- especially URL paths
+- missing columns
+- seat availability syncing
+- fare calculation consistency
+
+
+17. IF YOU WANT TO GENERATE THIS PROJECT WITH AN AI CODING AGENT
+
+Recommended generation order for prompts:
+
+Prompt batch 1:
+- "Create the folder structure, config files, database wrapper, and SQL schema for a PHP railway management system with users, trains, routes, seats, bookings, payments, notifications, audit logs, cargo, waitlist, live train status, maintenance, and crew assignments."
+
+Prompt batch 2:
+- "Create reusable PHP classes for User, Train, Booking, Payment, Operations, AuditLog, and PasswordReset using MySQLi and the schema already defined."
+
+Prompt batch 3:
+- "Create shared `inc/header.php` and `inc/footer.php`, global CSS, and basic JS helpers."
+
+Prompt batch 4:
+- "Create the public/passenger pages: index, login, signup, forgot_password, dashboard, book, bookings, booking_details, booking_update, booking_cancel, payment, notifications, my-cargo, and profile."
+
+Prompt batch 5:
+- "Create the admin pages: admin-dashboard, manage-trains, manage-routes, manage-bookings, manage-users, manage-payments, reports, audit-logs, and cargo-shipments."
+
+Prompt batch 6:
+- "Create the employee/operations pages: employee-dashboard, operations-hub, assign-seats, check-passengers, my-trains, route-details-emp, update_train_status, and the seat-availability API."
+
+Prompt batch 7:
+- "Integrate PHPMailer for password reset and e-ticket email sending, then add seed data and local setup instructions."
+
+
+18. SHORT SUMMARY
+
+This repository is a classic PHP + MySQL railway management monolith with:
+- root-level page controllers
+- a small reusable class layer
+- direct MySQLi access
+- Bootstrap-based server-rendered pages
+- seeded demo data
+- passenger, employee, and admin workflows in one application
+
+If you need to regenerate the code, the safest order is:
+- schema and config first
+- shared layout second
+- core classes third
+- passenger flow fourth
+- admin flow fifth
+- employee/operations flow sixth
+- email/API integrations last
