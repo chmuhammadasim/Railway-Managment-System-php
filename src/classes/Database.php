@@ -31,6 +31,9 @@ class Database {
         // On MySQL 8 those statements silently fail, so we apply the migration here instead.
         $this->ensureCancellationColumns();
 
+        // Ensure type/related_id columns exist on the notifications table.
+        $this->ensureNotificationColumns();
+
         return $this->connection;
     }
 
@@ -50,6 +53,26 @@ class Database {
             $check = $this->connection->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = '{$db}' AND TABLE_NAME = 'bookings' AND COLUMN_NAME = '{$col}'"
+            );
+            if ($check && $check->num_rows === 0) {
+                $this->connection->query($ddl);
+            }
+        }
+    }
+
+    /**
+     * Idempotent migration: add type/related_id columns to notifications if missing.
+     */
+    private function ensureNotificationColumns(): void {
+        $db = $this->connection->real_escape_string($this->db_name);
+        $columns = [
+            'type'       => "ALTER TABLE notifications ADD COLUMN type       VARCHAR(30)  NOT NULL DEFAULT 'info'",
+            'related_id' => "ALTER TABLE notifications ADD COLUMN related_id  INT          NOT NULL DEFAULT 0",
+        ];
+        foreach ($columns as $col => $ddl) {
+            $check = $this->connection->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = '{$db}' AND TABLE_NAME = 'notifications' AND COLUMN_NAME = '{$col}'"
             );
             if ($check && $check->num_rows === 0) {
                 $this->connection->query($ddl);

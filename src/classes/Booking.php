@@ -14,6 +14,45 @@ class Booking {
         $this->db = $database;
     }
 
+    // ── Notification helpers ───────────────────────────────────────────────
+
+    /** Insert one notification row (safe – ignores failure). */
+    private function pushNotif(int $user_id, string $message, string $type = 'info', int $related_id = 0): void {
+        $conn = $this->db->getConnection();
+        $msg  = $conn->real_escape_string($message);
+        $t    = $conn->real_escape_string($type);
+        $conn->query(
+            "INSERT INTO notifications (user_id, message, type, related_id, is_read)
+             VALUES ({$user_id}, '{$msg}', '{$t}', {$related_id}, 0)"
+        );
+    }
+
+    /** Notify all admin users. */
+    private function pushNotifToAdmins(string $message, string $type = 'info', int $related_id = 0): void {
+        $admins = $this->db->select("SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1");
+        foreach ($admins ?: [] as $a) {
+            $this->pushNotif((int)$a['user_id'], $message, $type, $related_id);
+        }
+    }
+
+    /** Notify all employee users. */
+    private function pushNotifToEmployees(string $message, string $type = 'info', int $related_id = 0): void {
+        $emps = $this->db->select("SELECT user_id FROM users WHERE role = 'employee' AND is_active = 1");
+        foreach ($emps ?: [] as $e) {
+            $this->pushNotif((int)$e['user_id'], $message, $type, $related_id);
+        }
+    }
+
+    /** Notify all staff (admins + employees). */
+    private function pushNotifToStaff(string $message, string $type = 'info', int $related_id = 0): void {
+        $staff = $this->db->select("SELECT user_id FROM users WHERE role IN ('admin','employee') AND is_active = 1");
+        foreach ($staff ?: [] as $s) {
+            $this->pushNotif((int)$s['user_id'], $message, $type, $related_id);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+
     // Create booking reference
     public function generateBookingReference() {
         return 'RWY' . date('YmdHis') . rand(1000, 9999);
@@ -108,6 +147,29 @@ class Booking {
             $conn->rollback();
             return array('success' => false, 'message' => $throwable->getMessage());
         }
+
+        // ── Notifications ─────────────────────────────────────────────────
+        $dep  = htmlspecialchars_decode($route['departure_city'] ?? '');
+        $arr  = htmlspecialchars_decode($route['arrival_city']   ?? '');
+        $jdt  = isset($route['journey_date']) ? date('d M Y', strtotime($route['journey_date'])) : '';
+        $fare = number_format((float)$total_fare, 2);
+
+        $this->pushNotif(
+            $user_id,
+            "Booking #{$booking_ref} placed! {$num_seats} seat(s) · {$dep} → {$arr} · {$jdt} · Rs {$fare}. Complete payment to confirm.",
+            'booking', $booking_id
+        );
+        $user_row = $this->db->selectRow("SELECT full_name FROM users WHERE user_id = {$user_id}");
+        $uname    = $user_row['full_name'] ?? "User #{$user_id}";
+        $this->pushNotifToAdmins(
+            "New booking #{$booking_ref} by {$uname} · {$dep} → {$arr} · {$jdt} · {$num_seats} seat(s) · Rs {$fare}",
+            'booking', $booking_id
+        );
+        $this->pushNotifToEmployees(
+            "New booking #{$booking_ref} on your route · {$dep} → {$arr} · {$jdt} · {$num_seats} seat(s)",
+            'booking', $booking_id
+        );
+        // ─────────────────────────────────────────────────────────────────
 
         return array('success' => true, 'message' => 'Booking created!', 'booking_id' => $booking_id);
     }
@@ -714,6 +776,44 @@ class Booking {
 
         $this->triggerWaitlistProcessing((int)$booking['route_id']);
 
+        // ── Notifications ─────────────────────────────────────────────────
+        $bref      = $booking['booking_reference'] ?? "#{$booking_id}";
+        $route_row = $this->db->selectRow(
+            "SELECT r.departure_city, r.arrival_city, r.journey_date
+             FROM routes r WHERE r.route_id = {$booking['route_id']}"
+        );
+        $dep  = $route_row['departure_city'] ?? '';
+        $arr  = $route_row['arrival_city']   ?? '';
+        $jdt  = isset($route_row['journey_date']) ? date('d M Y', strtotime($route_row['journey_date'])) : '';
+        $uid  = (int)$booking['user_id'];
+
+        if ($preview['is_unpaid'] ?? false) {
+            $this->pushNotif($uid,
+                "Booking {$bref} cancelled · {$dep} → {$arr} · {$jdt}. Unpaid reservation released.",
+                'cancel', $booking_id
+            );
+        } else {
+            $rfmt = number_format((float)$refund_amount, 2);
+            $cfmt = number_format((float)$cancel_fee,    2);
+            $this->pushNotif($uid,
+                "Booking {$bref} cancelled · {$dep} → {$arr} · {$jdt}. Refund: Rs {$rfmt}" .
+                ($cancel_fee > 0 ? " (fee Rs {$cfmt})" : "") . ". Allow 3-5 business days.",
+                'cancel', $booking_id
+            );
+        }
+        $user_row = $this->db->selectRow("SELECT full_name FROM users WHERE user_id = {$uid}");
+        $uname    = $user_row['full_name'] ?? "User #{$uid}";
+        $rfmt2    = number_format((float)$refund_amount, 2);
+        $this->pushNotifToAdmins(
+            "Booking {$bref} cancelled by {$uname} · {$dep} → {$arr} · {$jdt} · Refund: Rs {$rfmt2}",
+            'cancel', $booking_id
+        );
+        $this->pushNotifToEmployees(
+            "Booking {$bref} cancelled · {$dep} → {$arr} · {$jdt} · {$booking['number_of_seats']} seat(s) freed",
+            'cancel', $booking_id
+        );
+        // ─────────────────────────────────────────────────────────────────
+
         return array(
             'success'       => true,
             'message'       => ($preview['is_unpaid'] ?? false)
@@ -844,9 +944,30 @@ class Booking {
 
     // Confirm booking (after payment)
     public function confirmBooking($booking_id) {
-        return $this->db->update('bookings', 'booking_id', $booking_id, 
-                                 array('booking_status' => BOOKING_CONFIRMED, 
-                                       'payment_status' => PAYMENT_COMPLETED));
+        $result = $this->db->update('bookings', 'booking_id', $booking_id,
+                                    array('booking_status' => BOOKING_CONFIRMED,
+                                          'payment_status' => PAYMENT_COMPLETED));
+        if ($result) {
+            $b = $this->db->selectRow(
+                "SELECT b.user_id, b.booking_reference, b.total_fare, b.number_of_seats,
+                        r.departure_city, r.arrival_city, r.journey_date
+                 FROM bookings b JOIN routes r ON b.route_id = r.route_id
+                 WHERE b.booking_id = {$booking_id}"
+            );
+            if ($b) {
+                $bref = $b['booking_reference'];
+                $dep  = $b['departure_city'];
+                $arr  = $b['arrival_city'];
+                $jdt  = date('d M Y', strtotime($b['journey_date']));
+                $fare = number_format((float)$b['total_fare'], 2);
+                $uid  = (int)$b['user_id'];
+                $this->pushNotif($uid,
+                    "Booking {$bref} confirmed! {$dep} → {$arr} · {$jdt} · {$b['number_of_seats']} seat(s) · Rs {$fare}. Have a great journey!",
+                    'confirm', $booking_id
+                );
+            }
+        }
+        return $result;
     }
 
     /**
