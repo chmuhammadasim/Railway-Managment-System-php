@@ -352,7 +352,7 @@ require_once 'inc/header.php';
         <h5><i class="bi bi-bar-chart-line me-2 text-primary"></i>Monthly Revenue Overview – <?= date('Y') ?></h5>
         <canvas id="monthlyOverviewChart" style="max-height:280px;"></canvas>
             <script>
-            (function(){
+            document.addEventListener('DOMContentLoaded', function(){
                 const labels = <?= json_encode(array_column($monthly_overview, 'mon')) ?>;
                 const rev    = <?= json_encode(array_map('floatval', array_column($monthly_overview, 'revenue'))) ?>;
                 const bkgs   = <?= json_encode(array_map('intval',   array_column($monthly_overview, 'bookings'))) ?>;
@@ -375,7 +375,7 @@ require_once 'inc/header.php';
                         }
                     }
                 });
-            })();
+            });
             </script>
     </div>
     <?php endif; ?>
@@ -462,7 +462,7 @@ require_once 'inc/header.php';
             <canvas id="trainRevenueChart"></canvas>
         </div>
         <script>
-        (function(){
+        document.addEventListener('DOMContentLoaded', function(){
             const labels = <?= json_encode(array_column($trains, 'train_name')) ?>;
             const data   = <?= json_encode(array_map('floatval', array_column($trains, 'total_revenue'))) ?>;
             new Chart(document.getElementById('trainRevenueChart'), {
@@ -470,7 +470,7 @@ require_once 'inc/header.php';
                 data: { labels, datasets:[{ label:'Revenue (Rs.)', data, backgroundColor:'rgba(37,99,235,0.75)', borderColor:'#1e40af', borderWidth:1 }] },
                 options:{ responsive:true, plugins:{ legend:{display:false}, title:{display:true,text:'Revenue per Train'} }, scales:{ y:{beginAtZero:true} } }
             });
-        })();
+        });
         </script>
         <?php endif; ?>
     </div>
