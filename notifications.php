@@ -48,16 +48,34 @@ $unread_count = count(array_filter($notifications, fn($n) => !(int)$n['is_read']
 $_userObj  = new User($db);
 $_thisUser = $_userObj->getUserById($user_id);
 
-// ── Helper: categorise a notification message ──────────────────────────────
-function notif_classify(string $msg): array {
-    $m = strtolower($msg);
-    if (str_contains($m,'cancel'))                               return ['type'=>'cancel', 'color'=>'#ef4444','bg'=>'#fee2e2','icon'=>'bi-x-circle-fill',        'label'=>'Cancelled'];
-    if (str_contains($m,'refund'))                               return ['type'=>'refund', 'color'=>'#d97706','bg'=>'#fef3c7','icon'=>'bi-cash-coin',             'label'=>'Refund'];
-    if (str_contains($m,'payment')||str_contains($m,'paid'))     return ['type'=>'payment','color'=>'#7c3aed','bg'=>'#ede9fe','icon'=>'bi-credit-card-fill',      'label'=>'Payment'];
-    if (str_contains($m,'confirm')||str_contains($m,'success'))  return ['type'=>'confirm','color'=>'#16a34a','bg'=>'#dcfce7','icon'=>'bi-check-circle-fill',     'label'=>'Confirmed'];
-    if (str_contains($m,'book'))                                 return ['type'=>'booking','color'=>'#0284c7','bg'=>'#e0f2fe','icon'=>'bi-ticket-perforated-fill','label'=>'Booking'];
-    if (str_contains($m,'delay')||str_contains($m,'schedule'))   return ['type'=>'alert',  'color'=>'#ea580c','bg'=>'#fff7ed','icon'=>'bi-exclamation-triangle-fill','label'=>'Alert'];
-    return                                                              ['type'=>'info',   'color'=>'#2563eb','bg'=>'#dbeafe','icon'=>'bi-info-circle-fill',      'label'=>'Info'];
+// ── Notification type → visual style map ──────────────────────────────────
+// Uses the DB `type` column if present, falls back to message text detection.
+const NOTIF_STYLES = [
+    'booking' => ['color'=>'#0284c7','bg'=>'#e0f2fe','icon'=>'bi-ticket-perforated-fill','label'=>'Booking'],
+    'confirm' => ['color'=>'#16a34a','bg'=>'#dcfce7','icon'=>'bi-check-circle-fill',     'label'=>'Confirmed'],
+    'payment' => ['color'=>'#7c3aed','bg'=>'#ede9fe','icon'=>'bi-credit-card-fill',      'label'=>'Payment'],
+    'cancel'  => ['color'=>'#ef4444','bg'=>'#fee2e2','icon'=>'bi-x-circle-fill',         'label'=>'Cancelled'],
+    'refund'  => ['color'=>'#d97706','bg'=>'#fef3c7','icon'=>'bi-cash-coin',             'label'=>'Refund'],
+    'update'  => ['color'=>'#0891b2','bg'=>'#e0f7ff','icon'=>'bi-arrow-repeat',          'label'=>'Updated'],
+    'alert'   => ['color'=>'#ea580c','bg'=>'#fff7ed','icon'=>'bi-exclamation-triangle-fill','label'=>'Alert'],
+    'info'    => ['color'=>'#2563eb','bg'=>'#dbeafe','icon'=>'bi-info-circle-fill',      'label'=>'Info'],
+];
+
+function notif_classify(array $row): array {
+    $db_type = $row['type'] ?? '';
+    if ($db_type && isset(NOTIF_STYLES[$db_type])) {
+        return ['type' => $db_type] + NOTIF_STYLES[$db_type];
+    }
+    // fallback: detect from message text
+    $m = strtolower($row['message'] ?? '');
+    if (str_contains($m,'cancel'))                                return ['type'=>'cancel']  + NOTIF_STYLES['cancel'];
+    if (str_contains($m,'refund'))                                return ['type'=>'refund']  + NOTIF_STYLES['refund'];
+    if (str_contains($m,'payment')||str_contains($m,'paid'))      return ['type'=>'payment'] + NOTIF_STYLES['payment'];
+    if (str_contains($m,'confirm')||str_contains($m,'success'))   return ['type'=>'confirm'] + NOTIF_STYLES['confirm'];
+    if (str_contains($m,'update')||str_contains($m,'changed'))    return ['type'=>'update']  + NOTIF_STYLES['update'];
+    if (str_contains($m,'book'))                                   return ['type'=>'booking'] + NOTIF_STYLES['booking'];
+    if (str_contains($m,'delay')||str_contains($m,'schedule'))    return ['type'=>'alert']   + NOTIF_STYLES['alert'];
+    return                                                                ['type'=>'info']    + NOTIF_STYLES['info'];
 }
 
 function time_ago(int $ts): string {
@@ -68,6 +86,10 @@ function time_ago(int $ts): string {
     if ($d < 604800)  return floor($d/86400).' days ago';
     return date('d M Y', $ts);
 }
+
+// ── Role-specific tab config ───────────────────────────────────────────────
+// Admins and employees see different tab labels/priorities
+$is_staff = in_array($_role, ['admin', 'employee'], true);
 
 $hideMainNavbar = true;
 $pageTitle = 'Notifications – Railway System';
@@ -180,6 +202,8 @@ body { background:#f0f4f8; }
 .notif-ico { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; margin-top:.1rem; }
 .notif-body { flex:1; min-width:0; }
 .notif-label { display:inline-block; font-size:.68rem; font-weight:700; border-radius:999px; padding:.1rem .55rem; margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.4px; }
+.notif-view-link { font-size:.72rem; font-weight:600; color:#2563eb; text-decoration:none; display:inline-flex; align-items:center; }
+.notif-view-link:hover { text-decoration:underline; }
 .notif-msg  { font-size:.875rem; color:#1e293b; line-height:1.55; }
 .notif-time { font-size:.74rem; color:#94a3b8; margin-top:.3rem; }
 
@@ -312,14 +336,26 @@ body { background:#f0f4f8; }
     <?php
     $type_counts = ['all' => count($notifications)];
     foreach ($notifications as $n) {
-        $t = notif_classify($n['message'])['type'];
+        $t = notif_classify($n)['type'];
         $type_counts[$t] = ($type_counts[$t] ?? 0) + 1;
     }
-    $tab_defs = [
+    // Tab labels differ slightly for staff (admin/employee) vs regular users
+    $tab_defs = $is_staff ? [
+        'all'     => ['All',         'bi-grid-fill'],
+        'booking' => ['New Bookings','bi-ticket-perforated-fill'],
+        'payment' => ['Payments',    'bi-credit-card-fill'],
+        'cancel'  => ['Cancelled',   'bi-x-circle-fill'],
+        'update'  => ['Updated',     'bi-arrow-repeat'],
+        'refund'  => ['Refunds',     'bi-cash-coin'],
+        'confirm' => ['Confirmed',   'bi-check-circle-fill'],
+        'alert'   => ['Alerts',      'bi-exclamation-triangle-fill'],
+        'info'    => ['Info',        'bi-info-circle-fill'],
+    ] : [
         'all'     => ['All',       'bi-grid-fill'],
         'booking' => ['Booking',   'bi-ticket-perforated-fill'],
         'confirm' => ['Confirmed', 'bi-check-circle-fill'],
         'payment' => ['Payment',   'bi-credit-card-fill'],
+        'update'  => ['Updated',   'bi-arrow-repeat'],
         'refund'  => ['Refund',    'bi-cash-coin'],
         'cancel'  => ['Cancelled', 'bi-x-circle-fill'],
         'alert'   => ['Alerts',    'bi-exclamation-triangle-fill'],
@@ -343,16 +379,28 @@ body { background:#f0f4f8; }
         <div class="notif-empty">
             <i class="bi bi-bell-slash"></i>
             <p class="fw-semibold mb-1">No notifications yet</p>
-            <p class="mt-1 text-muted" style="font-size:.84rem;">Booking confirmations, cancellations, and alerts will show up here.</p>
+            <p class="mt-1 text-muted" style="font-size:.84rem;">
+                <?= $is_staff
+                    ? 'Booking activity, payments, and operational alerts will appear here.'
+                    : 'Booking confirmations, payment receipts, and travel alerts will show up here.' ?>
+            </p>
         </div>
         <?php else: ?>
 
         <?php foreach ($notifications as $notif):
-            $ts    = strtotime($notif['created_at']);
-            $cls   = notif_classify($notif['message']);
-            $ago   = time_ago($ts);
-            $isNew = !(int)$notif['is_read'];
-            $nid   = (int)$notif['notification_id'];
+            $ts      = strtotime($notif['created_at']);
+            $cls     = notif_classify($notif);
+            $ago     = time_ago($ts);
+            $isNew   = !(int)$notif['is_read'];
+            $nid     = (int)$notif['notification_id'];
+            $rel_id  = (int)($notif['related_id'] ?? 0);
+            // Build a "View booking" link if we have a related booking ID
+            $view_link = '';
+            if ($rel_id > 0) {
+                $view_link = $_role === 'user'
+                    ? "booking_details.php?id={$rel_id}"
+                    : "booking_details.php?id={$rel_id}";
+            }
         ?>
         <div class="notif-row <?= $isNew ? 'unread' : '' ?>"
              id="notif-<?= $nid ?>"
@@ -365,9 +413,16 @@ body { background:#f0f4f8; }
             </div>
 
             <div class="notif-body">
-                <span class="notif-label" style="background:<?= $cls['bg'] ?>;color:<?= $cls['color'] ?>;">
-                    <?= $cls['label'] ?>
-                </span>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <span class="notif-label" style="background:<?= $cls['bg'] ?>;color:<?= $cls['color'] ?>;">
+                        <?= $cls['label'] ?>
+                    </span>
+                    <?php if ($view_link): ?>
+                    <a href="<?= htmlspecialchars($view_link) ?>" class="notif-view-link">
+                        <i class="bi bi-arrow-up-right-square me-1"></i>View booking
+                    </a>
+                    <?php endif; ?>
+                </div>
                 <div class="notif-msg"><?= htmlspecialchars($notif['message']) ?></div>
                 <div class="notif-time">
                     <i class="bi bi-clock me-1"></i><?= $ago ?>
@@ -384,6 +439,11 @@ body { background:#f0f4f8; }
                 <button class="notif-act-btn read-btn" onclick="markUnread(<?= $nid ?>)">
                     <i class="bi bi-dot"></i> Mark unread
                 </button>
+                <?php endif; ?>
+                <?php if ($view_link): ?>
+                <a href="<?= htmlspecialchars($view_link) ?>" class="notif-act-btn" style="text-decoration:none;">
+                    <i class="bi bi-eye"></i> View
+                </a>
                 <?php endif; ?>
                 <button class="notif-act-btn del-btn" onclick="deleteNotif(<?= $nid ?>)">
                     <i class="bi bi-trash3"></i> Delete

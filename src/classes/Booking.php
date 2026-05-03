@@ -1251,6 +1251,35 @@ class Booking {
             $msg = 'Booking updated successfully.';
         }
 
+        // ── Notifications ─────────────────────────────────────────────────
+        $b_row  = $this->db->selectRow("SELECT booking_reference, user_id FROM bookings WHERE booking_id = {$booking_id}");
+        $bref   = $b_row['booking_reference'] ?? "#{$booking_id}";
+        $uid    = (int)($b_row['user_id'] ?? $user_id);
+        $ndep   = $new_route['departure_city'] ?? '';
+        $narr   = $new_route['arrival_city']   ?? '';
+        $njdt   = isset($new_route['journey_date']) ? date('d M Y', strtotime($new_route['journey_date'])) : '';
+        $nfmt   = number_format((float)$new_fare, 2);
+
+        $user_notif = "Booking {$bref} journey changed to {$ndep} → {$narr} · {$njdt} · {$num_seats_new} seat(s) · Rs {$nfmt}.";
+        if ($preview['requires_payment']) {
+            $user_notif .= ' Extra payment of Rs ' . number_format($preview['amount_due'], 2) . ' required.';
+        } elseif (($preview['credit_amount'] ?? 0) > 0.009) {
+            $user_notif .= ' No extra payment needed.';
+        }
+        $this->pushNotif($uid, $user_notif, 'update', $booking_id);
+
+        $user_row = $this->db->selectRow("SELECT full_name FROM users WHERE user_id = {$uid}");
+        $uname    = $user_row['full_name'] ?? "User #{$uid}";
+        $this->pushNotifToAdmins(
+            "Booking {$bref} journey changed by {$uname} → {$ndep} → {$narr} · {$njdt} · Rs {$nfmt}",
+            'update', $booking_id
+        );
+        $this->pushNotifToEmployees(
+            "Booking {$bref} route changed to {$ndep} → {$narr} · {$njdt} · {$num_seats_new} seat(s)",
+            'update', $booking_id
+        );
+        // ─────────────────────────────────────────────────────────────────
+
         return [
             'success'          => true,
             'message'          => $msg,
