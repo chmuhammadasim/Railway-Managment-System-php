@@ -105,33 +105,16 @@ $is_future  = $journey_ts > time();
             display: flex; flex-direction: column;
             box-shadow: 4px 0 20px rgba(0,0,0,.3);
         }
-        .sb-brand {
-            padding: 1.3rem 1.4rem 1rem;
-            font-weight: 800; font-size: 1.05rem; color: #d1fae5;
-            border-bottom: 1px solid rgba(255,255,255,.12);
-            display: flex; align-items: center; gap: .6rem;
-        }
-        .sb-brand .brand-sub { font-size: .7rem; font-weight: 400; opacity: .6; display: block; margin-top: .1rem; }
-        .sb-section {
-            font-size: .68rem; text-transform: uppercase; letter-spacing: .1em;
-            color: rgba(255,255,255,.38); padding: 1rem 1.4rem .3rem; font-weight: 700;
-        }
-        .sb-link {
-            display: flex; align-items: center; gap: .65rem;
-            padding: .6rem 1.4rem; color: rgba(255,255,255,.75);
-            text-decoration: none; font-size: .86rem; transition: all .15s;
-            border-left: 3px solid transparent;
-        }
-        .sb-link:hover { background: rgba(255,255,255,.1); color: #fff; border-left-color: rgba(255,255,255,.3); }
-        .sb-link.active { background: rgba(255,255,255,.15); color: #fff; border-left-color: #34d399; font-weight: 600; }
-        .sb-link i { font-size: 1rem; width: 18px; text-align: center; }
-        .sb-footer { margin-top: auto; padding: 1rem 1.4rem; border-top: 1px solid rgba(255,255,255,.1); }
-        .sb-user { display: flex; align-items: center; gap: .6rem; color: rgba(255,255,255,.7); font-size: .8rem; }
-        .sb-user-avatar {
-            width: 32px; height: 32px; border-radius: 50%;
-            background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: .9rem; color: #fff; flex-shrink: 0;
-        }
+        .emp-sb-brand { padding:1.4rem 1.25rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.1); }
+        .emp-sb-brand .brand-icon { width:38px; height:38px; border-radius:10px; background:rgba(16,185,129,.2); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:.55rem; }
+        .emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
+        .emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
+        .sb-sep { font-size:.65rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.28); padding:.9rem 1.25rem .3rem; }
+        .emp-sidebar nav a { display:flex; align-items:center; gap:.7rem; padding:.62rem 1.25rem; color:rgba(255,255,255,.65); text-decoration:none; font-size:.875rem; font-weight:500; transition:background .15s,color .15s,border-color .15s; border-left:3px solid transparent; }
+        .emp-sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; border-left-color:rgba(52,211,153,.4); }
+        .emp-sidebar nav a.active { background:rgba(16,185,129,.15); color:#fff; border-left-color:#10b981; font-weight:600; }
+        .emp-sidebar nav a i { font-size:.95rem; width:18px; text-align:center; }
+        .emp-sb-footer { margin-top:auto; padding:1rem 1.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.71rem; color:rgba(255,255,255,.3); text-align:center; }
 
         /* ── Main area ── */
         .emp-main { flex: 1; overflow-x: hidden; }
@@ -293,35 +276,27 @@ $is_future  = $journey_ts > time();
 
 <!-- ── Sidebar ──────────────────────────────────────────────────────────────── -->
 <aside class="emp-sidebar no-print">
-    <div class="sb-brand">
-        <i class="bi bi-train-front-fill text-success"></i>
-        <div>
-            <div>Employee Panel</div>
-            <span class="brand-sub">Pakistan Railways</span>
-        </div>
+    <div class="emp-sb-brand">
+        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
+        <div class="brand-name">Employee Panel</div>
+        <div class="brand-role">Operations &amp; Management</div>
     </div>
-
-    <div class="sb-section">Main</div>
-    <a href="employee-dashboard.php" class="sb-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
-
-    <div class="sb-section">Operations</div>
-    <a href="my-trains.php" class="sb-link"><i class="bi bi-train-front"></i>My Trains</a>
-    <a href="check-passengers.php" class="sb-link active"><i class="bi bi-people"></i>Passengers</a>
-    <a href="assign-seats.php" class="sb-link"><i class="bi bi-grid-3x3-gap"></i>Seat Management</a>
-
-    <div class="sb-section">Account</div>
-    <a href="profile.php" class="sb-link"><i class="bi bi-person-circle"></i>My Profile</a>
-    <a href="logout.php" class="sb-link"><i class="bi bi-box-arrow-right"></i>Logout</a>
-
-    <div class="sb-footer">
-        <div class="sb-user">
-            <div class="sb-user-avatar"><?= strtoupper(substr($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'E', 0, 1)) ?></div>
-            <div>
-                <div style="color:#d1fae5;font-weight:600;"><?= htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Employee') ?></div>
-                <div>Employee</div>
-            </div>
-        </div>
-    </div>
+    <nav>
+        <div class="sb-sep">Main</div>
+        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sb-sep">Operations</div>
+        <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
+        <a href="check-passengers.php" class="active"><i class="bi bi-people"></i> Passengers</a>
+        <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
+        <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">Bookings</div>
+        <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
+        <div class="sb-sep">Account</div>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+    <div class="emp-sb-footer">Railway Management System</div>
 </aside>
 
 <!-- ── Main ─────────────────────────────────────────────────────────────────── -->

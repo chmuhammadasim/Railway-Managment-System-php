@@ -267,7 +267,10 @@ require_once 'inc/header.php';
         <a href="check-passengers.php" class="active"><i class="bi bi-people"></i> Passengers</a>
         <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
         <a href="operations-hub.php"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">Bookings</div>
+        <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
         <div class="sb-sep">Account</div>
+        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
         <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
         <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
     </nav>

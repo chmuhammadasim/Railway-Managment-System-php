@@ -1088,9 +1088,14 @@ require_once 'inc/header.php';
 .ops-sidebar .sb-user .info small { display:block; font-size:.68rem; opacity:.5; }
 .ops-sidebar .sb-user .info strong { font-size:.78rem; color:#fff; }
 /* Employee sidebar accent */
-.ops-sidebar.emp { background:linear-gradient(180deg,#134e4a 0%,#0d3330 100%); }
-.ops-sidebar.emp .sb-brand strong { color:#6ee7b7; }
-.ops-sidebar.emp nav a:hover, .ops-sidebar.emp nav a.active { border-left-color:#34d399; }
+.ops-sidebar.emp { background:linear-gradient(180deg,#012117 0%,#064e3b 100%); }
+.ops-sidebar.emp nav a:hover, .ops-sidebar.emp nav a.active { border-left-color:#10b981; background:rgba(16,185,129,.12); }
+/* emp-sb-brand shared style */
+.emp-sb-brand { padding:1.4rem 1.25rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.1); }
+.emp-sb-brand .brand-icon { width:38px; height:38px; border-radius:10px; background:rgba(16,185,129,.2); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:.55rem; }
+.emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
+.emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
+.emp-sb-footer { margin-top:auto; padding:1rem 1.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.71rem; color:rgba(255,255,255,.3); text-align:center; }
 /* User sidebar accent */
 .ops-sidebar.usr { background:linear-gradient(180deg,#1e1b4b 0%,#312e81 100%); }
 .ops-sidebar.usr nav a:hover, .ops-sidebar.usr nav a.active { border-left-color:#818cf8; }
@@ -1138,9 +1143,10 @@ require_once 'inc/header.php';
 <?php elseif ($role === ROLE_EMPLOYEE): ?>
 <!-- ══ EMPLOYEE SIDEBAR ═══════════════════════════ -->
 <aside class="ops-sidebar emp">
-    <div class="sb-brand">
-        <span>Employee Panel</span>
-        <strong><i class="bi bi-train-front-fill me-1"></i> Railway Staff</strong>
+    <div class="emp-sb-brand">
+        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
+        <div class="brand-name">Employee Panel</div>
+        <div class="brand-role">Operations &amp; Management</div>
     </div>
     <nav>
         <div class="sb-sep">Main</div>
@@ -1150,18 +1156,14 @@ require_once 'inc/header.php';
         <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
         <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
         <a href="operations-hub.php" class="active"><i class="bi bi-diagram-3"></i> Operations Hub</a>
+        <div class="sb-sep">Bookings</div>
+        <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
         <div class="sb-sep">Account</div>
         <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
-        <a href="profile.php"><i class="bi bi-person-circle"></i> Profile</a>
-        <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
     </nav>
-    <div class="sb-user">
-        <div class="avatar"><?= strtoupper(substr($user['full_name'] ?? 'E', 0, 1)) ?></div>
-        <div class="info">
-            <strong><?= htmlspecialchars($user['full_name'] ?? 'Employee') ?></strong>
-            <small>Staff Member</small>
-        </div>
-    </div>
+    <div class="emp-sb-footer">Railway Management System</div>
 </aside>
 
 <?php else: ?>
