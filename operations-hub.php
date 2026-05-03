@@ -16,6 +16,12 @@ $db->connect();
 $conn = $db->getConnection();
 
 $role = $_SESSION['role'] ?? ROLE_USER;
+
+// Operations Hub is for admin and employee only
+if ($role === ROLE_USER) {
+    header('Location: dashboard.php');
+    exit();
+}
 $userId = (int)($_SESSION['user_id'] ?? 0);
 $userObj = new User($db);
 $user = $userObj->getUserById($userId);
