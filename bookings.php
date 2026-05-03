@@ -63,85 +63,55 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
     }
     return true;
 });
+$pageTitle = 'My Bookings – Railway System';
+require_once 'inc/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bookings – Railway System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="public/css/style.css">
-    <style>
-        body { background: #0b1728; min-height: 100vh; color: #1e293b; }
-        .site-nav { background: rgba(0,0,0,.35); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,.08); }
-        .hero-band { background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); padding: 3rem 0 5rem; }
-        .hero-band h1 { color: #fff; font-size: 2rem; font-weight: 800; }
-        .hero-meta { color: rgba(255,255,255,.6); font-size: .88rem; }
-        .stat-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: .6rem 1.2rem; color: #fff; text-align: center; }
-        .stat-chip .num { font-size: 1.5rem; font-weight: 800; }
-        .stat-chip .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; opacity: .7; }
-        .wave-div { line-height: 0; background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); }
-        .wave-div svg { display: block; }
-        .content-area { background: #eef2f7; padding-bottom: 4rem; }
-        .filter-tabs { display: flex; gap: .5rem; flex-wrap: wrap; }
-        .filter-tab { padding: .4rem 1rem; border-radius: 20px; font-size: .82rem; font-weight: 600; border: 1.5px solid #d1d5db; background: #fff; color: #64748b; cursor: pointer; text-decoration: none; transition: all .15s; }
-        .filter-tab:hover { border-color: #1a3a6e; color: #1a3a6e; }
-        .filter-tab.active { background: #1a3a6e; border-color: #1a3a6e; color: #fff; }
-        .search-box { position: relative; }
-        .search-box .bi-search { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-        .search-box input { padding-left: 2.4rem; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff; }
-        .search-box input:focus { border-color: #1a3a6e; box-shadow: 0 0 0 3px rgba(26,58,110,.12); outline: none; }
-        .bk-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 1rem; transition: box-shadow .2s, transform .2s; }
-        .bk-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.12); transform: translateY(-2px); }
-        .bk-card-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.1rem 1.4rem .8rem; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: .5rem; }
-        .bk-route { font-size: 1.15rem; font-weight: 800; color: #0b1728; }
-        .bk-route .arrow { color: #10b981; margin: 0 .4rem; font-size: .9rem; }
-        .bk-train-pill { display: inline-flex; align-items: center; gap: .3rem; background: #f0f4ff; color: #1a3a6e; border-radius: 20px; padding: .2em .8em; font-size: .76rem; font-weight: 600; margin-top: .3rem; }
-        .bk-ref-pill { display: inline-flex; align-items: center; gap: .3rem; background: #f8fafc; color: #64748b; border-radius: 20px; padding: .2em .8em; font-size: .74rem; margin-top: .3rem; margin-left: .3rem; font-family: monospace; letter-spacing: .5px; }
-        .s-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .3em .9em; border-radius: 20px; font-weight: 700; font-size: .78rem; }
-        .s-confirmed, .s-completed { background: #d1fae5; color: #065f46; }
-        .s-pending   { background: #fef3c7; color: #78350f; }
-        .s-cancelled { background: #fee2e2; color: #7f1d1d; }
-        .s-refunded  { background: #ede9fe; color: #4c1d95; }
-        .s-failed    { background: #fee2e2; color: #7f1d1d; }
-        .bk-card-body { padding: .9rem 1.4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .6rem; }
-        .bk-info-cell .lbl { font-size: .68rem; text-transform: uppercase; letter-spacing: .4px; color: #9ca3af; display: block; }
-        .bk-info-cell .val { font-size: .88rem; font-weight: 600; color: #1e293b; }
-        .countdown-badge { display: inline-flex; align-items: center; gap: .35rem; background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; border-radius: 20px; padding: .25em .8em; font-size: .75rem; font-weight: 700; }
-        .bk-card-footer { padding: .8rem 1.4rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
-        .bk-card.s-confirmed { border-left: 4px solid #10b981; }
-        .bk-card.s-pending   { border-left: 4px solid #f59e0b; }
-        .bk-card.s-cancelled { border-left: 4px solid #ef4444; opacity: .88; }
-        .bk-card.s-completed { border-left: 4px solid #3b82f6; }
-        .bk-card.s-refunded  { border-left: 4px solid #8b5cf6; }
-        .empty-state { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
-        .empty-icon { font-size: 4rem; color: #d1d5db; margin-bottom: 1rem; }
-        @media (max-width: 576px) { .hero-band h1 { font-size: 1.5rem; } .bk-card-body { grid-template-columns: 1fr 1fr; } }
-    </style>
-</head>
-<body>
+<style>
+    .hero-band { background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); padding: 3rem 0 5rem; }
+    .hero-band h1 { color: #fff; font-size: 2rem; font-weight: 800; }
+    .hero-meta { color: rgba(255,255,255,.6); font-size: .88rem; }
+    .stat-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: .6rem 1.2rem; color: #fff; text-align: center; }
+    .stat-chip .num { font-size: 1.5rem; font-weight: 800; }
+    .stat-chip .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; opacity: .7; }
+    .wave-div { line-height: 0; background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); }
+    .wave-div svg { display: block; }
+    .content-area { background: #eef2f7; padding-bottom: 4rem; }
+    .filter-tabs { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .filter-tab { padding: .4rem 1rem; border-radius: 20px; font-size: .82rem; font-weight: 600; border: 1.5px solid #d1d5db; background: #fff; color: #64748b; cursor: pointer; text-decoration: none; transition: all .15s; }
+    .filter-tab:hover { border-color: #1a3a6e; color: #1a3a6e; }
+    .filter-tab.active { background: #1a3a6e; border-color: #1a3a6e; color: #fff; }
+    .search-box { position: relative; }
+    .search-box .bi-search { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+    .search-box input { padding-left: 2.4rem; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff; }
+    .search-box input:focus { border-color: #1a3a6e; box-shadow: 0 0 0 3px rgba(26,58,110,.12); outline: none; }
+    .bk-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 1rem; transition: box-shadow .2s, transform .2s; }
+    .bk-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.12); transform: translateY(-2px); }
+    .bk-card-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.1rem 1.4rem .8rem; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: .5rem; }
+    .bk-route { font-size: 1.15rem; font-weight: 800; color: #0b1728; }
+    .bk-route .arrow { color: #10b981; margin: 0 .4rem; font-size: .9rem; }
+    .bk-train-pill { display: inline-flex; align-items: center; gap: .3rem; background: #f0f4ff; color: #1a3a6e; border-radius: 20px; padding: .2em .8em; font-size: .76rem; font-weight: 600; margin-top: .3rem; }
+    .bk-ref-pill { display: inline-flex; align-items: center; gap: .3rem; background: #f8fafc; color: #64748b; border-radius: 20px; padding: .2em .8em; font-size: .74rem; margin-top: .3rem; margin-left: .3rem; font-family: monospace; letter-spacing: .5px; }
+    .s-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .3em .9em; border-radius: 20px; font-weight: 700; font-size: .78rem; }
+    .s-confirmed, .s-completed { background: #d1fae5; color: #065f46; }
+    .s-pending   { background: #fef3c7; color: #78350f; }
+    .s-cancelled { background: #fee2e2; color: #7f1d1d; }
+    .s-refunded  { background: #ede9fe; color: #4c1d95; }
+    .s-failed    { background: #fee2e2; color: #7f1d1d; }
+    .bk-card-body { padding: .9rem 1.4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .6rem; }
+    .bk-info-cell .lbl { font-size: .68rem; text-transform: uppercase; letter-spacing: .4px; color: #9ca3af; display: block; }
+    .bk-info-cell .val { font-size: .88rem; font-weight: 600; color: #1e293b; }
+    .countdown-badge { display: inline-flex; align-items: center; gap: .35rem; background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; border-radius: 20px; padding: .25em .8em; font-size: .75rem; font-weight: 700; }
+    .bk-card-footer { padding: .8rem 1.4rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .bk-card.s-confirmed { border-left: 4px solid #10b981; }
+    .bk-card.s-pending   { border-left: 4px solid #f59e0b; }
+    .bk-card.s-cancelled { border-left: 4px solid #ef4444; opacity: .88; }
+    .bk-card.s-completed { border-left: 4px solid #3b82f6; }
+    .bk-card.s-refunded  { border-left: 4px solid #8b5cf6; }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+    .empty-icon { font-size: 4rem; color: #d1d5db; margin-bottom: 1rem; }
+    @media (max-width: 576px) { .hero-band h1 { font-size: 1.5rem; } .bk-card-body { grid-template-columns: 1fr 1fr; } }
+</style>
 
-<nav class="site-nav navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="index.php">
-            <i class="bi bi-train-front-fill me-2 text-warning"></i>Railway System
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNav">
-            <ul class="navbar-nav ms-auto align-items-center gap-1">
-                <li class="nav-item"><a class="nav-link" href="index.php"><i class="bi bi-house me-1"></i>Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link active" href="bookings.php"><i class="bi bi-ticket-perforated me-1"></i>My Bookings</a></li>
-                <li class="nav-item"><a class="nav-link" href="profile.php"><i class="bi bi-person me-1"></i>Profile</a></li>
-                <li class="nav-item ms-1"><a class="btn btn-danger btn-sm" href="logout.php">Logout</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
 <div class="hero-band">
     <div class="container">
@@ -327,7 +297,6 @@ $bookings = array_filter($all_bookings, function($b) use ($filter, $search) {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function emailTicket(bookingId, btn) {
     const orig = btn.innerHTML;
@@ -353,5 +322,5 @@ function emailTicket(bookingId, btn) {
     .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
 }
 </script>
-</body>
-</html>
+
+<?php require_once 'inc/footer.php'; ?>

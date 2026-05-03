@@ -209,50 +209,57 @@ if (!empty($_SESSION['booking_update_flash'])) {
     $passenger_flash = $_SESSION['booking_update_flash'];
     unset($_SESSION['booking_update_flash']);
 }
+$pageTitle = 'Change Journey - Railway Management System';
+
+require_once 'inc/header.php';
+
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Change Journey - Railway Management System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="public/css/style.css">
-    <style>
-        body { background: #f0f2f5; }
-        .page-wrap { max-width: 940px; margin: 2rem auto; padding: 0 1rem; }
-        .current-route-card { background: #e8f0fe; border-left: 4px solid #1a3c6e; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1rem; }
-        .route-option { border: 2px solid #dee2e6; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.85rem; cursor: pointer; transition: all 0.2s; background: #fff; }
-        .route-option:hover { border-color: #2d6a9f; background: #f7fbff; }
-        .route-option input[type=radio] { margin-right: 0.6rem; }
-        .route-option.selected { border-color: #1a3c6e; background: #eef5ff; box-shadow: 0 6px 18px rgba(26,60,110,.08); }
-        .fare-pill { background: #1a3c6e; color: #fff; padding: 0.25em 0.7em; border-radius: 20px; font-weight: 600; }
-        .status-pill { padding: 0.25em 0.7em; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
-        .status-pill.due { background: #fff7ed; color: #c2410c; }
-        .status-pill.covered { background: #ecfdf5; color: #047857; }
-        .status-pill.credit { background: #f5f3ff; color: #6d28d9; }
-        .status-pill.seats { background: #ecfdf5; color: #047857; }
-        .deadline-warn { background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 0.9rem 1rem; }
-        .seat-chip { display: inline-flex; align-items: center; gap: .35rem; background: #fff; border: 1px solid #cbd5e1; border-radius: 999px; padding: .25rem .7rem; font-size: .76rem; font-weight: 700; color: #334155; }
-        .mix-chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .2rem .65rem; font-size: .74rem; font-weight: 700; }
-        .mix-economy { background: #dbeafe; color: #1d4ed8; }
-        .mix-premium { background: #dcfce7; color: #15803d; }
-        .mix-luxury { background: #ede9fe; color: #6d28d9; }
-        .passenger-box { background: #fff; border: 1px solid #dbe3ef; border-radius: 10px; padding: .9rem 1rem; }
-        .helper-text { font-size: .82rem; color: #64748b; }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">Railway System</a>
-            <div>
-                <a href="bookings.php" class="btn btn-outline-light btn-sm me-2">My Bookings</a>
-                <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
-            </div>
-        </div>
-    </nav>
+
+<style>
+
+    body { background: #f0f2f5; }
+
+    .page-wrap { max-width: 940px; margin: 2rem auto; padding: 0 1rem; }
+
+    .current-route-card { background: #e8f0fe; border-left: 4px solid #1a3c6e; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1rem; }
+
+    .route-option { border: 2px solid #dee2e6; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.85rem; cursor: pointer; transition: all 0.2s; background: #fff; }
+
+    .route-option:hover { border-color: #2d6a9f; background: #f7fbff; }
+
+    .route-option input[type=radio] { margin-right: 0.6rem; }
+
+    .route-option.selected { border-color: #1a3c6e; background: #eef5ff; box-shadow: 0 6px 18px rgba(26,60,110,.08); }
+
+    .fare-pill { background: #1a3c6e; color: #fff; padding: 0.25em 0.7em; border-radius: 20px; font-weight: 600; }
+
+    .status-pill { padding: 0.25em 0.7em; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+
+    .status-pill.due { background: #fff7ed; color: #c2410c; }
+
+    .status-pill.covered { background: #ecfdf5; color: #047857; }
+
+    .status-pill.credit { background: #f5f3ff; color: #6d28d9; }
+
+    .status-pill.seats { background: #ecfdf5; color: #047857; }
+
+    .deadline-warn { background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 0.9rem 1rem; }
+
+    .seat-chip { display: inline-flex; align-items: center; gap: .35rem; background: #fff; border: 1px solid #cbd5e1; border-radius: 999px; padding: .25rem .7rem; font-size: .76rem; font-weight: 700; color: #334155; }
+
+    .mix-chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .2rem .65rem; font-size: .74rem; font-weight: 700; }
+
+    .mix-economy { background: #dbeafe; color: #1d4ed8; }
+
+    .mix-premium { background: #dcfce7; color: #15803d; }
+
+    .mix-luxury { background: #ede9fe; color: #6d28d9; }
+
+    .passenger-box { background: #fff; border: 1px solid #dbe3ef; border-radius: 10px; padding: .9rem 1rem; }
+
+    .helper-text { font-size: .82rem; color: #64748b; }
+
+</style>
 
     <div class="page-wrap">
         <a href="bookings.php" class="btn btn-outline-secondary mb-3">
@@ -468,7 +475,6 @@ if (!empty($_SESSION['booking_update_flash'])) {
 
     </div><!-- /page-wrap -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function () {
         var options = document.querySelectorAll('[data-route-option]');
@@ -482,5 +488,5 @@ if (!empty($_SESSION['booking_update_flash'])) {
         });
     }());
     </script>
-</body>
-</html>
+
+<?php require_once 'inc/footer.php'; ?>

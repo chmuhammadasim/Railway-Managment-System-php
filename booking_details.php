@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // booking_details.php – E-Ticket / Booking Receipt
 
 require_once 'config/database.php';
@@ -77,123 +77,94 @@ $journey_ts = booking_departure_timestamp($booking);
 $hours_left = ($journey_ts - time()) / 3600;
 $can_modify = ($booking['booking_status'] !== 'cancelled') && $hours_left >= 4;
 $can_cancel = ($booking['booking_status'] !== 'cancelled') && $hours_left > 0;
+$pageTitle = 'E-Ticket #' . htmlspecialchars($booking['booking_reference']) . ' â€“ Pakistan Railways';
+require_once 'inc/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Ticket #<?= htmlspecialchars($booking['booking_reference']) ?> – Pakistan Railways</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="public/css/style.css">
-    <style>
-        body { background: #0b1728; min-height: 100vh; color: #1e293b; }
-        .site-nav { background: rgba(0,0,0,.35); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,.08); }
-        .hero-band { background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); padding: 3rem 0 5rem; }
-        .hero-band h1 { color: #fff; font-size: 2rem; font-weight: 800; margin-bottom: .5rem; }
-        .hero-meta { color: rgba(255,255,255,.65); font-size: .88rem; }
-        .hero-ref-badge { display: inline-block; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; border-radius: 8px; padding: .45rem 1.1rem; font-size: .8rem; letter-spacing: 2px; font-family: monospace; margin-bottom: .8rem; }
-        .s-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .35em 1em; border-radius: 20px; font-weight: 700; font-size: .82rem; }
-        .s-confirmed, .s-completed { background: #d1fae5; color: #065f46; }
-        .s-pending   { background: #fef3c7; color: #78350f; }
-        .s-cancelled { background: #fee2e2; color: #7f1d1d; }
-        .s-refunded  { background: #ede9fe; color: #4c1d95; }
-        .s-failed    { background: #fee2e2; color: #7f1d1d; }
-        .wave-div { line-height: 0; background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); }
-        .wave-div svg { display: block; }
-        .content-area { background: #eef2f7; padding-bottom: 4rem; }
-        .ticket-wrap { max-width: 900px; margin: 0 auto; }
-        .action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-        .tkt-card { background: #fff; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,.12); overflow: hidden; margin-bottom: 1.25rem; }
-        .tkt-top { background: linear-gradient(135deg, #0b1728 0%, #1a3a6e 100%); padding: 1.6rem 2rem; color: #fff; }
-        .tkt-logo { font-size: 1.45rem; font-weight: 800; }
-        .tkt-ref-line { font-size: .82rem; opacity: .7; margin-top: .25rem; font-family: monospace; letter-spacing: 1px; }
-        .journey-bar { display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem 2rem; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; }
-        .jb-city { flex: 1; text-align: center; }
-        .jb-city-name { font-size: 1.7rem; font-weight: 800; color: #0b1728; letter-spacing: -.5px; }
-        .jb-city-time { font-size: 1rem; font-weight: 600; color: #374151; margin-top: .1rem; }
-        .jb-city-lbl  { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; }
-        .jb-center { flex: 1; text-align: center; }
-        .jb-track { position: relative; height: 4px; background: linear-gradient(90deg, #1a3a6e, #10b981); border-radius: 4px; margin: .5rem 0; }
-        .jb-track::before, .jb-track::after { content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; }
-        .jb-track::before { left: 0; background: #1a3a6e; }
-        .jb-track::after  { right: 0; background: #10b981; }
-        .jb-dist { font-size: .76rem; color: #94a3b8; margin-top: .2rem; }
-        .tear-line { position: relative; height: 28px; display: flex; align-items: center; }
-        .tear-line::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed #d1d5db; }
-        .tear-circ { position: absolute; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: #eef2f7; z-index: 1; border: 1px solid #d1d5db; }
-        .tear-circ-l { left: -12px; }
-        .tear-circ-r { right: -12px; }
-        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: .85rem; padding: 1.4rem 2rem; }
-        .info-cell { background: #f8fafc; border-radius: 10px; padding: .7rem 1rem; }
-        .info-cell .lbl { font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; color: #9ca3af; display: block; margin-bottom: .2rem; }
-        .info-cell .val { font-size: .9rem; font-weight: 600; color: #1e293b; }
-        .section-hdr { display: flex; align-items: center; gap: .6rem; padding: .7rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #1a3a6e; }
-        .pax-table { margin: 0; }
-        .pax-table thead th { background: #0b1728; color: #fff; font-weight: 600; font-size: .8rem; padding: .65rem 1rem; border: none; }
-        .pax-table tbody td { padding: .65rem 1rem; vertical-align: middle; font-size: .88rem; border-color: #f1f5f9; }
-        .pax-table tbody tr:hover { background: #f8fafc; }
-        .seat-chip { display: inline-block; background: #0b1728; color: #fff; border-radius: 6px; padding: .2em .65em; font-size: .84rem; font-weight: 700; font-family: monospace; }
-        .berth-lower { color: #2563eb; font-weight: 600; }
-        .berth-mid   { color: #d97706; font-weight: 600; }
-        .berth-upper { color: #7c3aed; font-weight: 600; }
-        .class-chip { display: inline-block; padding: .2em .75em; border-radius: 12px; font-size: .76rem; font-weight: 600; }
-        .class-economy { background: #dcfce7; color: #15803d; }
-        .class-premium { background: #fef3c7; color: #92400e; }
-        .class-luxury  { background: #ede9fe; color: #6d28d9; }
-        .bottom-row { padding: 1.4rem 2rem; }
-        .barcode-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.3rem; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .barcode-svg { display: flex; align-items: flex-end; gap: 2px; height: 54px; margin-bottom: .65rem; }
-        .barcode-svg span { display: inline-block; background: #0b1728; width: 3px; border-radius: 1px; }
-        .barcode-ref { font-size: .72rem; color: #6b7280; letter-spacing: 2px; font-family: monospace; }
-        .barcode-hint { font-size: .65rem; color: #aaa; margin-top: .25rem; }
-        .fare-hero { background: linear-gradient(135deg, #0b1728 0%, #1a3a6e 100%); border-radius: 12px; padding: 1.5rem 1.6rem; color: #fff; text-align: right; height: 100%; display: flex; flex-direction: column; justify-content: center; }
-        .fare-hero-lbl { font-size: .8rem; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
-        .fare-hero-amt { font-size: 2.5rem; font-weight: 800; color: #fbbf24; line-height: 1.1; margin: .15rem 0; }
-        .fare-hero-sub { font-size: .78rem; opacity: .55; }
-        .fare-hero-txn { font-size: .72rem; opacity: .5; margin-top: .5rem; font-family: monospace; }
-        .pay-section { padding: 1rem 2rem 1.2rem; }
-        .pay-row { border-left: 3px solid #10b981; background: #f8fafc; border-radius: 0 10px 10px 0; padding: .7rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
-        .pay-row.refund-row { border-color: #9333ea; }
-        .tkt-footer { background: #fafafa; border-top: 2px dashed #d1d5db; padding: 1.25rem 2rem; font-size: .82rem; color: #64748b; }
-        @media print {
-            body, html { background: white !important; }
-            .no-print { display: none !important; }
-            .content-area { background: white !important; padding: 0 !important; }
-            .hero-band, .wave-div, .site-nav, .action-bar { display: none !important; }
-            .tkt-card { box-shadow: none !important; border: 1px solid #ccc !important; border-radius: 0 !important; }
-            .ticket-wrap { max-width: 100% !important; }
-        }
-        @media (max-width: 576px) {
-            .jb-city-name { font-size: 1.25rem; }
-            .hero-band h1  { font-size: 1.5rem; }
-            .fare-hero-amt { font-size: 1.9rem; }
-            .info-grid, .bottom-row, .pay-section, .tkt-footer { padding-left: 1rem; padding-right: 1rem; }
-            .journey-bar { padding: 1rem; gap: .75rem; }
-            .tkt-top { padding: 1.2rem; }
-        }
-    </style>
-</head>
-<body>
-
-<nav class="site-nav navbar navbar-expand-lg navbar-dark no-print">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="index.php">
-            <i class="bi bi-train-front-fill me-2 text-warning"></i>Railway System
-        </a>
-        <div class="d-flex gap-2">
-            <?php if ($is_admin): ?>
-            <a href="manage-bookings.php" class="btn btn-outline-light btn-sm"><i class="bi bi-list-check me-1"></i>Manage Bookings</a>
-            <?php else: ?>
-            <a href="bookings.php" class="btn btn-outline-light btn-sm"><i class="bi bi-list-ul me-1"></i>My Bookings</a>
-            <?php endif; ?>
-            <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
-        </div>
-    </div>
-</nav>
-
-<div class="hero-band no-print">
+<style>
+    .hero-band { background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); padding: 3rem 0 5rem; }
+    .hero-band h1 { color: #fff; font-size: 2rem; font-weight: 800; margin-bottom: .5rem; }
+    .hero-meta { color: rgba(255,255,255,.65); font-size: .88rem; }
+    .hero-ref-badge { display: inline-block; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; border-radius: 8px; padding: .45rem 1.1rem; font-size: .8rem; letter-spacing: 2px; font-family: monospace; margin-bottom: .8rem; }
+    .s-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .35em 1em; border-radius: 20px; font-weight: 700; font-size: .82rem; }
+    .s-confirmed, .s-completed { background: #d1fae5; color: #065f46; }
+    .s-pending   { background: #fef3c7; color: #78350f; }
+    .s-cancelled { background: #fee2e2; color: #7f1d1d; }
+    .s-refunded  { background: #ede9fe; color: #4c1d95; }
+    .s-failed    { background: #fee2e2; color: #7f1d1d; }
+    .wave-div { line-height: 0; background: linear-gradient(135deg, #0b1728 0%, #0f2040 55%, #1a3a6e 100%); }
+    .wave-div svg { display: block; }
+    .content-area { background: #eef2f7; padding-bottom: 4rem; }
+    .ticket-wrap { max-width: 900px; margin: 0 auto; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .tkt-card { background: #fff; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,.12); overflow: hidden; margin-bottom: 1.25rem; }
+    .tkt-top { background: linear-gradient(135deg, #0b1728 0%, #1a3a6e 100%); padding: 1.6rem 2rem; color: #fff; }
+    .tkt-logo { font-size: 1.45rem; font-weight: 800; }
+    .tkt-ref-line { font-size: .82rem; opacity: .7; margin-top: .25rem; font-family: monospace; letter-spacing: 1px; }
+    .journey-bar { display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem 2rem; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; }
+    .jb-city { flex: 1; text-align: center; }
+    .jb-city-name { font-size: 1.7rem; font-weight: 800; color: #0b1728; letter-spacing: -.5px; }
+    .jb-city-time { font-size: 1rem; font-weight: 600; color: #374151; margin-top: .1rem; }
+    .jb-city-lbl  { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; }
+    .jb-center { flex: 1; text-align: center; }
+    .jb-track { position: relative; height: 4px; background: linear-gradient(90deg, #1a3a6e, #10b981); border-radius: 4px; margin: .5rem 0; }
+    .jb-track::before, .jb-track::after { content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; }
+    .jb-track::before { left: 0; background: #1a3a6e; }
+    .jb-track::after  { right: 0; background: #10b981; }
+    .jb-dist { font-size: .76rem; color: #94a3b8; margin-top: .2rem; }
+    .tear-line { position: relative; height: 28px; display: flex; align-items: center; }
+    .tear-line::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed #d1d5db; }
+    .tear-circ { position: absolute; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: #eef2f7; z-index: 1; border: 1px solid #d1d5db; }
+    .tear-circ-l { left: -12px; }
+    .tear-circ-r { right: -12px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: .85rem; padding: 1.4rem 2rem; }
+    .info-cell { background: #f8fafc; border-radius: 10px; padding: .7rem 1rem; }
+    .info-cell .lbl { font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; color: #9ca3af; display: block; margin-bottom: .2rem; }
+    .info-cell .val { font-size: .9rem; font-weight: 600; color: #1e293b; }
+    .section-hdr { display: flex; align-items: center; gap: .6rem; padding: .7rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #1a3a6e; }
+    .pax-table { margin: 0; }
+    .pax-table thead th { background: #0b1728; color: #fff; font-weight: 600; font-size: .8rem; padding: .65rem 1rem; border: none; }
+    .pax-table tbody td { padding: .65rem 1rem; vertical-align: middle; font-size: .88rem; border-color: #f1f5f9; }
+    .pax-table tbody tr:hover { background: #f8fafc; }
+    .seat-chip { display: inline-block; background: #0b1728; color: #fff; border-radius: 6px; padding: .2em .65em; font-size: .84rem; font-weight: 700; font-family: monospace; }
+    .berth-lower { color: #2563eb; font-weight: 600; }
+    .berth-mid   { color: #d97706; font-weight: 600; }
+    .berth-upper { color: #7c3aed; font-weight: 600; }
+    .class-chip { display: inline-block; padding: .2em .75em; border-radius: 12px; font-size: .76rem; font-weight: 600; }
+    .class-economy { background: #dcfce7; color: #15803d; }
+    .class-premium { background: #fef3c7; color: #92400e; }
+    .class-luxury  { background: #ede9fe; color: #6d28d9; }
+    .bottom-row { padding: 1.4rem 2rem; }
+    .barcode-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.3rem; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .barcode-svg { display: flex; align-items: flex-end; gap: 2px; height: 54px; margin-bottom: .65rem; }
+    .barcode-svg span { display: inline-block; background: #0b1728; width: 3px; border-radius: 1px; }
+    .barcode-ref { font-size: .72rem; color: #6b7280; letter-spacing: 2px; font-family: monospace; }
+    .barcode-hint { font-size: .65rem; color: #aaa; margin-top: .25rem; }
+    .fare-hero { background: linear-gradient(135deg, #0b1728 0%, #1a3a6e 100%); border-radius: 12px; padding: 1.5rem 1.6rem; color: #fff; text-align: right; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+    .fare-hero-lbl { font-size: .8rem; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
+    .fare-hero-amt { font-size: 2.5rem; font-weight: 800; color: #fbbf24; line-height: 1.1; margin: .15rem 0; }
+    .fare-hero-sub { font-size: .78rem; opacity: .55; }
+    .fare-hero-txn { font-size: .72rem; opacity: .5; margin-top: .5rem; font-family: monospace; }
+    .pay-section { padding: 1rem 2rem 1.2rem; }
+    .pay-row { border-left: 3px solid #10b981; background: #f8fafc; border-radius: 0 10px 10px 0; padding: .7rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
+    .pay-row.refund-row { border-color: #9333ea; }
+    .tkt-footer { background: #fafafa; border-top: 2px dashed #d1d5db; padding: 1.25rem 2rem; font-size: .82rem; color: #64748b; }
+    @media print {
+        body, html { background: white !important; }
+        .no-print { display: none !important; }
+        .content-area { background: white !important; padding: 0 !important; }
+        .hero-band, .wave-div, .site-navbar, .action-bar { display: none !important; }
+        .tkt-card { box-shadow: none !important; border: 1px solid #ccc !important; border-radius: 0 !important; }
+        .ticket-wrap { max-width: 100% !important; }
+    }
+    @media (max-width: 576px) {
+        .jb-city-name { font-size: 1.25rem; }
+        .hero-band h1  { font-size: 1.5rem; }
+        .fare-hero-amt { font-size: 1.9rem; }
+        .info-grid, .bottom-row, .pay-section, .tkt-footer { padding-left: 1rem; padding-right: 1rem; }
+        .journey-bar { padding: 1rem; gap: .75rem; }
+        .tkt-top { padding: 1.2rem; }
+    }
+</style><div class="hero-band no-print">
     <div class="container text-center">
         <div class="hero-ref-badge"><i class="bi bi-ticket-perforated me-1"></i><?= htmlspecialchars($booking['booking_reference']) ?></div>
         <h1><i class="bi bi-receipt me-2"></i>E-Ticket</h1>
@@ -478,7 +449,6 @@ $can_cancel = ($booking['booking_status'] !== 'cancelled') && $hours_left > 0;
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function sendTicketEmail(bookingId) {
     const btn  = document.getElementById('emailTicketBtn');
@@ -506,5 +476,5 @@ function sendTicketEmail(bookingId) {
     .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
 }
 </script>
-</body>
-</html>
+
+<?php require_once 'inc/footer.php'; ?>
