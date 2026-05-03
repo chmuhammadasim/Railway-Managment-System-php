@@ -15,6 +15,7 @@ $search_to   = isset($_GET['arrival_city'])   ? trim($_GET['arrival_city'])   : 
 $search_date = isset($_GET['journey_date'])   ? trim($_GET['journey_date'])   : '';
 $has_search  = $search_from !== '' || $search_to !== '' || $search_date !== '';
 $show_all    = isset($_GET['show_all']);
+$show_month  = isset($_GET['show_month']);
 
 if ($has_search) {
     $conn  = $db->getConnection();
@@ -23,6 +24,13 @@ if ($has_search) {
     if ($search_to)   $where[] = "r.arrival_city   = '" . $conn->real_escape_string($search_to)   . "'";
     if ($search_date) $where[] = "r.journey_date   = '" . $conn->real_escape_string($search_date)  . "'";
     $sql    = "SELECT r.*, t.train_name, t.train_number FROM routes r JOIN trains t ON r.train_id = t.train_id WHERE " . implode(' AND ', $where) . " ORDER BY r.journey_date, r.departure_time";
+    $routes = $db->select($sql) ?: [];
+} elseif ($show_month) {
+    $month_start = date('Y-m-01');
+    $month_end   = date('Y-m-t');
+    $sql = "SELECT r.*, t.train_name, t.train_number FROM routes r JOIN trains t ON r.train_id = t.train_id
+            WHERE r.status = 'scheduled' AND r.journey_date BETWEEN '{$month_start}' AND '{$month_end}'
+            ORDER BY r.journey_date ASC, r.departure_time ASC";
     $routes = $db->select($sql) ?: [];
 } else {
     $routes = $train->getAllRoutes() ?: [];
@@ -597,6 +605,59 @@ require_once 'inc/header.php';
 
 
 <!-- ═══════════════════════════════════════════════
+     STATS STRIP
+════════════════════════════════════════════════ -->
+<div class="ix-stats">
+    <div class="ix-stats-inner">
+        <div class="ix-stat-item">
+            <div class="si-ico" style="background:#dbeafe;color:#2563eb;">
+                <i class="bi bi-train-front-fill"></i>
+            </div>
+            <div>
+                <div class="si-val" data-count="<?= $total_trains ?>"><?= number_format($total_trains) ?>+</div>
+                <div class="si-lbl">Active Trains</div>
+            </div>
+        </div>
+        <div class="ix-stat-item">
+            <div class="si-ico" style="background:#dcfce7;color:#16a34a;">
+                <i class="bi bi-map-fill"></i>
+            </div>
+            <div>
+                <div class="si-val" data-count="<?= $total_routes ?>"><?= number_format($total_routes) ?>+</div>
+                <div class="si-lbl">Scheduled Routes</div>
+            </div>
+        </div>
+        <div class="ix-stat-item">
+            <div class="si-ico" style="background:#fef3c7;color:#d97706;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="si-val" data-count="<?= $total_users ?>"><?= number_format($total_users) ?>+</div>
+                <div class="si-lbl">Registered Passengers</div>
+            </div>
+        </div>
+        <div class="ix-stat-item">
+            <div class="si-ico" style="background:#ede9fe;color:#7c3aed;">
+                <i class="bi bi-ticket-perforated-fill"></i>
+            </div>
+            <div>
+                <div class="si-val" data-count="<?= $total_bookings ?>"><?= number_format($total_bookings) ?>+</div>
+                <div class="si-lbl">Confirmed Bookings</div>
+            </div>
+        </div>
+        <div class="ix-stat-item">
+            <div class="si-ico" style="background:#fee2e2;color:#dc2626;">
+                <i class="bi bi-shield-check-fill"></i>
+            </div>
+            <div>
+                <div class="si-val">100%</div>
+                <div class="si-lbl">Secure &amp; Trusted</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      SEARCH
 ════════════════════════════════════════════════ -->
 <div class="ix-search-band" id="search">
@@ -641,7 +702,8 @@ require_once 'inc/header.php';
                 <label><i class="bi bi-calendar3"></i> Travel Date</label>
                 <input type="date" name="journey_date"
                        min="<?= date('Y-m-d') ?>"
-                       value="<?= htmlspecialchars($search_date ?: date('Y-m-d')) ?>">
+                       value="<?= htmlspecialchars($search_date) ?>"
+                       placeholder="Any date">
             </div>
 
             <button type="submit" class="btn-search-ix">
@@ -702,6 +764,13 @@ require_once 'inc/header.php';
             ?>
             &nbsp;·&nbsp; <a href="index.php" style="font-size:.85rem;">Clear search</a>
         </p>
+        <?php elseif ($show_month): ?>
+        <div class="ix-section-badge"><i class="bi bi-calendar3"></i> This Month</div>
+        <h2><?= date('F Y') ?> – All Routes</h2>
+        <p>
+            Showing <?= count($routes) ?> route<?= count($routes) !== 1 ? 's' : '' ?> scheduled for <?= date('F Y') ?>.
+            &nbsp;·&nbsp; <a href="index.php#routes" style="font-size:.85rem;">Show upcoming</a>
+        </p>
         <?php else: ?>
         <div class="ix-section-badge"><i class="bi bi-map"></i> Upcoming Trips</div>
         <h2><?= $show_all ? 'All Available Routes' : 'Popular Routes' ?></h2>
@@ -711,6 +780,7 @@ require_once 'inc/header.php';
             &nbsp;·&nbsp; <a href="index.php#routes" style="font-size:.85rem;">Show less</a>
             <?php else: ?>
             Browse upcoming departures — click any card to book a seat instantly.
+            &nbsp;·&nbsp; <a href="index.php?show_month=1#routes" style="font-size:.85rem;color:#7c3aed;"><i class="bi bi-calendar3 me-1"></i><?= date('F') ?> routes</a>
             <?php endif; ?>
         </p>
         <?php endif; ?>
@@ -782,10 +852,13 @@ require_once 'inc/header.php';
             </div>
         <?php endif; ?>
     </div>
-    <?php if (!$show_all && !$has_search && $routes && count($routes) > 6): ?>
+    <?php if (!$show_all && !$show_month && !$has_search && $routes && count($routes) > 6): ?>
     <div class="ix-routes-more">
         <a href="index.php?show_all=1#routes" class="btn-routes-all">
             View All <?= count($routes) ?> Routes <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        <a href="index.php?show_month=1#routes" class="btn-routes-all ms-2" style="border-color:#7c3aed;color:#7c3aed;">
+            <i class="bi bi-calendar3 me-1"></i><?= date('F') ?> Schedule
         </a>
     </div>
     <?php endif; ?>

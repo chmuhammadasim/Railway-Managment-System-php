@@ -48,7 +48,7 @@ class Train {
         $query = "SELECT r.*, t.train_name, t.train_number 
                   FROM routes r 
                   JOIN trains t ON r.train_id = t.train_id 
-                  WHERE r.status = 'scheduled'";
+                  WHERE r.status = 'scheduled' AND r.journey_date >= CURDATE()";
 
         if (isset($filter['departure_city'])) {
             $query .= " AND r.departure_city = '{$filter['departure_city']}'";
@@ -60,7 +60,7 @@ class Train {
             $query .= " AND r.journey_date = '{$filter['journey_date']}'";
         }
         
-        $query .= " ORDER BY r.departure_time ASC";
+        $query .= " ORDER BY r.journey_date ASC, r.departure_time ASC";
         
         return $this->db->select($query);
     }

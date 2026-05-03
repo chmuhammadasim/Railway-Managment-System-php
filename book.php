@@ -642,6 +642,28 @@ function render() {
     }
 
     document.getElementById('submitBtn').disabled = n === 0;
+
+    // Update progress bar steps
+    updateSteps(n);
+}
+
+function updateSteps(seatCount) {
+    const steps = document.querySelectorAll('.bk-step');
+    const connectors = document.querySelectorAll('.bk-connector');
+    // Step 1: always done/active depending on seats
+    if (seatCount > 0) {
+        steps[0].classList.remove('active'); steps[0].classList.add('done');
+        steps[1].classList.remove('done');   steps[1].classList.add('active');
+        steps[2].classList.remove('active', 'done');
+        if (connectors[0]) connectors[0].classList.add('done');
+        if (connectors[1]) connectors[1].classList.remove('done');
+    } else {
+        steps[0].classList.add('active');    steps[0].classList.remove('done');
+        steps[1].classList.remove('active', 'done');
+        steps[2].classList.remove('active', 'done');
+        if (connectors[0]) connectors[0].classList.remove('done');
+        if (connectors[1]) connectors[1].classList.remove('done');
+    }
 }
 
 function fmt(n) { return Math.round(n).toLocaleString('en-PK'); }
@@ -655,7 +677,13 @@ document.getElementById('bookingForm').addEventListener('submit', function(e) {
         if (!inp.value.trim()) { inp.classList.add('is-invalid'); ok = false; }
         else inp.classList.remove('is-invalid');
     });
-    if (!ok) { e.preventDefault(); alert('Please fill in all passenger details.'); }
+    if (!ok) { e.preventDefault(); alert('Please fill in all passenger details.'); return; }
+    // Mark step 3 active on valid submit
+    const steps = document.querySelectorAll('.bk-step');
+    const connectors = document.querySelectorAll('.bk-connector');
+    steps[1].classList.remove('active'); steps[1].classList.add('done');
+    steps[2].classList.add('active');
+    if (connectors[1]) connectors[1].classList.add('done');
 });
 </script>
 

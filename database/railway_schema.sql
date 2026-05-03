@@ -1057,6 +1057,285 @@ INSERT IGNORE INTO crew_assignments (route_id, employee_id, role_title, shift_st
 (15, 12, 'Train Conductor',     '2026-04-12 05:30:00', '2026-04-12 09:00:00', 'assigned', 'Khyber Mail Karachi-Peshawar tomorrow'),
 (18, 13, 'Station Captain',     '2026-04-12 06:30:00', '2026-04-12 13:00:00', 'assigned', 'Allama Iqbal Express Lahore-Islamabad tomorrow');
 
+-- ========================================
+-- MORE TRAINS (IDs 21-35)
+-- ========================================
+INSERT IGNORE INTO trains (train_name, train_number, train_type, total_seats, available_seats, status) VALUES
+('Lahore Express',         '71-UP', 'Express',   400, 375, 'active'),
+('Chenab Express',         '73-UP', 'Express',   360, 340, 'active'),
+('Indus Express',          '75-UP', 'Express',   380, 355, 'active'),
+('Soan Express',           '77-UP', 'Express',   320, 295, 'active'),
+('Jhelum Express',         '79-UP', 'Express',   350, 325, 'active'),
+('Attock Express',         '81-UP', 'Express',   300, 275, 'active'),
+('Bahawalpur Express',     '83-UP', 'Express',   330, 305, 'active'),
+('Gujranwala Express',     '85-UP', 'Passenger', 280, 260, 'active'),
+('Sahiwal Express',        '87-UP', 'Passenger', 260, 240, 'active'),
+('Larkana Express',        '89-UP', 'Express',   310, 285, 'active'),
+('Nawabshah Express',      '91-UP', 'Passenger', 270, 250, 'active'),
+('Jacobabad Express',      '93-UP', 'Passenger', 250, 230, 'active'),
+('Dera Ghazi Khan Express','95-UP', 'Express',   290, 265, 'active'),
+('Mardan Express',         '97-UP', 'Express',   310, 285, 'active'),
+('Swabi Express',          '99-UP', 'Passenger', 260, 240, 'active');
+
+-- ========================================
+-- MORE ROUTES (Weeks 2-5 from today)
+-- Covers days +8 through +35 (about 5 weeks)
+-- Uses a mix of existing trains (1-20) and new trains (21-35)
+-- ========================================
+
+-- ---- Days +8 to +14 (Week 2) ----
+INSERT IGNORE INTO routes (train_id, departure_city, arrival_city, departure_time, arrival_time, distance_km, base_fare, journey_date, available_seats, status) VALUES
+-- Day +8
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),470,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),360,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),375,'scheduled'),
+(22, 'Islamabad',      'Lahore',         '10:00:00','14:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),340,'scheduled'),
+(23, 'Multan',         'Karachi',        '06:00:00','17:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),355,'scheduled'),
+(24, 'Rawalpindi',     'Lahore',         '09:00:00','12:30:00', 376.00,1700.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),295,'scheduled'),
+(25, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),325,'scheduled'),
+(26, 'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL  8 DAY),275,'scheduled'),
+-- Day +9
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),375,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),340,'scheduled'),
+(27, 'Lahore',         'Bahawalpur',     '11:00:00','16:30:00', 415.00,1550.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),305,'scheduled'),
+(28, 'Gujranwala',     'Karachi',        '07:30:00','22:30:00',1180.00,3400.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),260,'scheduled'),
+(29, 'Lahore',         'Sahiwal',        '10:30:00','13:00:00', 164.00, 800.00, DATE_ADD(CURDATE(),INTERVAL  9 DAY),240,'scheduled'),
+-- Day +10
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),470,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),360,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),280,'scheduled'),
+(30, 'Larkana',        'Karachi',        '06:00:00','13:30:00', 370.00,1300.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),285,'scheduled'),
+(31, 'Karachi',        'Nawabshah',      '08:00:00','12:30:00', 200.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 10 DAY),250,'scheduled'),
+-- Day +11
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),400,'scheduled'),
+(11, 'Karachi',        'Sukkur',         '07:00:00','14:30:00', 473.00,1600.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),290,'scheduled'),
+(13, 'Peshawar',       'Lahore',         '06:00:00','13:30:00', 508.00,1900.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),325,'scheduled'),
+(14, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),300,'scheduled'),
+(32, 'Karachi',        'Jacobabad',      '06:30:00','16:00:00', 540.00,1750.00, DATE_ADD(CURDATE(),INTERVAL 11 DAY),230,'scheduled'),
+-- Day +12
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),470,'scheduled'),
+(15, 'Islamabad',      'Lahore',         '09:30:00','13:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),370,'scheduled'),
+(16, 'Multan',         'Lahore',         '10:00:00','14:00:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),335,'scheduled'),
+(33, 'Multan',         'Lahore',         '07:00:00','12:00:00', 340.00,1450.00, DATE_ADD(CURDATE(),INTERVAL 12 DAY),265,'scheduled'),
+-- Day +13
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 13 DAY),350,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 13 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 13 DAY),375,'scheduled'),
+(20, 'Rawalpindi',     'Abbottabad',     '10:00:00','14:30:00', 160.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 13 DAY),350,'scheduled'),
+(34, 'Lahore',         'Mardan',         '07:00:00','14:30:00', 580.00,2000.00, DATE_ADD(CURDATE(),INTERVAL 13 DAY),265,'scheduled'),
+-- Day +14
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),380,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),400,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),470,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),360,'scheduled'),
+(35, 'Lahore',         'Swabi',          '08:30:00','16:00:00', 620.00,2100.00, DATE_ADD(CURDATE(),INTERVAL 14 DAY),240,'scheduled');
+
+-- ---- Days +15 to +21 (Week 3) ----
+INSERT IGNORE INTO routes (train_id, departure_city, arrival_city, departure_time, arrival_time, distance_km, base_fare, journey_date, available_seats, status) VALUES
+-- Day +15
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),420,'scheduled'),
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),350,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),470,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),360,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),340,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),375,'scheduled'),
+(22, 'Islamabad',      'Lahore',         '10:00:00','14:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 15 DAY),340,'scheduled'),
+-- Day +16
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),380,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),375,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),280,'scheduled'),
+(23, 'Multan',         'Karachi',        '06:00:00','17:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),355,'scheduled'),
+(24, 'Rawalpindi',     'Lahore',         '09:00:00','12:30:00', 376.00,1700.00, DATE_ADD(CURDATE(),INTERVAL 16 DAY),295,'scheduled'),
+-- Day +17
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),420,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),470,'scheduled'),
+(11, 'Karachi',        'Sukkur',         '07:00:00','14:30:00', 473.00,1600.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),290,'scheduled'),
+(12, 'Quetta',         'Karachi',        '06:30:00','22:00:00', 683.00,2200.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),255,'scheduled'),
+(14, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),300,'scheduled'),
+(15, 'Islamabad',      'Lahore',         '09:30:00','13:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),370,'scheduled'),
+(25, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),325,'scheduled'),
+(26, 'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 17 DAY),275,'scheduled'),
+-- Day +18
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),350,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),360,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),340,'scheduled'),
+(13, 'Peshawar',       'Lahore',         '06:00:00','13:30:00', 508.00,1900.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),325,'scheduled'),
+(16, 'Multan',         'Lahore',         '10:00:00','14:00:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),335,'scheduled'),
+(27, 'Lahore',         'Bahawalpur',     '11:00:00','16:30:00', 415.00,1550.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),305,'scheduled'),
+(28, 'Gujranwala',     'Karachi',        '07:30:00','22:30:00',1180.00,3400.00, DATE_ADD(CURDATE(),INTERVAL 18 DAY),260,'scheduled'),
+-- Day +19
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),380,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),400,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),470,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),375,'scheduled'),
+(29, 'Lahore',         'Sahiwal',        '10:30:00','13:00:00', 164.00, 800.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),240,'scheduled'),
+(30, 'Larkana',        'Karachi',        '06:00:00','13:30:00', 370.00,1300.00, DATE_ADD(CURDATE(),INTERVAL 19 DAY),285,'scheduled'),
+-- Day +20
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),350,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),360,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),280,'scheduled'),
+(11, 'Sukkur',         'Lahore',         '06:00:00','22:30:00', 855.00,2600.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),290,'scheduled'),
+(20, 'Rawalpindi',     'Abbottabad',     '10:00:00','14:30:00', 160.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),350,'scheduled'),
+(31, 'Karachi',        'Nawabshah',      '08:00:00','12:30:00', 200.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),250,'scheduled'),
+(32, 'Karachi',        'Jacobabad',      '06:30:00','16:00:00', 540.00,1750.00, DATE_ADD(CURDATE(),INTERVAL 20 DAY),230,'scheduled'),
+-- Day +21
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),470,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),360,'scheduled'),
+(14, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),300,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),375,'scheduled'),
+(33, 'Multan',         'Lahore',         '07:00:00','12:00:00', 340.00,1450.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),265,'scheduled'),
+(34, 'Lahore',         'Mardan',         '07:00:00','14:30:00', 580.00,2000.00, DATE_ADD(CURDATE(),INTERVAL 21 DAY),265,'scheduled');
+
+-- ---- Days +22 to +28 (Week 4) ----
+INSERT IGNORE INTO routes (train_id, departure_city, arrival_city, departure_time, arrival_time, distance_km, base_fare, journey_date, available_seats, status) VALUES
+-- Day +22
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),375,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),340,'scheduled'),
+(22, 'Islamabad',      'Lahore',         '10:00:00','14:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),340,'scheduled'),
+(23, 'Multan',         'Karachi',        '06:00:00','17:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),355,'scheduled'),
+(35, 'Lahore',         'Swabi',          '08:30:00','16:00:00', 620.00,2100.00, DATE_ADD(CURDATE(),INTERVAL 22 DAY),240,'scheduled'),
+-- Day +23
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),470,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),280,'scheduled'),
+(11, 'Karachi',        'Sukkur',         '07:00:00','14:30:00', 473.00,1600.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),290,'scheduled'),
+(12, 'Quetta',         'Karachi',        '06:30:00','22:00:00', 683.00,2200.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),255,'scheduled'),
+(24, 'Rawalpindi',     'Lahore',         '09:00:00','12:30:00', 376.00,1700.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),295,'scheduled'),
+(25, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 23 DAY),325,'scheduled'),
+-- Day +24
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),350,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),360,'scheduled'),
+(13, 'Peshawar',       'Lahore',         '06:00:00','13:30:00', 508.00,1900.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),325,'scheduled'),
+(15, 'Islamabad',      'Lahore',         '09:30:00','13:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),370,'scheduled'),
+(16, 'Multan',         'Lahore',         '10:00:00','14:00:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),335,'scheduled'),
+(26, 'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),275,'scheduled'),
+(27, 'Lahore',         'Bahawalpur',     '11:00:00','16:30:00', 415.00,1550.00, DATE_ADD(CURDATE(),INTERVAL 24 DAY),305,'scheduled'),
+-- Day +25
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),380,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),400,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),470,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),330,'scheduled'),
+(28, 'Gujranwala',     'Karachi',        '07:30:00','22:30:00',1180.00,3400.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),260,'scheduled'),
+(29, 'Lahore',         'Sahiwal',        '10:30:00','13:00:00', 164.00, 800.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),240,'scheduled'),
+(30, 'Larkana',        'Karachi',        '06:00:00','13:30:00', 370.00,1300.00, DATE_ADD(CURDATE(),INTERVAL 25 DAY),285,'scheduled'),
+-- Day +26
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),350,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),360,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),340,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),375,'scheduled'),
+(31, 'Karachi',        'Nawabshah',      '08:00:00','12:30:00', 200.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),250,'scheduled'),
+(32, 'Karachi',        'Jacobabad',      '06:30:00','16:00:00', 540.00,1750.00, DATE_ADD(CURDATE(),INTERVAL 26 DAY),230,'scheduled'),
+-- Day +27
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),470,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),280,'scheduled'),
+(14, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),300,'scheduled'),
+(22, 'Islamabad',      'Lahore',         '10:00:00','14:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),340,'scheduled'),
+(33, 'Multan',         'Lahore',         '07:00:00','12:00:00', 340.00,1450.00, DATE_ADD(CURDATE(),INTERVAL 27 DAY),265,'scheduled'),
+-- Day +28
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),360,'scheduled'),
+(23, 'Multan',         'Karachi',        '06:00:00','17:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),355,'scheduled'),
+(34, 'Lahore',         'Mardan',         '07:00:00','14:30:00', 580.00,2000.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),265,'scheduled'),
+(35, 'Lahore',         'Swabi',          '08:30:00','16:00:00', 620.00,2100.00, DATE_ADD(CURDATE(),INTERVAL 28 DAY),240,'scheduled');
+
+-- ---- Days +29 to +35 (Week 5) ----
+INSERT IGNORE INTO routes (train_id, departure_city, arrival_city, departure_time, arrival_time, distance_km, base_fare, journey_date, available_seats, status) VALUES
+-- Day +29
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),470,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),340,'scheduled'),
+(11, 'Karachi',        'Sukkur',         '07:00:00','14:30:00', 473.00,1600.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),290,'scheduled'),
+(12, 'Quetta',         'Karachi',        '06:30:00','22:00:00', 683.00,2200.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),255,'scheduled'),
+(13, 'Peshawar',       'Lahore',         '06:00:00','13:30:00', 508.00,1900.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),325,'scheduled'),
+(25, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),325,'scheduled'),
+(26, 'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 29 DAY),275,'scheduled'),
+-- Day +30
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),360,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),280,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),375,'scheduled'),
+(27, 'Lahore',         'Bahawalpur',     '11:00:00','16:30:00', 415.00,1550.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),305,'scheduled'),
+(28, 'Gujranwala',     'Karachi',        '07:30:00','22:30:00',1180.00,3400.00, DATE_ADD(CURDATE(),INTERVAL 30 DAY),260,'scheduled'),
+-- Day +31
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),470,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),340,'scheduled'),
+(14, 'Lahore',         'Multan',         '08:00:00','12:30:00', 340.00,1400.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),300,'scheduled'),
+(15, 'Islamabad',      'Lahore',         '09:30:00','13:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),370,'scheduled'),
+(29, 'Lahore',         'Sahiwal',        '10:30:00','13:00:00', 164.00, 800.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),240,'scheduled'),
+(30, 'Larkana',        'Karachi',        '06:00:00','13:30:00', 370.00,1300.00, DATE_ADD(CURDATE(),INTERVAL 31 DAY),285,'scheduled'),
+-- Day +32
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),360,'scheduled'),
+(22, 'Islamabad',      'Lahore',         '10:00:00','14:00:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),340,'scheduled'),
+(31, 'Karachi',        'Nawabshah',      '08:00:00','12:30:00', 200.00, 900.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),250,'scheduled'),
+(32, 'Karachi',        'Jacobabad',      '06:30:00','16:00:00', 540.00,1750.00, DATE_ADD(CURDATE(),INTERVAL 32 DAY),230,'scheduled'),
+-- Day +33
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),380,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),470,'scheduled'),
+(11, 'Karachi',        'Sukkur',         '07:00:00','14:30:00', 473.00,1600.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),290,'scheduled'),
+(12, 'Quetta',         'Karachi',        '06:30:00','22:00:00', 683.00,2200.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),255,'scheduled'),
+(13, 'Peshawar',       'Lahore',         '06:00:00','13:30:00', 508.00,1900.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),325,'scheduled'),
+(33, 'Multan',         'Lahore',         '07:00:00','12:00:00', 340.00,1450.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),265,'scheduled'),
+(34, 'Lahore',         'Mardan',         '07:00:00','14:30:00', 580.00,2000.00, DATE_ADD(CURDATE(),INTERVAL 33 DAY),265,'scheduled'),
+-- Day +34
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),400,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),360,'scheduled'),
+(9,  'Faisalabad',     'Karachi',        '08:30:00','23:00:00',1040.00,3200.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),340,'scheduled'),
+(10, 'Hyderabad',      'Lahore',         '09:30:00','22:30:00',1050.00,3100.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),280,'scheduled'),
+(35, 'Lahore',         'Swabi',          '08:30:00','16:00:00', 620.00,2100.00, DATE_ADD(CURDATE(),INTERVAL 34 DAY),240,'scheduled'),
+-- Day +35
+(1,  'Karachi',        'Lahore',         '08:00:00','20:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),420,'scheduled'),
+(2,  'Karachi',        'Rawalpindi',     '07:30:00','22:00:00',1548.00,4200.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),380,'scheduled'),
+(3,  'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),350,'scheduled'),
+(4,  'Islamabad',      'Karachi',        '10:00:00','06:30:00',1528.00,4000.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),400,'scheduled'),
+(5,  'Karachi',        'Peshawar',       '06:00:00','08:30:00',1680.00,4800.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),470,'scheduled'),
+(6,  'Multan',         'Karachi',        '11:00:00','22:00:00', 880.00,2800.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),330,'scheduled'),
+(7,  'Quetta',         'Lahore',         '05:00:00','22:00:00',1170.00,3800.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),375,'scheduled'),
+(8,  'Lahore',         'Islamabad',      '07:00:00','12:30:00', 376.00,1800.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),360,'scheduled'),
+(21, 'Lahore',         'Karachi',        '09:00:00','21:30:00',1214.00,3500.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),375,'scheduled'),
+(24, 'Rawalpindi',     'Lahore',         '09:00:00','12:30:00', 376.00,1700.00, DATE_ADD(CURDATE(),INTERVAL 35 DAY),295,'scheduled');
+
 -- Waitlist Entries
 INSERT IGNORE INTO waitlist_entries (route_id, user_id, passenger_manifest, passenger_count, preferred_class, queue_status, queue_position, note, linked_booking_id) VALUES
 (1,  21, '[{"name":"Sanam Chaudhry","age":32,"gender":"F"}]',

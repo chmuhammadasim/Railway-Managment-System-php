@@ -132,6 +132,17 @@ $total_bookings = $db->selectRow("SELECT COUNT(*) AS total FROM bookings WHERE b
 $active_trains  = $db->selectRow("SELECT COUNT(*) AS total FROM trains WHERE status='active'");
 $active_routes  = $db->selectRow("SELECT COUNT(*) AS total FROM routes WHERE status='scheduled'");
 
+// ---- Monthly revenue for current year (for overview chart) ----
+$monthly_overview = $db->select("SELECT DATE_FORMAT(booking_date,'%b') AS mon,
+    MONTH(booking_date) AS mon_num,
+    IFNULL(SUM(total_fare),0) AS revenue,
+    COUNT(*) AS bookings
+    FROM bookings
+    WHERE YEAR(booking_date) = " . (int)date('Y') . " AND booking_status = 'confirmed'
+    GROUP BY mon_num, mon
+    ORDER BY mon_num ASC");
+if (!$monthly_overview) $monthly_overview = [];
+
 // Available years for the filter dropdown
 $years_result = $db->select("SELECT DISTINCT YEAR(booking_date) AS yr FROM bookings ORDER BY yr DESC");
 $available_years = $years_result ? array_column($years_result, 'yr') : array(date('Y'));
@@ -145,7 +156,7 @@ $available_years = $years_result ? array_column($years_result, 'yr') : array(dat
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="public/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         body { background: #f0f2f5; }
         .page-header { background: linear-gradient(135deg,#1a3c6e,#2d6a9f); color:#fff; padding: 1.5rem 2rem; border-radius: 10px; margin-bottom: 2rem; }
@@ -227,9 +238,42 @@ $available_years = $years_result ? array_column($years_result, 'yr') : array(dat
             </div>
         </div>
 
+        <!-- Monthly Revenue Overview Chart -->
+        <?php if (!empty($monthly_overview)): ?>
+        <div class="report-card mb-4">
+            <h5 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i>Monthly Revenue Overview – <?= date('Y') ?></h5>
+            <canvas id="monthlyOverviewChart" style="max-height:280px;"></canvas>
+            <script>
+            (function(){
+                const labels = <?= json_encode(array_column($monthly_overview, 'mon')) ?>;
+                const rev    = <?= json_encode(array_map('floatval', array_column($monthly_overview, 'revenue'))) ?>;
+                const bkgs   = <?= json_encode(array_map('intval',   array_column($monthly_overview, 'bookings'))) ?>;
+                new Chart(document.getElementById('monthlyOverviewChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Revenue (Rs.)', data: rev, backgroundColor: 'rgba(37,99,235,0.75)', borderColor: '#1e40af', borderWidth: 1, yAxisID: 'y' },
+                            { label: 'Bookings', data: bkgs, type: 'line', borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.15)', tension: 0.35, pointRadius: 4, yAxisID: 'y1' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'top' } },
+                        scales: {
+                            y:  { beginAtZero: true, position: 'left',  title: { display: true, text: 'Revenue (Rs.)' } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Bookings' } }
+                        }
+                    }
+                });
+            })();
+            </script>
+        </div>
+        <?php endif; ?>
+
         <!-- Tab Navigation -->
-        <ul class="nav nav-tabs mb-4 no-print" id="reportTabs">
-            <li class="nav-item">
+        <ul class="nav nav-tabs mb-4 no-print" id="reportTabs">            <li class="nav-item">
                 <a class="nav-link <?= $report_tab === 'trains' ? 'active' : '' ?>" href="?tab=trains&period=<?= $period ?>&year=<?= $year ?>">
                     <i class="bi bi-train-front me-1"></i>Train List
                 </a>

@@ -318,6 +318,15 @@ use PHPMailer\PHPMailer\Exception as MailException;
 
 $mailCfg = require __DIR__ . '/config/mail.php';
 
+// Guard: SMTP must be fully configured
+if (empty($mailCfg['username']) || empty($mailCfg['from_email']) || empty($mailCfg['password'])) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Email is not configured on this server. Please set SMTP credentials in config/mail.php to enable ticket emails.',
+    ]);
+    exit();
+}
+
 $mail = new PHPMailer(true); // true = throw exceptions
 
 try {

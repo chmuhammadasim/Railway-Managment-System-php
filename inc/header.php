@@ -23,7 +23,7 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" href="public/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="public/css/style.css">
@@ -68,6 +68,21 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                         <li class="nav-item"><a class="nav-link" href="manage-routes.php">Routes</a></li>
                         <li class="nav-item"><a class="nav-link" href="manage-trains.php">Trains</a></li>
                         <?php endif; ?>
+                        <?php
+                        $notif_unread = 0;
+                        if (isset($db) && ($navRole === ROLE_USER)) {
+                            $notif_row = $db->selectRow("SELECT COUNT(*) AS cnt FROM notifications WHERE user_id=".(int)$_SESSION['user_id']." AND is_read=0");
+                            $notif_unread = (int)($notif_row['cnt'] ?? 0);
+                        }
+                        ?>
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="notifications.php" title="Notifications">
+                                <i class="bi bi-bell-fill"></i>
+                                <?php if ($notif_unread > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;"><?= $notif_unread ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
                         <li class="nav-item"><a class="nav-link" href="profile.php">Profile</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">

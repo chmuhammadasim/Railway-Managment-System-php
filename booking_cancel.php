@@ -141,39 +141,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_cancel'])) {
 }
 
 $is_unpaid_preview = (bool)($preview['is_unpaid'] ?? false);
+$pageTitle = 'Cancel Booking – Railway System';
+require_once 'inc/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cancel Booking - Railway System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="public/css/style.css">
-    <style>
-        body { background: #f0f2f5; }
-        .refund-tier-card { border-radius: 14px; overflow: hidden; }
-        .tier-row { display: flex; align-items: center; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid #eef2f7; font-size: .88rem; }
-        .tier-row:last-child { border-bottom: none; }
-        .tier-row.active-tier { background: #f0fdf4; border-left: 4px solid #10b981; }
-        .tier-time { min-width: 150px; font-weight: 600; color: #374151; }
-        .tier-refund { min-width: 90px; font-size: .95rem; font-weight: 700; }
-        .policy-header { background: #1a2e4a; color: #fff; padding: .75rem 1rem; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-        .booking-meta span { font-size: .82rem; color: #6b7280; }
-        .booking-meta strong { color: #111827; }
-        .refund-summary { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1.5px solid #10b981; border-radius: 12px; padding: 1.2rem 1.4rem; }
-        .refund-summary .rs-amount { font-size: 1.4rem; font-weight: 800; color: #059669; }
-        .refund-summary .rs-fee { font-size: .95rem; color: #dc2626; font-weight: 600; }
-        .info-summary { background: linear-gradient(135deg, #eff6ff, #e0f2fe); border: 1.5px solid #2563eb; border-radius: 12px; padding: 1.2rem 1.4rem; }
-        .blocked-box { background: #fff7f7; border: 1.5px solid #ef4444; border-radius: 12px; padding: 1.2rem 1.4rem; }
-        .seat-chip { display: inline-flex; align-items: center; gap: .35rem; background: #fff; border: 1px solid #d1d5db; border-radius: 999px; padding: .25rem .7rem; font-size: .75rem; font-weight: 700; color: #374151; }
-        .countdown-badge { font-size: .72rem; padding: .3rem .6rem; border-radius: 20px; }
-        .helper-text { font-size: .82rem; color: #64748b; }
-    </style>
-</head>
-<body>
-<?php require_once 'inc/header.php'; ?>
+<style>
+    body { background: #f0f2f5; }
+    .refund-tier-card { border-radius: 14px; overflow: hidden; }
+    .tier-row { display: flex; align-items: center; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid #eef2f7; font-size: .88rem; }
+    .tier-row:last-child { border-bottom: none; }
+    .tier-row.active-tier { background: #f0fdf4; border-left: 4px solid #10b981; }
+    .tier-time { min-width: 150px; font-weight: 600; color: #374151; }
+    .tier-refund { min-width: 90px; font-size: .95rem; font-weight: 700; }
+    .policy-header { background: #1a2e4a; color: #fff; padding: .75rem 1rem; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .booking-meta span { font-size: .82rem; color: #6b7280; }
+    .booking-meta strong { color: #111827; }
+    .refund-summary { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1.5px solid #10b981; border-radius: 12px; padding: 1.2rem 1.4rem; }
+    .refund-summary .rs-amount { font-size: 1.4rem; font-weight: 800; color: #059669; }
+    .refund-summary .rs-fee { font-size: .95rem; color: #dc2626; font-weight: 600; }
+    .info-summary { background: linear-gradient(135deg, #eff6ff, #e0f2fe); border: 1.5px solid #2563eb; border-radius: 12px; padding: 1.2rem 1.4rem; }
+    .blocked-box { background: #fff7f7; border: 1.5px solid #ef4444; border-radius: 12px; padding: 1.2rem 1.4rem; }
+    .seat-chip { display: inline-flex; align-items: center; gap: .35rem; background: #fff; border: 1px solid #d1d5db; border-radius: 999px; padding: .25rem .7rem; font-size: .75rem; font-weight: 700; color: #374151; }
+    .countdown-badge { font-size: .72rem; padding: .3rem .6rem; border-radius: 20px; }
+    .helper-text { font-size: .82rem; color: #64748b; }
+</style>
 
 <div class="container py-4" style="max-width:700px;">
     <a href="bookings.php" class="btn btn-outline-secondary btn-sm mb-3">
@@ -406,7 +396,6 @@ $is_unpaid_preview = (bool)($preview['is_unpaid'] ?? false);
     <?php endif; ?>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
     var check = document.getElementById('confirmCheck');

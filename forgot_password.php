@@ -16,6 +16,7 @@ $passwordReset = new PasswordReset($db);
 $error_message = '';
 $success_message = '';
 $step = 1;
+$dev_reset_link = '';
 $token = trim($_GET['token'] ?? $_POST['token'] ?? '');
 $reset_context = null;
 
@@ -45,7 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($account) {
                 $result = $passwordReset->requestLink((int) $account['user_id'], $email, $account['full_name']);
                 if (!$result['success']) {
-                    $error_message = $result['message'];
+                    // If SMTP is not configured, show the reset link directly (admin/dev fallback)
+                    if (!empty($result['reset_link'])) {
+                        $success_message = "Email delivery is not configured. Use the link below to reset the password:";
+                        // Store the link for display in the view
+                        $dev_reset_link = $result['reset_link'];
+                    } else {
+                        $error_message = $result['message'];
+                    }
                 } else {
                     $success_message = "If that email is registered, we've sent a password reset link.";
                 }
@@ -150,6 +158,13 @@ require_once 'inc/header.php';
     <?php endif; ?>
     <?php if ($success_message): ?>
     <div class="alert-ok"><i class="bi bi-check-circle-fill"></i><?= htmlspecialchars($success_message) ?></div>
+    <?php if (!empty($dev_reset_link)): ?>
+    <div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.82rem;">
+        <strong style="color:#92400e;"><i class="bi bi-exclamation-triangle me-1"></i>Dev Mode – Reset Link:</strong><br>
+        <a href="<?= htmlspecialchars($dev_reset_link) ?>" style="word-break:break-all;color:#1d4ed8;"><?= htmlspecialchars($dev_reset_link) ?></a>
+        <p style="color:#78716c;margin:.4rem 0 0;font-size:.75rem;">Configure SMTP in <code>config/mail.php</code> to send this link by email automatically.</p>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
 
     <?php if ($step === 1): ?>

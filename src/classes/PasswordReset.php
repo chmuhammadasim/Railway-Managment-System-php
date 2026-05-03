@@ -40,10 +40,13 @@ class PasswordReset {
 
         $resetLink = $this->buildResetLink($token);
         if (!$this->sendEmail($email, $recipientName, $resetLink)) {
-            $connection->query(
-                "UPDATE password_reset_tokens SET used=1 WHERE token_hash='{$tokenHashEscaped}' AND used=0"
-            );
-            return ['success' => false, 'message' => 'Unable to send the reset email right now.'];
+            // Do NOT invalidate the token – the link was created; only the email failed.
+            // Check if SMTP is configured so we can return a helpful message.
+            $smtpMissing = empty($this->mailCfg['username']) || empty($this->mailCfg['from_email']);
+            $msg = $smtpMissing
+                ? 'Email delivery is not configured on this server. Please contact the administrator.'
+                : 'Unable to send the reset email right now. Please try again later.';
+            return ['success' => false, 'message' => $msg, 'reset_link' => $smtpMissing ? $resetLink : ''];
         }
 
         return ['success' => true, 'message' => 'Password reset link sent successfully.'];
@@ -132,6 +135,11 @@ class PasswordReset {
     private function sendEmail(string $to, string $name, string $resetLink): bool {
         $phpmailerPath = __DIR__ . '/../PHPMailer/PHPMailer.php';
         if (!file_exists($phpmailerPath)) {
+            return false;
+        }
+
+        // Guard: require SMTP credentials to be configured
+        if (empty($this->mailCfg['username']) || empty($this->mailCfg['from_email'])) {
             return false;
         }
 
