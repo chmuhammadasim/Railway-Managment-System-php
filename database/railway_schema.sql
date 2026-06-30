@@ -1358,3 +1358,825 @@ INSERT IGNORE INTO waitlist_entries (route_id, user_id, passenger_manifest, pass
     1, 'economy',  'waitlist', 4, 'Waiting for economy seat on Khyber Mail Karachi-Peshawar tomorrow', NULL),
 (11, 17, '[{"name":"Shazia Bano","age":27,"gender":"F"},{"name":"Zeeshan Bano","age":30,"gender":"M"}]',
     2, 'premium',  'waitlist', 5, 'Couple waitlisted for premium seats on Green Line Karachi-Lahore tomorrow', NULL);
+
+-- ========================================
+-- MORE SEATS FOR EXISTING ROUTES
+-- ========================================
+
+-- Seats for Route 5 (Khyber Mail – Karachi→Peshawar, today) — train_id=5
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(5, 5, 'E-01', 'economy', 'booked'),
+(5, 5, 'E-02', 'economy', 'booked'),
+(5, 5, 'E-03', 'economy', 'booked'),
+(5, 5, 'E-04', 'economy', 'booked'),
+(5, 5, 'E-05', 'economy', 'available'),
+(5, 5, 'E-06', 'economy', 'available'),
+(5, 5, 'E-07', 'economy', 'available'),
+(5, 5, 'E-08', 'economy', 'booked'),
+(5, 5, 'P-01', 'premium', 'booked'),
+(5, 5, 'P-02', 'premium', 'available'),
+(5, 5, 'P-03', 'premium', 'available'),
+(5, 5, 'L-01', 'luxury',  'booked'),
+(5, 5, 'L-02', 'luxury',  'available');
+
+-- Seats for Route 6 (Awam Express – Multan→Karachi, today) — train_id=6
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(6, 6, 'E-01', 'economy', 'booked'),
+(6, 6, 'E-02', 'economy', 'available'),
+(6, 6, 'E-03', 'economy', 'available'),
+(6, 6, 'E-04', 'economy', 'available'),
+(6, 6, 'E-05', 'economy', 'available'),
+(6, 6, 'P-01', 'premium', 'available'),
+(6, 6, 'P-02', 'premium', 'available'),
+(6, 6, 'L-01', 'luxury',  'available');
+
+-- Seats for Route 7 (Millat Express – Quetta→Lahore, today) — train_id=7
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(7, 7, 'E-01', 'economy', 'available'),
+(7, 7, 'E-02', 'economy', 'available'),
+(7, 7, 'E-03', 'economy', 'available'),
+(7, 7, 'E-04', 'economy', 'available'),
+(7, 7, 'P-01', 'premium', 'available'),
+(7, 7, 'P-02', 'premium', 'available'),
+(7, 7, 'L-01', 'luxury',  'available'),
+(7, 7, 'L-02', 'luxury',  'available');
+
+-- Seats for Route 9 (Shalimar Express – Faisalabad→Karachi, today) — train_id=9
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(9, 9, 'E-01', 'economy', 'available'),
+(9, 9, 'E-02', 'economy', 'available'),
+(9, 9, 'E-03', 'economy', 'available'),
+(9, 9, 'E-04', 'economy', 'available'),
+(9, 9, 'E-05', 'economy', 'available'),
+(9, 9, 'P-01', 'premium', 'available'),
+(9, 9, 'P-02', 'premium', 'available'),
+(9, 9, 'L-01', 'luxury',  'available');
+
+-- Seats for Route 10 (Jaffar Express – Hyderabad→Lahore, today) — train_id=10
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(10, 10, 'E-01', 'economy', 'available'),
+(10, 10, 'E-02', 'economy', 'available'),
+(10, 10, 'E-03', 'economy', 'available'),
+(10, 10, 'E-04', 'economy', 'available'),
+(10, 10, 'E-05', 'economy', 'available'),
+(10, 10, 'P-01', 'premium', 'available'),
+(10, 10, 'P-02', 'premium', 'available'),
+(10, 10, 'L-01', 'luxury',  'available');
+
+-- Seats for Route 4 (Pakistan Express – Islamabad→Karachi, today) — train_id=4
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(4, 4, 'E-01', 'economy', 'available'),
+(4, 4, 'E-02', 'economy', 'available'),
+(4, 4, 'E-03', 'economy', 'available'),
+(4, 4, 'E-04', 'economy', 'available'),
+(4, 4, 'E-05', 'economy', 'available'),
+(4, 4, 'P-01', 'premium', 'available'),
+(4, 4, 'P-02', 'premium', 'available'),
+(4, 4, 'L-01', 'luxury',  'available'),
+(4, 4, 'L-02', 'luxury',  'available');
+
+-- ========================================
+-- SEATS FOR TOMORROW'S ROUTES (11-18)
+-- ========================================
+
+-- Route 11 (Green Line – Karachi→Lahore, tomorrow) — train_id=1
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(1, 11, 'E-01', 'economy', 'booked'),
+(1, 11, 'E-02', 'economy', 'booked'),
+(1, 11, 'E-03', 'economy', 'booked'),
+(1, 11, 'E-04', 'economy', 'booked'),
+(1, 11, 'E-05', 'economy', 'booked'),
+(1, 11, 'E-06', 'economy', 'booked'),
+(1, 11, 'E-07', 'economy', 'available'),
+(1, 11, 'E-08', 'economy', 'available'),
+(1, 11, 'E-09', 'economy', 'available'),
+(1, 11, 'E-10', 'economy', 'available'),
+(1, 11, 'P-01', 'premium', 'booked'),
+(1, 11, 'P-02', 'premium', 'available'),
+(1, 11, 'P-03', 'premium', 'available'),
+(1, 11, 'L-01', 'luxury',  'booked'),
+(1, 11, 'L-02', 'luxury',  'available');
+
+-- Route 12 (Tezgam – Karachi→Rawalpindi, tomorrow) — train_id=2
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(2, 12, 'E-01', 'economy', 'available'),
+(2, 12, 'E-02', 'economy', 'available'),
+(2, 12, 'E-03', 'economy', 'available'),
+(2, 12, 'E-04', 'economy', 'available'),
+(2, 12, 'E-05', 'economy', 'available'),
+(2, 12, 'P-01', 'premium', 'available'),
+(2, 12, 'P-02', 'premium', 'available'),
+(2, 12, 'L-01', 'luxury',  'available'),
+(2, 12, 'L-02', 'luxury',  'available');
+
+-- Route 13 (Karakoram – Lahore→Karachi, tomorrow) — train_id=3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(3, 13, 'E-01', 'economy', 'booked'),
+(3, 13, 'E-02', 'economy', 'booked'),
+(3, 13, 'E-03', 'economy', 'booked'),
+(3, 13, 'E-04', 'economy', 'available'),
+(3, 13, 'E-05', 'economy', 'available'),
+(3, 13, 'P-01', 'premium', 'available'),
+(3, 13, 'P-02', 'premium', 'available'),
+(3, 13, 'L-01', 'luxury',  'available');
+
+-- Route 14 (Pakistan Express – Islamabad→Karachi, tomorrow) — train_id=4
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(4, 14, 'E-01', 'economy', 'booked'),
+(4, 14, 'E-02', 'economy', 'booked'),
+(4, 14, 'E-03', 'economy', 'available'),
+(4, 14, 'E-04', 'economy', 'available'),
+(4, 14, 'E-05', 'economy', 'available'),
+(4, 14, 'P-01', 'premium', 'available'),
+(4, 14, 'P-02', 'premium', 'available'),
+(4, 14, 'L-01', 'luxury',  'available');
+
+-- Route 15 (Khyber Mail – Karachi→Peshawar, tomorrow) — train_id=5
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(5, 15, 'E-01', 'economy', 'booked'),
+(5, 15, 'E-02', 'economy', 'booked'),
+(5, 15, 'E-03', 'economy', 'available'),
+(5, 15, 'E-04', 'economy', 'available'),
+(5, 15, 'E-05', 'economy', 'available'),
+(5, 15, 'E-06', 'economy', 'available'),
+(5, 15, 'P-01', 'premium', 'booked'),
+(5, 15, 'P-02', 'premium', 'available'),
+(5, 15, 'P-03', 'premium', 'available'),
+(5, 15, 'L-01', 'luxury',  'available'),
+(5, 15, 'L-02', 'luxury',  'available');
+
+-- Route 16 (Awam Express – Multan→Karachi, tomorrow) — train_id=6
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(6, 16, 'E-01', 'economy', 'available'),
+(6, 16, 'E-02', 'economy', 'available'),
+(6, 16, 'E-03', 'economy', 'available'),
+(6, 16, 'E-04', 'economy', 'available'),
+(6, 16, 'E-05', 'economy', 'available'),
+(6, 16, 'P-01', 'premium', 'available'),
+(6, 16, 'P-02', 'premium', 'available'),
+(6, 16, 'L-01', 'luxury',  'available');
+
+-- Route 17 (Millat Express – Quetta→Lahore, tomorrow) — train_id=7
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(7, 17, 'E-01', 'economy', 'available'),
+(7, 17, 'E-02', 'economy', 'available'),
+(7, 17, 'E-03', 'economy', 'available'),
+(7, 17, 'E-04', 'economy', 'available'),
+(7, 17, 'P-01', 'premium', 'available'),
+(7, 17, 'P-02', 'premium', 'available'),
+(7, 17, 'L-01', 'luxury',  'available'),
+(7, 17, 'L-02', 'luxury',  'available');
+
+-- Route 18 (Allama Iqbal – Lahore→Islamabad, tomorrow) — train_id=8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(8, 18, 'E-01', 'economy', 'available'),
+(8, 18, 'E-02', 'economy', 'available'),
+(8, 18, 'E-03', 'economy', 'available'),
+(8, 18, 'E-04', 'economy', 'available'),
+(8, 18, 'E-05', 'economy', 'available'),
+(8, 18, 'P-01', 'premium', 'available'),
+(8, 18, 'P-02', 'premium', 'available'),
+(8, 18, 'P-03', 'premium', 'available'),
+(8, 18, 'L-01', 'luxury',  'available'),
+(8, 18, 'L-02', 'luxury',  'available');
+
+-- Seats for Day After Tomorrow Routes (19-20)
+-- Route 19 (Green Line – Karachi→Lahore, day+2) — train_id=1
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(1, 19, 'E-01', 'economy', 'booked'),
+(1, 19, 'E-02', 'economy', 'available'),
+(1, 19, 'E-03', 'economy', 'available'),
+(1, 19, 'E-04', 'economy', 'available'),
+(1, 19, 'E-05', 'economy', 'available'),
+(1, 19, 'P-01', 'premium', 'available'),
+(1, 19, 'P-02', 'premium', 'available'),
+(1, 19, 'L-01', 'luxury',  'available');
+
+-- Route 20 (Tezgam – Karachi→Rawalpindi, day+2) — train_id=2
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(2, 20, 'E-01', 'economy', 'available'),
+(2, 20, 'E-02', 'economy', 'available'),
+(2, 20, 'E-03', 'economy', 'available'),
+(2, 20, 'E-04', 'economy', 'available'),
+(2, 20, 'E-05', 'economy', 'available'),
+(2, 20, 'P-01', 'premium', 'available'),
+(2, 20, 'P-02', 'premium', 'available'),
+(2, 20, 'L-01', 'luxury',  'available');
+
+-- ========================================
+-- MORE SEATS FOR EXISTING ROUTES (additional)
+-- ========================================
+
+-- Additional seats for Route 1 (Green Line – Karachi→Lahore, today) to reach 30+ seats
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(1, 1, 'E-09', 'economy', 'available'),
+(1, 1, 'E-10', 'economy', 'booked'),
+(1, 1, 'E-11', 'economy', 'available'),
+(1, 1, 'E-12', 'economy', 'booked'),
+(1, 1, 'E-13', 'economy', 'available'),
+(1, 1, 'E-14', 'economy', 'available'),
+(1, 1, 'E-15', 'economy', 'available'),
+(1, 1, 'P-05', 'premium', 'booked'),
+(1, 1, 'P-06', 'premium', 'available'),
+(1, 1, 'L-03', 'luxury',  'available'),
+(1, 1, 'L-04', 'luxury',  'booked');
+
+-- Additional seats for Route 2 (Tezgam – Karachi→Rawalpindi, today)
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(2, 2, 'E-06', 'economy', 'available'),
+(2, 2, 'E-07', 'economy', 'available'),
+(2, 2, 'E-08', 'economy', 'available'),
+(2, 2, 'E-09', 'economy', 'available'),
+(2, 2, 'E-10', 'economy', 'booked'),
+(2, 2, 'P-03', 'premium', 'available'),
+(2, 2, 'P-04', 'premium', 'available'),
+(2, 2, 'L-02', 'luxury',  'available'),
+(2, 2, 'L-03', 'luxury',  'booked');
+
+-- Additional seats for Route 3 (Karakoram – Lahore→Karachi, today)
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(3, 3, 'E-04', 'economy', 'booked'),
+(3, 3, 'E-05', 'economy', 'available'),
+(3, 3, 'E-06', 'economy', 'available'),
+(3, 3, 'E-07', 'economy', 'booked'),
+(3, 3, 'E-08', 'economy', 'available'),
+(3, 3, 'P-03', 'premium', 'available'),
+(3, 3, 'P-04', 'premium', 'available'),
+(3, 3, 'L-03', 'luxury',  'available');
+
+-- Additional seats for Route 8 (Allama Iqbal – Lahore→Islamabad, today)
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(8, 8, 'E-06', 'economy', 'booked'),
+(8, 8, 'E-07', 'economy', 'available'),
+(8, 8, 'E-08', 'economy', 'available'),
+(8, 8, 'E-09', 'economy', 'booked'),
+(8, 8, 'E-10', 'economy', 'available'),
+(8, 8, 'P-04', 'premium', 'available'),
+(8, 8, 'P-05', 'premium', 'booked'),
+(8, 8, 'L-03', 'luxury',  'available'),
+(8, 8, 'L-04', 'luxury',  'booked');
+
+-- ========================================
+-- SEATS FOR FUTURE ROUTES (week 1, days +3 to +7)
+-- Selected key routes for data richness
+-- ========================================
+
+-- Day +3 routes (route IDs roughly 21-29 in order)
+-- Route: Karachi→Sukkur (train 11) — day +3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(11, 21, 'E-01', 'economy', 'available'),
+(11, 21, 'E-02', 'economy', 'available'),
+(11, 21, 'E-03', 'economy', 'available'),
+(11, 21, 'E-04', 'economy', 'available'),
+(11, 21, 'P-01', 'premium', 'available'),
+(11, 21, 'P-02', 'premium', 'available'),
+(11, 21, 'L-01', 'luxury',  'available');
+
+-- Route: Quetta→Karachi (train 12) — day +3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(12, 22, 'E-01', 'economy', 'available'),
+(12, 22, 'E-02', 'economy', 'available'),
+(12, 22, 'E-03', 'economy', 'available'),
+(12, 22, 'P-01', 'premium', 'available'),
+(12, 22, 'P-02', 'premium', 'available'),
+(12, 22, 'L-01', 'luxury',  'available');
+
+-- Route: Peshawar→Lahore (train 13) — day +3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(13, 23, 'E-01', 'economy', 'booked'),
+(13, 23, 'E-02', 'economy', 'available'),
+(13, 23, 'E-03', 'economy', 'available'),
+(13, 23, 'E-04', 'economy', 'booked'),
+(13, 23, 'P-01', 'premium', 'booked'),
+(13, 23, 'P-02', 'premium', 'available'),
+(13, 23, 'L-01', 'luxury',  'available');
+
+-- Route: Lahore→Multan (train 14) — day +3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(14, 24, 'E-01', 'economy', 'available'),
+(14, 24, 'E-02', 'economy', 'available'),
+(14, 24, 'E-03', 'economy', 'available'),
+(14, 24, 'P-01', 'premium', 'available'),
+(14, 24, 'P-02', 'premium', 'available'),
+(14, 24, 'L-01', 'luxury',  'available');
+
+-- Route: Islamabad→Lahore (train 15) — day +3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(15, 25, 'E-01', 'economy', 'available'),
+(15, 25, 'E-02', 'economy', 'available'),
+(15, 25, 'E-03', 'economy', 'available'),
+(15, 25, 'P-01', 'premium', 'available'),
+(15, 25, 'P-02', 'premium', 'available'),
+(15, 25, 'L-01', 'luxury',  'available');
+
+-- ========================================
+-- MORE BOOKING_SEATS (link bookings to seats)
+-- ========================================
+
+-- Booking 6: Zainab Ali, route 5 (Khyber Mail, Karachi→Peshawar), 4 seats E-01/E-02/E-03/E-04
+-- seat_ids for route 5 start around 40-52
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(6,  40, 'Zainab Ali',    28, 'F'),
+(6,  41, 'Hassan Ali',    30, 'M'),
+(6,  42, 'Fatima Ali',    55, 'F'),
+(6,  43, 'Kamran Ali',    60, 'M');
+
+-- Booking 5: Hassan Raza, route 6 (Awam Express, Multan→Karachi), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(5,  53, 'Hassan Raza',   31, 'M');
+
+-- Booking 7: Mariam Khan, route 11 (Green Line, Karachi→Lahore, tomorrow), 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(7,  97, 'Mariam Khan',   26, 'F'),
+(7,  98, 'Amir Khan',     29, 'M');
+
+-- Booking 8: Noreen Mirza, route 12 (Tezgam, Karachi→Rawalpindi, tomorrow), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(8,  112, 'Noreen Mirza', 24, 'F');
+
+-- Booking 9: Ali Khan, route 13 (Karakoram, Lahore→Karachi, tomorrow), 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(9,  121, 'Ali Khan',     32, 'M'),
+(9,  122, 'Amina Khan',   28, 'F'),
+(9,  123, 'Baby Ali Khan', 1, 'M');
+
+-- Booking 10: Sara Ahmad, route 14 (Pakistan Express, Islamabad→Karachi, tomorrow), 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(10, 129, 'Sara Ahmad',   29, 'F'),
+(10, 130, 'Nadia Ahmad',  24, 'F');
+
+-- Booking 14: Rukhsana Bibi, route 5 (Khyber Mail, Karachi→Peshawar), seat E-08
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(14, 47, 'Rukhsana Bibi', 38, 'F');
+
+-- Booking 17: Wasim Akram, route 5 (Khyber Mail, Karachi→Peshawar), 2 seats P-01/L-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(17, 49, 'Wasim Akram',   35, 'M'),
+(17, 51, 'Rukhsana Akram',32, 'F');
+
+-- Booking 19: Kashif Nawaz, route 11 (Green Line, Karachi→Lahore, tomorrow), 2 seats E-03/E-04
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(19, 99, 'Kashif Nawaz',  33, 'M'),
+(19, 100,'Saira Nawaz',   28, 'F');
+
+-- Booking 20: Sanam Chaudhry, route 15 (Khyber Mail, Karachi→Peshawar, tomorrow), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(20, 140,'Sanam Chaudhry',32, 'F');
+
+-- Booking 21: Humaira Bibi, route 11 (Green Line, Karachi→Lahore, tomorrow), 3 seats E-05/E-06/P-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(21, 101,'Humaira Bibi',  40, 'F'),
+(21, 102,'Junaid Bibi',   42, 'M'),
+(21, 107,'Sara Bibi',     12, 'F');
+
+-- Booking 22: Adnan Shaikh, route 15 (Khyber Mail, Karachi→Peshawar, tomorrow), 2 seats E-02/P-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(22, 141,'Adnan Shaikh',  28, 'M'),
+(22, 146,'Hina Shaikh',   26, 'F');
+
+-- Booking 11: Umer Farooq, route 19 (Green Line, Karachi→Lahore, day+2), 1 seat E-01 (cancelled)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(11, 175,'Umer Farooq',   34, 'M');
+
+-- Booking 12: Ayesha Khan, route 20 (Tezgam, Karachi→Rawalpindi, day+2), 2 seats E-01/E-02 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(12, 183,'Ayesha Khan',   25, 'F'),
+(12, 184,'Usman Khan',    27, 'M');
+
+-- Booking 23 (Humaira Bibi): route 5 (Khyber Mail), 2 seats E-05/E-06
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(23, 44, 'Humaira Bibi',  40, 'F'),
+(23, 45, 'Junaid Bibi',   42, 'M');
+
+-- Booking 24 (Nadeem Sultan): route 5 (Khyber Mail), 2 seats E-07/P-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(24, 46, 'Nadeem Sultan', 50, 'M'),
+(24, 50, 'Fatima Sultan', 45, 'F');
+
+-- Booking 25 (Sobia Qureshi): route 1 (Green Line, today) — cancelled, 1 seat E-10
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(25, 65, 'Sobia Qureshi', 29, 'F');
+
+-- Booking 26 (Noreen Mirza): route 11 (Green Line, tomorrow) — pending, 4 seats E-09/E-10/P-02/L-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(26, 105,'Noreen Mirza',  24, 'F'),
+(26, 106,'Kamran Mirza',  26, 'M'),
+(26, 108,'Sadia Mirza',   55, 'F'),
+(26, 110,'Bilal Mirza',   58, 'M');
+
+-- Bookings for day +3 routes (Peshawar→Lahore, train 13)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(18, 157,'Noreen Mirza family – seat 1', 24, 'F'),
+(18, 159,'Noreen Mirza family – seat 2', 26, 'M'),
+(18, 160,'Noreen Mirza family – seat 3', 55, 'F');
+
+-- ========================================
+-- ADDITIONAL BOOKINGS (more variety)
+-- ========================================
+
+-- More confirmed bookings for today's routes
+INSERT IGNORE INTO bookings (user_id, route_id, booking_reference, number_of_seats, total_fare, booking_status, payment_status, booking_date, journey_date) VALUES
+-- Today routes
+(21, 1,  'PKR-2026-0027', 2,  7000.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  CURDATE()),
+(22, 2,  'PKR-2026-0028', 3, 12600.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  CURDATE()),
+(23, 3,  'PKR-2026-0029', 1,  3500.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  CURDATE()),
+(24, 5,  'PKR-2026-0030', 2,  9600.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY),  CURDATE()),
+(25, 8,  'PKR-2026-0031', 1,  1800.00,  'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 1 DAY),  CURDATE()),
+(12, 10, 'PKR-2026-0032', 2,  6200.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY),  CURDATE()),
+(13, 4,  'PKR-2026-0033', 1,  4000.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  CURDATE()),
+(14, 7,  'PKR-2026-0034', 3, 11400.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  CURDATE()),
+(15, 9,  'PKR-2026-0035', 1,  3200.00,  'cancelled', 'refunded',  DATE_SUB(NOW(), INTERVAL 8 DAY),  CURDATE()),
+(16, 1,  'PKR-2026-0036', 3, 10500.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  CURDATE()),
+(17, 2,  'PKR-2026-0037', 1,  4200.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY),  CURDATE()),
+(18, 8,  'PKR-2026-0038', 2,  3600.00,  'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  CURDATE()),
+-- Tomorrow routes
+(19, 11, 'PKR-2026-0039', 2,  7000.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(20, 12, 'PKR-2026-0040', 1,  4200.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(21, 13, 'PKR-2026-0041', 2,  7000.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(22, 15, 'PKR-2026-0042', 3, 14400.00,  'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(23, 18, 'PKR-2026-0043', 2,  3600.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(24, 14, 'PKR-2026-0044', 1,  4000.00,  'cancelled', 'refunded',  DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(25, 16, 'PKR-2026-0045', 2,  5600.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+-- Day after tomorrow
+(15, 19, 'PKR-2026-0046', 2,  7000.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 2 DAY)),
+(18, 20, 'PKR-2026-0047', 3, 12600.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 2 DAY)),
+-- Day +3 routes
+(12, 23, 'PKR-2026-0048', 2,  3800.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 3 DAY)),
+(14, 23, 'PKR-2026-0049', 1,  1900.00,  'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 3 DAY)),
+(16, 25, 'PKR-2026-0050', 3,  5400.00,  'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 3 DAY));
+
+-- Payments for additional bookings
+INSERT IGNORE INTO payments (booking_id, user_id, amount, payment_method, transaction_id, payment_status, payment_date) VALUES
+(27, 21, 7000.00,  'credit_card',   'TXN-PKR-027', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(28, 22, 12600.00, 'bank_transfer', 'TXN-PKR-028', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(29, 23, 3500.00,  'jazzcash',      'TXN-PKR-029', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(30, 24, 9600.00,  'easypaisa',     'TXN-PKR-030', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(31, 25, 1800.00,  'cash',          NULL,           'pending',   NULL),
+(32, 12, 6200.00,  'debit_card',    'TXN-PKR-032', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(33, 13, 4000.00,  'easypaisa',     'TXN-PKR-033', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(34, 14, 11400.00, 'credit_card',   'TXN-PKR-034', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(35, 15, 3200.00,  'jazzcash',      'TXN-PKR-035', 'refunded',  DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(36, 16, 10500.00, 'bank_transfer', 'TXN-PKR-036', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(37, 17, 4200.00,  'easypaisa',     'TXN-PKR-037', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(38, 18, 3600.00,  'cash',          NULL,           'pending',   NULL),
+(39, 19, 7000.00,  'credit_card',   'TXN-PKR-039', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(40, 20, 4200.00,  'debit_card',    'TXN-PKR-040', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(41, 21, 7000.00,  'jazzcash',      'TXN-PKR-041', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(42, 22, 14400.00, 'cash',          NULL,           'pending',   NULL),
+(43, 23, 3600.00,  'easypaisa',     'TXN-PKR-043', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(44, 24, 4000.00,  'credit_card',   'TXN-PKR-044', 'refunded',  DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(45, 25, 5600.00,  'bank_transfer', 'TXN-PKR-045', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(46, 15, 7000.00,  'debit_card',    'TXN-PKR-046', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(47, 18, 12600.00, 'easypaisa',     'TXN-PKR-047', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(48, 12, 3800.00,  'jazzcash',      'TXN-PKR-048', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(49, 14, 1900.00,  'credit_card',   'TXN-PKR-049', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(50, 16, 5400.00,  'cash',          NULL,           'pending',   NULL);
+
+-- Booking seats for additional bookings (today routes)
+-- Route 1 (Green Line) seats: E-09(id:62), E-11(id:64), E-12(id:65), E-13(id:66), L-04(id:71)
+-- Booking 27: Sanam Chaudhry, route 1, 2 seats E-09/P-05
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(27, 62, 'Sanam Chaudhry', 32, 'F'),
+(27, 68, 'Imran Chaudhry', 34, 'M');
+
+-- Booking 28: Humaira Bibi, route 2, 3 seats E-10/L-03/P-03
+-- Route 2 additional seats: E-10(id:76), P-03(id:77), L-03(id:79)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(28, 76, 'Humaira Bibi',  40, 'F'),
+(28, 79, 'Junaid Bibi',   42, 'M'),
+(28, 77, 'Sara Bibi',     12, 'F');
+
+-- Booking 29: Nadeem Sultan, route 3, 1 seat E-04
+-- Route 3 additional: E-04(id:83)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(29, 83, 'Nadeem Sultan', 50, 'M');
+
+-- Booking 30: Sobia Qureshi, route 5, 2 seats P-03/L-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(30, 50, 'Sobia Qureshi', 29, 'F'),
+(30, 52, 'Imran Qureshi', 31, 'M');
+
+-- Booking 31: Bilal Ahmed, route 8, 1 seat E-06 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(31, 89, 'Bilal Ahmed',   27, 'M');
+
+-- Booking 32: Tariq Mehmood, route 10, 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(32, 63, 'Tariq Mehmood', 45, 'M'),
+(32, 64, 'Sana Mehmood',  38, 'F');
+
+-- Booking 33: Rukhsana Bibi, route 4, 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(33, 55, 'Rukhsana Bibi', 38, 'F');
+
+-- Booking 34: Wasim Akram, route 7, 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(34, 61, 'Wasim Akram',   35, 'M'),
+(34, 62, 'Rukhsana Akram',32, 'F'),
+(34, 63, 'Bilal Akram',    8, 'M');
+
+-- Booking 35: Shazia Bano, route 9, 1 seat E-01 (cancelled)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(35, 70, 'Shazia Bano',   27, 'F');
+
+-- Booking 36: Fahad Sheikh, route 1, 3 seats E-11/E-12/L-04
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(36, 64, 'Fahad Sheikh',  28, 'M'),
+(36, 65, 'Nadia Sheikh',  26, 'F'),
+(36, 71, 'Amir Sheikh',   55, 'M');
+
+-- Booking 37: Adnan Shaikh, route 2, 1 seat P-04
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(37, 78, 'Adnan Shaikh',  28, 'M');
+
+-- Booking 38: Noreen Mirza, route 8, 2 seats E-09/L-04 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(38, 92, 'Noreen Mirza',  24, 'F'),
+(38, 94, 'Kamran Mirza',  26, 'M');
+
+-- Booking seats for additional bookings (tomorrow routes)
+-- Booking 39: Kashif Nawaz, route 11, 2 seats P-03/L-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(39, 109,'Kashif Nawaz',  33, 'F'),
+(39, 111,'Saira Nawaz',   28, 'F');
+
+-- Booking 40: Sanam Chaudhry, route 12, 1 seat P-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(40, 116,'Sanam Chaudhry',32, 'F');
+
+-- Booking 41: Humaira Bibi, route 13, 2 seats P-01/P-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(41, 126,'Humaira Bibi',  40, 'F'),
+(41, 127,'Junaid Bibi',   42, 'M');
+
+-- Booking 42: Adnan Shaikh, route 15, 3 seats E-03/E-04/E-05 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(42, 142,'Adnan Shaikh',  28, 'M'),
+(42, 143,'Hina Shaikh',   26, 'F'),
+(42, 144,'Baby Shaikh',    1, 'M');
+
+-- Booking 43: Nadeem Sultan, route 18, 2 seats P-01/P-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(43, 167,'Nadeem Sultan', 50, 'M'),
+(43, 168,'Fatima Sultan', 45, 'F');
+
+-- Booking 44: Sobia Qureshi, route 14, 1 seat E-03 (cancelled)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(44, 131,'Sobia Qureshi', 29, 'F');
+
+-- Booking 45: Tariq Mehmood, route 16, 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(45, 148,'Tariq Mehmood', 45, 'M'),
+(45, 149,'Sana Mehmood',  38, 'F');
+
+-- Booking seats for day+2 routes
+-- Booking 46: Shazia Bano, route 19, 2 seats E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(46, 176,'Shazia Bano',   27, 'F'),
+(46, 177,'Zeeshan Bano',  30, 'M');
+
+-- Booking 47: Noreen Mirza, route 20, 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(47, 183,'Noreen Mirza',  24, 'F'),
+(47, 184,'Kamran Mirza',  26, 'M'),
+(47, 185,'Sadia Mirza',   55, 'F');
+
+-- Booking seats for day+3 routes
+-- Booking 48: Tariq Mehmood, route 23 (Peshawar→Lahore), 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(48, 155,'Tariq Mehmood', 45, 'M'),
+(48, 156,'Sana Mehmood',  38, 'F');
+
+-- Booking 49: Wasim Akram, route 23 (Peshawar→Lahore), 1 seat E-04
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(49, 158,'Wasim Akram',   35, 'M');
+
+-- Booking 50: Fahad Sheikh, route 25 (Islamabad→Lahore), 3 seats E-01/E-02/E-03 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(50, 162,'Fahad Sheikh',  28, 'M'),
+(50, 163,'Nadia Sheikh',  26, 'F'),
+(50, 164,'Amir Sheikh',   55, 'M');
+
+-- ========================================
+-- MORE REVIEWS for new bookings
+-- ========================================
+INSERT IGNORE INTO reviews (user_id, booking_id, rating, comment) VALUES
+(21, 27, 5, 'Karachi to Lahore safar zabardast tha. Seats bohat comfortable thay. Staff ka attitude acha tha!'),
+(22, 28, 4, 'Tezgam service bohat achi hai. AC theek tha, khana acha tha lekin thoda mehnga.'),
+(23, 29, 3, 'Lahore se Karachi ka safar average tha. Time par pohanch gaye lekin seats thodi purani thin.'),
+(24, 30, 5, 'Peshawar tak ka safar yaadgar raha. Khyber Mail ki service kamaal ki hai!'),
+(12, 32, 4, 'Hyderabad to Lahore journey was smooth. Recommended for family trips.'),
+(13, 33, 5, 'Islamabad se Karachi tak bohut acha safar. Pakistan Railways improving day by day.'),
+(14, 34, 4, 'Quetta to Lahore was long but comfortable. Sleeper coach was clean.'),
+(16, 36, 5, 'Second time on Green Line. Best train in Pakistan! Service top notch.'),
+(19, 39, 3, 'Tomorrow ki booking hai lekin abhi tak koi confirmation SMS nahi aya.'),
+(21, 41, 4, 'Advance booking experience smooth. Looking forward to the journey.'),
+(15, 35, 2, 'Had to cancel due to emergency. Refund process takes too long. Improve this please!'),
+(24, 44, 1, 'Cancelled booking. Poor customer service when trying to reschedule.');
+
+-- ========================================
+-- MORE NOTIFICATIONS
+-- ========================================
+INSERT IGNORE INTO notifications (user_id, message, is_read, created_at) VALUES
+(21, 'Booking PKR-2026-0027 confirmed! 2 seats Karachi to Lahore. Safe travels!', 1, DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(22, 'Booking PKR-2026-0028 confirmed! 3 seats Karachi to Rawalpindi. Enjoy your trip!', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(23, 'Booking PKR-2026-0029 confirmed! 1 seat Lahore to Karachi.', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(24, 'Booking PKR-2026-0030 confirmed! 2 seats Karachi to Peshawar via Khyber Mail.', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(25, 'Your booking PKR-2026-0031 is pending payment. Pay now to secure your seat!', 0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(12, 'Booking PKR-2026-0032 confirmed! Hyderabad to Lahore via Jaffar Express.', 1, DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(14, 'Booking PKR-2026-0034 confirmed! 3 seats Quetta to Lahore. Long journey – pack snacks!', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(15, 'Booking PKR-2026-0035 has been cancelled. Refund will be processed within 7 working days.', 1, DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(16, 'Booking PKR-2026-0036 confirmed! 3 seats on Green Line Karachi to Lahore.', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(18, 'Booking PKR-2026-0038 is pending payment. Complete payment to confirm seats.', 0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(19, 'Booking PKR-2026-0039 confirmed for tomorrow! Karachi to Lahore Green Line.', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(20, 'Booking PKR-2026-0040 confirmed for tomorrow! Karachi to Rawalpindi Tezgam.', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(22, 'Booking PKR-2026-0042 is pending. Pay now to confirm 3 seats for tomorrow!', 0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(23, 'Booking PKR-2026-0043 confirmed! Tomorrow Lahore to Islamabad.', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(24, 'Booking PKR-2026-0044 has been cancelled. Refund of PKR 4,000 initiated.', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(25, 'Booking PKR-2026-0045 confirmed! Tomorrow Multan to Karachi.', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(15, 'Booking PKR-2026-0046 confirmed for day after tomorrow! Karachi to Lahore.', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(18, 'Booking PKR-2026-0047 confirmed for day after tomorrow! 3 seats to Rawalpindi.', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(1,  'System: 5 bookings are pending payment for more than 24 hours. Review needed.', 0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+(1,  'System: Train Green Line Express (1-UP) is running at 85%+ occupancy today.', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+(1,  'System: 12 new bookings created in the last 7 days. Revenue up 15%.', 1, DATE_SUB(NOW(), INTERVAL 1 DAY));
+
+-- ========================================
+-- EVEN MORE DATA — ROUND 3
+-- ========================================
+
+-- More Bookings (days +4 to +14, spread across routes)
+INSERT IGNORE INTO bookings (user_id, route_id, booking_reference, number_of_seats, total_fare, booking_status, payment_status, booking_date, journey_date) VALUES
+-- Day +4 routes
+(4,  30, 'PKR-2026-0051', 1,  4200.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(5,  31, 'PKR-2026-0052', 2,  6400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(6,  32, 'PKR-2026-0053', 1,  1900.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(7,  33, 'PKR-2026-0054', 3,  7200.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(8,  34, 'PKR-2026-0055', 2,  6000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(9,  35, 'PKR-2026-0056', 1,  3000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+-- Day +5 routes
+(10, 36, 'PKR-2026-0057', 2,  8400.00, 'cancelled', 'refunded',  DATE_SUB(NOW(), INTERVAL 9 DAY),  DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(11, 37, 'PKR-2026-0058', 1,  4200.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(12, 38, 'PKR-2026-0059', 3, 14400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(13, 39, 'PKR-2026-0060', 1,  1800.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(14, 40, 'PKR-2026-0061', 2,  6200.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+-- Day +6 routes
+(15, 41, 'PKR-2026-0062', 1,  3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY),  DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(16, 42, 'PKR-2026-0063', 2,  8000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(17, 43, 'PKR-2026-0064', 1,  2800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(18, 44, 'PKR-2026-0065', 2,  7600.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(19, 45, 'PKR-2026-0066', 3,  9600.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+-- Day +7
+(20, 46, 'PKR-2026-0067', 2,  3200.00, 'cancelled', 'refunded',  DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+(21, 47, 'PKR-2026-0068', 1,  3400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+(22, 48, 'PKR-2026-0069', 3, 14400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+(23, 49, 'PKR-2026-0070', 1,  1400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY),  DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+(24, 50, 'PKR-2026-0071', 2,  8000.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+-- Day +8 to +10 mix
+(25, 51, 'PKR-2026-0072', 1,  3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY),  DATE_ADD(CURDATE(), INTERVAL 8 DAY)),
+(4,  52, 'PKR-2026-0073', 2,  8400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY),  DATE_ADD(CURDATE(), INTERVAL 8 DAY)),
+(5,  55, 'PKR-2026-0074', 1,  4800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 9 DAY),  DATE_ADD(CURDATE(), INTERVAL 10 DAY)),
+(6,  56, 'PKR-2026-0075', 3,  5400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY),  DATE_ADD(CURDATE(), INTERVAL 10 DAY)),
+(7,  61, 'PKR-2026-0076', 2,  3800.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 11 DAY)),
+(8,  65, 'PKR-2026-0077', 1,  3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY),  DATE_ADD(CURDATE(), INTERVAL 12 DAY)),
+(9,  70, 'PKR-2026-0078', 2,  7600.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY),  DATE_ADD(CURDATE(), INTERVAL 13 DAY)),
+(10, 75, 'PKR-2026-0079', 1,  3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY),  DATE_ADD(CURDATE(), INTERVAL 14 DAY)),
+(11, 78, 'PKR-2026-0080', 3, 14400.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY),  DATE_ADD(CURDATE(), INTERVAL 15 DAY));
+
+-- Payments for these bookings (51-80)
+INSERT IGNORE INTO payments (booking_id, user_id, amount, payment_method, transaction_id, payment_status, payment_date) VALUES
+(51, 4,  4200.00,  'jazzcash',      'TXN-PKR-051', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(52, 5,  6400.00,  'credit_card',   'TXN-PKR-052', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(53, 6,  1900.00,  'easypaisa',     'TXN-PKR-053', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(54, 7,  7200.00,  'cash',          NULL,           'pending',   NULL),
+(55, 8,  6000.00,  'bank_transfer', 'TXN-PKR-055', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(56, 9,  3000.00,  'debit_card',    'TXN-PKR-056', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(57, 10, 8400.00,  'credit_card',   'TXN-PKR-057', 'refunded',  DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(58, 11, 4200.00,  'jazzcash',      'TXN-PKR-058', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(59, 12, 14400.00, 'easypaisa',     'TXN-PKR-059', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(60, 13, 1800.00,  'cash',          NULL,           'pending',   NULL),
+(61, 14, 6200.00,  'bank_transfer', 'TXN-PKR-061', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(62, 15, 3500.00,  'credit_card',   'TXN-PKR-062', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(63, 16, 8000.00,  'debit_card',    'TXN-PKR-063', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(64, 17, 2800.00,  'jazzcash',      'TXN-PKR-064', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(65, 18, 7600.00,  'cash',          NULL,           'pending',   NULL),
+(66, 19, 9600.00,  'easypaisa',     'TXN-PKR-066', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(67, 20, 3200.00,  'credit_card',   'TXN-PKR-067', 'refunded',  DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(68, 21, 3400.00,  'bank_transfer', 'TXN-PKR-068', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(69, 22, 14400.00, 'jazzcash',      'TXN-PKR-069', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(70, 23, 1400.00,  'easypaisa',     'TXN-PKR-070', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(71, 24, 8000.00,  'cash',          NULL,           'pending',   NULL),
+(72, 25, 3500.00,  'credit_card',   'TXN-PKR-072', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(73, 4,  8400.00,  'debit_card',    'TXN-PKR-073', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(74, 5,  4800.00,  'jazzcash',      'TXN-PKR-074', 'completed', DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(75, 6,  5400.00,  'easypaisa',     'TXN-PKR-075', 'completed', DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(76, 7,  3800.00,  'cash',          NULL,           'pending',   NULL),
+(77, 8,  3500.00,  'bank_transfer', 'TXN-PKR-077', 'completed', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(78, 9,  7600.00,  'credit_card',   'TXN-PKR-078', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(79, 10, 3500.00,  'debit_card',    'TXN-PKR-079', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(80, 11, 14400.00, 'cash',          NULL,           'pending',   NULL);
+
+-- More Crew Assignments (days +3 to +7, future routes)
+INSERT IGNORE INTO crew_assignments (route_id, employee_id, role_title, shift_start, shift_end, assignment_status, notes) VALUES
+-- Day +3 routes
+(21, 2,  'Train Conductor',  DATE_ADD('2026-06-30 06:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 15:00:00', INTERVAL 3 DAY), 'assigned', 'Sukkur Express Karachi-Sukkur'),
+(22, 13, 'Ticket Checker',   DATE_ADD('2026-06-30 06:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 3 DAY), 'assigned', 'Bolan Mail Quetta-Karachi'),
+(23, 12, 'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 3 DAY), 'assigned', 'Rehman Baba Peshawar-Lahore'),
+(24, 3,  'Station Captain',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:00:00', INTERVAL 3 DAY), 'assigned', 'Shah Hussain Lahore-Multan'),
+(25, 2,  'Ticket Checker',   DATE_ADD('2026-06-30 09:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:30:00', INTERVAL 3 DAY), 'assigned', 'Subak Raftar Islamabad-Lahore'),
+-- Day +4 routes
+(30, 3,  'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 23:00:00', INTERVAL 4 DAY), 'assigned', 'Sukkur Express Sukkur-Lahore long haul'),
+(31, 12, 'Catering Supervisor', DATE_ADD('2026-06-30 06:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 4 DAY), 'assigned', 'Bolan Mail Karachi-Quetta'),
+(32, 13, 'Train Conductor',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 16:00:00', INTERVAL 4 DAY), 'assigned', 'Rehman Baba Lahore-Peshawar'),
+(36, 2,  'Train Conductor',  DATE_ADD('2026-06-30 05:00:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 18:30:00', INTERVAL 5 DAY), 'assigned', 'Green Line Lahore-Karachi (reverse)'),
+(38, 13, 'Ticket Checker',   DATE_ADD('2026-06-30 07:30:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 5 DAY), 'assigned', 'Allama Iqbal Islamabad-Lahore');
+
+-- More Cargo Shipments
+INSERT IGNORE INTO cargo_shipments (tracking_number, shipment_type, passenger_name, passenger_cnic, linked_booking_ref, sender_name, sender_phone, sender_address, receiver_name, receiver_phone, receiver_address, origin_city, destination_city, route_id, weight_kg, cargo_type, declared_value, shipping_fee, shipment_status, payment_status, special_instructions, booked_by, handled_by, booking_date, estimated_delivery, actual_delivery) VALUES
+('PKR-CGO-2026-0013', 'cargo_delivery', NULL, NULL, NULL,
+ 'Rawalpindi Electronics', '+92-51-4451234', 'Saddar Road, Rawalpindi',
+ 'Karachi Electronics Hub', '+92-21-35811234', 'Saddar, Karachi',
+ 'Rawalpindi', 'Karachi', 2, 180.00, 'fragile', 350000.00, 4200.00,
+ 'pending', 'paid', 'LED TVs and monitors. Fragile – handle with extreme care.',
+ 4, 2, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
+
+('PKR-CGO-2026-0014', 'cargo_delivery', NULL, NULL, NULL,
+ 'Lahore Book Depot', '+92-42-37301234', 'Urdu Bazar, Lahore',
+ 'Islamabad University Library', '+92-51-9261234', 'Sector H-10, Islamabad',
+ 'Lahore', 'Islamabad', 8, 350.00, 'general', 85000.00, 1800.00,
+ 'delivered', 'paid', 'Educational books and journals. Keep dry.',
+ 5, 12, DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
+
+('PKR-CGO-2026-0015', 'cargo_delivery', NULL, NULL, NULL,
+ 'Peshawar Marble Exports', '+92-91-5601234', 'Industrial Estate, Peshawar',
+ 'Karachi Construction Co.', '+92-21-32561234', 'M A Jinnah Road, Karachi',
+ 'Peshawar', 'Karachi', 5, 2000.00, 'general', 500000.00, 12000.00,
+ 'in_transit', 'paid', 'Marble slabs. Use forklift only. Do not drop.',
+ 9, 3, DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
+
+('PKR-CGO-2026-0016', 'travelling', 'Ali Khan', '42101-1122334-9', 'PKR-2026-0001',
+ 'Ali Khan', '+92-300-1111111', 'DHA Phase 5, Karachi',
+ 'Ali Khan', '+92-300-1111111', 'DHA Phase 5, Karachi',
+ 'Karachi', 'Lahore', 1, 25.00, 'general', 10000.00, 500.00,
+ 'delivered', 'paid', 'Passenger personal luggage – 1 suitcase.',
+ 4, 2, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
+
+('PKR-CGO-2026-0017', 'cargo_delivery', NULL, NULL, NULL,
+ 'Faisalabad Yarn Mills', '+92-41-8751234', 'Khurrianwala, Faisalabad',
+ 'Lahore Textile Market', '+92-42-37651234', 'Azam Cloth Market, Lahore',
+ 'Faisalabad', 'Lahore', NULL, 500.00, 'general', 120000.00, 2500.00,
+ 'pending', 'pending', 'Cotton yarn bundles. Keep away from moisture.',
+ 14, 12, NOW(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
+
+('PKR-CGO-2026-0018', 'cargo_delivery', NULL, NULL, NULL,
+ 'Quetta Dry Fruit House', '+92-81-2881234', 'Jinnah Road, Quetta',
+ 'Islamabad Gift Shop', '+92-51-2821234', 'Super Market, F-6, Islamabad',
+ 'Quetta', 'Islamabad', NULL, 120.00, 'general', 75000.00, 3200.00,
+ 'in_transit', 'paid', 'Premium dry fruits gift packs. Fragile packaging.',
+ 11, 13, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY), NULL);
+
+-- More Lost & Found
+INSERT IGNORE INTO lost_found_items (record_type, route_id, reported_by, assigned_to, claimed_by, item_name, category, description, location_hint, contact_phone, status, resolution_note, resolved_at) VALUES
+('lost',  6,  8,  3,  NULL, 'Silver Bracelet',       'jewelry',     'Silver bracelet with engraving. Sentimental value. Lost somewhere in economy coach.',              'Economy coach, Awam Express Multan-Karachi',      '+92-321-5555555', 'under_review', NULL, NULL),
+('found', 4,  2,  2,  NULL, 'iPhone 15 Pro Max',     'electronics', 'Black iPhone 15 Pro Max found on seat P-02. Screen locked. Awaiting owner contact.',              'Seat P-02, Pakistan Express Islamabad-Karachi',    '+92-321-7654321', 'reported',     NULL, NULL),
+('lost',  10, 10, 12, NULL, 'Prescription Glasses',  'accessories', 'Brown rimmed prescription glasses in a hard case. Left on window sill.',                          'Window seat, Jaffar Express Hyderabad-Lahore',     '+92-321-8888888', 'matched',      'Identified via booking – glasses returned to owner at Lahore station', NULL),
+('found', 5,  3,  3,  NULL, 'Cash Envelope',         'wallet',      'White envelope containing PKR 15,000 cash. No ID inside. Found under seat E-04.',                  'Seat E-04, Khyber Mail Karachi-Peshawar',           '+92-333-9876543', 'under_review', 'Cross-checking with passenger manifest for possible owner', NULL),
+('lost',  11, 10, 2,  NULL, 'Passport & CNIC',       'documents',   'Pakistani passport (green) and CNIC card. Urgent – passenger has flight in 2 days!',              'Seat E-02, Green Line Karachi-Lahore (tomorrow)',   '+92-321-8888888', 'reported',     NULL, NULL),
+('found', 2,  2,  12, NULL, 'Umbrella (Blue)',       'accessories', 'Large blue umbrella with wooden handle. Found in overhead luggage rack.',                         'Coach P-01, Tezgam Karachi-Rawalpindi',             '+92-321-7654321', 'reported',     NULL, NULL);
+
+-- More Waitlist Entries
+INSERT IGNORE INTO waitlist_entries (route_id, user_id, passenger_manifest, passenger_count, preferred_class, queue_status, queue_position, note, linked_booking_id) VALUES
+(3,  19, '[{"name":"Sanam Chaudhry","age":32,"gender":"F"},{"name":"Zain Chaudhry","age":34,"gender":"M"}]',
+    2, 'premium',  'waitlist', 2, 'Couple waitlisted for premium on Karakoram Express Lahore-Karachi', NULL),
+(4,  20, '[{"name":"Kashif Nawaz","age":33,"gender":"M"}]',
+    1, 'economy',  'rac',      2, 'RAC seat expected after boarding Pakistan Express', NULL),
+(8,  21, '[{"name":"Fahad Sheikh","age":28,"gender":"M"}]',
+    1, 'luxury',   'waitlist', 1, 'Single luxury seat requested on Allama Iqbal Express', NULL),
+(6,  22, '[{"name":"Adnan Shaikh","age":28,"gender":"M"},{"name":"Hina Shaikh","age":26,"gender":"F"}]',
+    2, 'economy',  'waitlist', 3, 'Couple on waitlist for Awam Express Multan-Karachi', NULL),
+(10, 25, '[{"name":"Sobia Qureshi","age":29,"gender":"F"}]',
+    1, 'premium',  'waitlist', 1, 'Single premium seat on Jaffar Express Hyderabad-Lahore', NULL);
+
+-- More Audit Logs
+INSERT IGNORE INTO audit_logs (user_id, user_role, action, module, description, old_value, new_value, record_id, ip_address, created_at) VALUES
+(2,  'employee', 'CHECK_IN',  'bookings',  'Checked in passenger for booking PKR-2026-0013 (Green Line)',        NULL,       NULL,             13, '192.168.1.101', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(3,  'employee', 'CHECK_IN',  'bookings',  'Checked in passengers for booking PKR-2026-0015 (Allama Iqbal)',      NULL,       NULL,             15, '192.168.1.102', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(12, 'employee', 'UPDATE',    'cargo',     'Updated cargo PKR-CGO-2026-0001 status to delivered',                 'in_transit','delivered',      1,  '192.168.2.50',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1,  'admin',    'CREATE',    'discounts', 'Created LAHORE10 city-specific discount',                              NULL,       'LAHORE10',       11, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(1,  'admin',    'UPDATE',    'trains',    'Updated Subak Raftar available seats count',                           '380',      '370',            15, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(13, 'employee', 'LOGIN',     'auth',      'Employee Nadia Butt logged in',                                        NULL,       NULL,             13, '192.168.3.75',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(13, 'employee', 'UPDATE',    'cargo',     'Marked cargo PKR-CGO-2026-0009 as in transit',                        'pending',  'in_transit',     9,  '192.168.3.75',  DATE_SUB(NOW(), INTERVAL 12 HOUR)),
+(2,  'employee', 'UPDATE',    'live_train_status', 'Route 3 (Karakoram): departed Lahore on schedule',            'boarding', 'running',         3,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+(1,  'admin',    'SYSTEM',    'system',    'Database backup completed successfully',                               NULL,       NULL,              NULL,'192.168.1.100', DATE_SUB(NOW(), INTERVAL 6 HOUR)),
+(1,  'admin',    'CREATE',    'trains',    'Added train maintenance schedule for next month',                     NULL,       'schedule',        NULL,'192.168.1.100', DATE_SUB(NOW(), INTERVAL 30 MINUTE));
+
+-- More Booking Discounts
+INSERT IGNORE INTO booking_discounts (booking_id, discount_id, discount_amount) VALUES
+(27, 11, 400.00),  -- PKR-2026-0027 used LAHORE10
+(30, 3,  800.00),  -- PKR-2026-0030 used SENIOR20
+(36, 9,  700.00),  -- PKR-2026-0036 used NEWUSER20
+(41, 10, 1000.00), -- PKR-2026-0041 used FAMILY15
+(46, 12, 400.00),  -- PKR-2026-0046 used KARACHI10
+(52, 8,  400.00),  -- PKR-2026-0052 used PESHAWAR10
+(59, 6,  1200.00), -- PKR-2026-0059 used RAMZAN30
+(66, 5,  1000.00), -- PKR-2026-0066 used EID25
+(69, 4,  500.00);  -- PKR-2026-0069 used FLAT500
