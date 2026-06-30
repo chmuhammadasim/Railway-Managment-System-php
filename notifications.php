@@ -236,6 +236,7 @@ body { background:#f0f4f8; }
         <a href="audit-logs.php"><i class="bi bi-journal-text"></i> Audit Logs</a>
         <div class="sb-sep">Operations</div>
         <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
+        <a href="train-seats-report.php"><i class="bi bi-diagram-3"></i> Seat Report</a>
         <a href="manage-routes.php"><i class="bi bi-signpost-split"></i> Routes</a>
         <a href="manage-bookings.php"><i class="bi bi-ticket-perforated"></i> Bookings</a>
         <a href="manage-payments.php"><i class="bi bi-credit-card"></i> Payments</a>

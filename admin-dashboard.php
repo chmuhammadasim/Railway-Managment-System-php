@@ -452,6 +452,7 @@ require_once 'inc/header.php';
 
             <div class="sb-sep">Operations</div>
             <a href="manage-trains.php"><i class="bi bi-train-front"></i> Trains</a>
+            <a href="train-seats-report.php"><i class="bi bi-diagram-3"></i> Seat Report</a>
             <a href="manage-routes.php"><i class="bi bi-map"></i> Routes</a>
             <a href="operations-hub.php?tab=stations"><i class="bi bi-building"></i> Stations</a>
             <a href="booking-admin.php" style="justify-content:space-between;">
