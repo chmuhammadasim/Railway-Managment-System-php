@@ -1,5 +1,6 @@
 <?php
 // train-seats-report.php - Train Seats Booking Report (Admin)
+// Enhanced: seat map, date filters, sortable columns, CSV export, seat-type breakdown
 
 require_once 'config/database.php';
 require_once 'src/classes/Database.php';
@@ -20,11 +21,63 @@ $user_obj = new User($db);
 $user = $user_obj->getUserById($_SESSION['user_id']);
 
 // ── Filters ────────────────────────────────────────────────────────────────
-$filter_status   = $_GET['status'] ?? 'all';
+$filter_status   = $_GET['status']   ?? 'all';
 $filter_train_id = isset($_GET['train_id']) ? (int)$_GET['train_id'] : 0;
-$search          = trim($_GET['q'] ?? '');
+$search          = trim($_GET['q']    ?? '');
+$sort_by         = $_GET['sort']     ?? 'booked';
+$sort_dir        = $_GET['dir']      ?? 'desc';
+$view_mode       = $_GET['view']     ?? 'table';
+$date_from       = $_GET['from']     ?? '';
+$date_to         = $_GET['to']       ?? '';
+$export_csv      = isset($_GET['export']) && $_GET['export'] === 'csv';
 
-// ── Train list with seat stats ─────────────────────────────────────────────
+// Validate sort
+$allowed_sorts = ['booked', 'name', 'type', 'occupancy', 'available', 'total'];
+if (!in_array($sort_by, $allowed_sorts)) $sort_by = 'booked';
+$sort_dir = ($sort_dir === 'asc') ? 'ASC' : 'DESC';
+
+// ── CSV Export ──────────────────────────────────────────────────────────────
+if ($export_csv) {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="train-seats-report-' . date('Ymd') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['Train Name', 'Train Number', 'Type', 'Status', 'Total Seats', 'Booked', 'Confirmed', 'Economy', 'Premium', 'Luxury', 'Available', 'Occupancy %']);
+
+    $csv_trains = $db->select(
+        "SELECT t.train_name, t.train_number, t.train_type, t.status, t.total_seats,
+                COALESCE(ss.booked,0) AS booked, COALESCE(ss.confirmed,0) AS confirmed,
+                COALESCE(ss.economy,0) AS economy, COALESCE(ss.premium,0) AS premium, COALESCE(ss.luxury,0) AS luxury
+         FROM trains t
+         LEFT JOIN (
+             SELECT s.train_id, COUNT(*) AS booked,
+                    SUM(CASE WHEN b.booking_status='confirmed' THEN 1 ELSE 0 END) AS confirmed,
+                    SUM(CASE WHEN s.seat_type='economy' THEN 1 ELSE 0 END) AS economy,
+                    SUM(CASE WHEN s.seat_type='premium' THEN 1 ELSE 0 END) AS premium,
+                    SUM(CASE WHEN s.seat_type='luxury' THEN 1 ELSE 0 END) AS luxury
+             FROM seats s
+             JOIN booking_seats bs ON bs.seat_id=s.seat_id
+             JOIN bookings b ON b.booking_id=bs.booking_id
+             WHERE s.status='booked' AND b.booking_status!='cancelled'
+             GROUP BY s.train_id
+         ) ss ON ss.train_id=t.train_id
+         ORDER BY ss.booked DESC, t.train_name ASC"
+    );
+    foreach ($csv_trains ?: [] as $row) {
+        $total = (int)$row['total_seats'];
+        $booked = (int)$row['booked'];
+        $pct = $total > 0 ? round(($booked/$total)*100, 1) : 0;
+        fputcsv($out, [
+            $row['train_name'], $row['train_number'], $row['train_type'], $row['status'],
+            $total, $booked, (int)$row['confirmed'],
+            (int)$row['economy'], (int)$row['premium'], (int)$row['luxury'],
+            $total - $booked, $pct . '%'
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
+// ── Build where clause ─────────────────────────────────────────────────────
 $where_clauses = [];
 if ($filter_status !== 'all') {
     $safe_status = $conn->real_escape_string($filter_status);
@@ -36,16 +89,34 @@ if ($search !== '') {
 }
 $where_sql = $where_clauses ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
+// Sort mapping
+$sort_map = [
+    'name'       => 't.train_name',
+    'type'       => 't.train_type',
+    'total'      => 't.total_seats',
+    'booked'     => 'COALESCE(seat_stats.booked_seats, 0)',
+    'available'  => 't.total_seats - COALESCE(seat_stats.booked_seats, 0)',
+    'occupancy'  => '(COALESCE(seat_stats.booked_seats,0) / NULLIF(t.total_seats,0))',
+];
+$order_col = $sort_map[$sort_by] ?? $sort_map['booked'];
+$order_clause = "ORDER BY {$order_col} {$sort_dir}, t.train_name ASC";
+
 $trains = $db->select(
     "SELECT t.train_id, t.train_name, t.train_number, t.train_type, t.total_seats, t.status,
             COALESCE(seat_stats.booked_seats, 0) AS booked_seats,
             COALESCE(seat_stats.confirmed_seats, 0) AS confirmed_seats,
+            COALESCE(seat_stats.economy_booked, 0) AS economy_booked,
+            COALESCE(seat_stats.premium_booked, 0) AS premium_booked,
+            COALESCE(seat_stats.luxury_booked, 0) AS luxury_booked,
             t.total_seats - COALESCE(seat_stats.booked_seats, 0) AS available_seats
      FROM trains t
      LEFT JOIN (
          SELECT s.train_id,
                 COUNT(*) AS booked_seats,
-                SUM(CASE WHEN b.booking_status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_seats
+                SUM(CASE WHEN b.booking_status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_seats,
+                SUM(CASE WHEN s.seat_type = 'economy' THEN 1 ELSE 0 END) AS economy_booked,
+                SUM(CASE WHEN s.seat_type = 'premium' THEN 1 ELSE 0 END) AS premium_booked,
+                SUM(CASE WHEN s.seat_type = 'luxury'  THEN 1 ELSE 0 END) AS luxury_booked
          FROM seats s
          JOIN booking_seats bs ON bs.seat_id = s.seat_id
          JOIN bookings b ON b.booking_id = bs.booking_id
@@ -54,28 +125,50 @@ $trains = $db->select(
          GROUP BY s.train_id
      ) seat_stats ON seat_stats.train_id = t.train_id
      {$where_sql}
-     ORDER BY t.status = 'active' DESC, seat_stats.booked_seats DESC, t.train_name ASC"
+     {$order_clause}"
 );
 if (!$trains) $trains = [];
 
 // ── Aggregates ─────────────────────────────────────────────────────────────
 $total_trains_n       = count($trains);
 $total_booked_seats   = array_sum(array_map('intval', array_column($trains, 'booked_seats')));
+$total_confirmed      = array_sum(array_map('intval', array_column($trains, 'confirmed_seats')));
 $total_capacity       = array_sum(array_map('intval', array_column($trains, 'total_seats')));
 $overall_booking_pct  = $total_capacity > 0 ? round(($total_booked_seats / $total_capacity) * 100, 1) : 0;
+$total_available      = $total_capacity - $total_booked_seats;
+$fully_booked_trains  = count(array_filter($trains, fn($t) => (int)$t['total_seats'] > 0 && (int)$t['booked_seats'] >= (int)$t['total_seats']));
 
-// ── Selected train detail: which seats are booked ──────────────────────────
+$total_economy_bkd = array_sum(array_map('intval', array_column($trains, 'economy_booked')));
+$total_premium_bkd = array_sum(array_map('intval', array_column($trains, 'premium_booked')));
+$total_luxury_bkd  = array_sum(array_map('intval', array_column($trains, 'luxury_booked')));
+
+// ── Selected train detail ──────────────────────────────────────────────────
 $selected_train = null;
 $booked_seats_detail = [];
+$seat_map_all = [];
+$train_routes = [];
+
 if ($filter_train_id > 0) {
     $selected_train = $train_obj->getTrainById($filter_train_id);
 
+    // Date filter for detail
+    $date_filter_sql = '';
+    if ($date_from !== '') {
+        $safe_from = $conn->real_escape_string($date_from);
+        $date_filter_sql .= " AND b.journey_date >= '{$safe_from}'";
+    }
+    if ($date_to !== '') {
+        $safe_to = $conn->real_escape_string($date_to);
+        $date_filter_sql .= " AND b.journey_date <= '{$safe_to}'";
+    }
+
+    // Booked seats detail
     $booked_seats_detail = $db->select(
         "SELECT s.seat_id, s.seat_number, s.seat_type,
                 bs.passenger_name, bs.passenger_age, bs.passenger_gender,
-                b.booking_reference, b.booking_status, b.payment_status,
-                b.journey_date, b.total_fare,
-                r.departure_city, r.arrival_city, r.departure_time, r.arrival_time,
+                b.booking_id, b.booking_reference, b.booking_status, b.payment_status,
+                b.journey_date, b.total_fare, b.number_of_seats,
+                r.route_id, r.departure_city, r.arrival_city, r.departure_time, r.arrival_time,
                 u.full_name AS booked_by
          FROM seats s
          JOIN booking_seats bs ON bs.seat_id = s.seat_id
@@ -85,10 +178,65 @@ if ($filter_train_id > 0) {
          WHERE s.train_id = {$filter_train_id}
            AND s.status = 'booked'
            AND b.booking_status != 'cancelled'
+           {$date_filter_sql}
          ORDER BY b.journey_date DESC, s.seat_number ASC"
     );
     if (!$booked_seats_detail) $booked_seats_detail = [];
+
+    // Routes for this train
+    $train_routes = $db->select(
+        "SELECT r.route_id, r.departure_city, r.arrival_city, r.journey_date,
+                r.departure_time, r.arrival_time, r.available_seats, r.status, r.base_fare
+         FROM routes r WHERE r.train_id = {$filter_train_id}
+         ORDER BY r.journey_date DESC LIMIT 30"
+    );
+    if (!$train_routes) $train_routes = [];
+
+    // All seats for seat map (latest upcoming route)
+    $filter_route_id = isset($_GET['route_id']) ? (int)$_GET['route_id'] : 0;
+    if ($filter_route_id > 0) {
+        $latest_route = $db->selectRow("SELECT route_id FROM routes WHERE route_id = {$filter_route_id}");
+    } else {
+        $latest_route = $db->selectRow(
+            "SELECT route_id FROM routes
+             WHERE train_id = {$filter_train_id} AND journey_date >= CURDATE() AND status = 'scheduled'
+             ORDER BY journey_date ASC LIMIT 1"
+        );
+    }
+    if ($latest_route) {
+        $rid = (int)$latest_route['route_id'];
+        $seat_map_all = $db->select(
+            "SELECT s.seat_id, s.seat_number, s.seat_type, s.status
+             FROM seats s WHERE s.train_id = {$filter_train_id} AND s.route_id = {$rid}
+             ORDER BY s.seat_number ASC"
+        );
+        if (!$seat_map_all) $seat_map_all = [];
+    }
 }
+
+// ── Sort link helper ───────────────────────────────────────────────────────
+function sortLink(string $col, string $currentSort, string $currentDir, array $params): string {
+    $newDir = ($currentSort === $col && $currentDir === 'asc') ? 'desc' : 'asc';
+    $p = $params;
+    $p['sort'] = $col;
+    $p['dir']  = $newDir;
+    return 'train-seats-report.php?' . http_build_query(array_filter($p, fn($v) => $v !== '' && $v !== 'all'));
+}
+function sortIcon(string $col, string $currentSort, string $currentDir): string {
+    if ($currentSort !== $col) return '<i class="bi bi-arrow-down-up" style="opacity:.25;font-size:.65rem;margin-left:3px;"></i>';
+    return $currentDir === 'asc'
+        ? '<i class="bi bi-caret-up-fill" style="font-size:.65rem;margin-left:3px;"></i>'
+        : '<i class="bi bi-caret-down-fill" style="font-size:.65rem;margin-left:3px;"></i>';
+}
+
+$sort_params = [
+    'status'   => $filter_status,
+    'q'        => $search,
+    'train_id' => $filter_train_id,
+    'view'     => $view_mode,
+    'from'     => $date_from,
+    'to'       => $date_to,
+];
 
 $hideMainNavbar = true;
 $pageTitle = 'Train Seats Report – Admin';
@@ -116,8 +264,7 @@ require_once 'inc/header.php';
     font-size:.875rem; font-weight:500; transition:all .2s;
     border-left:3px solid transparent;
 }
-.adm-sidebar nav a:hover,
-.adm-sidebar nav a.active {
+.adm-sidebar nav a:hover, .adm-sidebar nav a.active {
     background:rgba(255,255,255,.07); color:#fff; border-left-color:#3b82f6;
 }
 .adm-sidebar nav a i { font-size:1rem; width:1.1rem; text-align:center; }
@@ -137,87 +284,99 @@ require_once 'inc/header.php';
 
 .adm-main { flex:1; padding:2rem; overflow-x:hidden; }
 
-/* Page header */
 .adm-page-header {
     display:flex; justify-content:space-between; align-items:flex-start;
-    gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;
+    gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;
 }
 .adm-page-header h2 { margin:0; font-size:1.6rem; font-weight:800; color:#0f172a; }
 .adm-page-header p  { margin:.2rem 0 0; color:#64748b; font-size:.875rem; }
 
+/* View tabs */
+.view-tabs {
+    display:flex; gap:.25rem; margin-bottom:1.25rem;
+    background:#f1f5f9; border-radius:10px; padding:4px; width:fit-content;
+}
+.view-tabs a {
+    padding:.4rem 1.1rem; border-radius:8px; text-decoration:none;
+    font-size:.8rem; font-weight:600; color:#64748b; transition:all .2s;
+}
+.view-tabs a.active, .view-tabs a:hover { background:#fff; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+
 /* KPI strip */
 .kpi-strip {
-    display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:1rem;
-    margin-bottom:1.5rem;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(155px,1fr)); gap:.75rem;
+    margin-bottom:1.25rem;
 }
 .kpi-box {
-    background:#fff; border-radius:12px; padding:1.1rem 1.3rem;
-    box-shadow:0 1px 4px rgba(0,0,0,.07);
+    background:#fff; border-radius:12px; padding:1rem 1.1rem;
+    box-shadow:0 1px 4px rgba(0,0,0,.07); position:relative; overflow:hidden;
 }
 .kpi-box .kpi-icon {
-    width:38px; height:38px; border-radius:9px;
+    width:34px; height:34px; border-radius:8px;
     display:flex; align-items:center; justify-content:center;
-    font-size:1.1rem; margin-bottom:.7rem;
+    font-size:1rem; margin-bottom:.55rem;
 }
-.kpi-box .kpi-val { font-size:1.6rem; font-weight:800; color:#0f172a; line-height:1.1; }
-.kpi-box .kpi-lbl { font-size:.75rem; color:#64748b; margin-top:.2rem; }
+.kpi-box .kpi-val { font-size:1.45rem; font-weight:800; color:#0f172a; line-height:1.1; }
+.kpi-box .kpi-lbl { font-size:.72rem; color:#64748b; margin-top:.15rem; }
+.kpi-box .kpi-sub { font-size:.68rem; color:#94a3b8; margin-top:.1rem; }
 .kpi-blue   .kpi-icon { background:#dbeafe; color:#2563eb; }
 .kpi-green  .kpi-icon { background:#dcfce7; color:#16a34a; }
 .kpi-amber  .kpi-icon { background:#fef3c7; color:#d97706; }
 .kpi-purple .kpi-icon { background:#ede9fe; color:#7c3aed; }
+.kpi-red    .kpi-icon { background:#fee2e2; color:#dc2626; }
+.kpi-teal   .kpi-icon { background:#ccfbf1; color:#0d9488; }
+.kpi-indigo .kpi-icon { background:#e0e7ff; color:#4338ca; }
 
 /* Filters */
 .filter-bar {
-    display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;
-    margin-bottom:1.25rem;
+    display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;
+    margin-bottom:1rem;
 }
-.filter-bar select, .filter-bar input {
-    padding:.45rem .8rem; border:1px solid #e2e8f0; border-radius:8px;
-    font-size:.8rem; background:#fff; color:#334155;
+.filter-bar select, .filter-bar input[type="text"], .filter-bar input[type="date"] {
+    padding:.42rem .7rem; border:1px solid #e2e8f0; border-radius:8px;
+    font-size:.78rem; background:#fff; color:#334155;
 }
 .filter-bar select:focus, .filter-bar input:focus {
     outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(59,130,246,.12);
 }
-.filter-bar .btn-sm {
-    padding:.45rem 1rem; font-size:.8rem; border-radius:8px;
-}
+.filter-bar .btn-sm { padding:.42rem .9rem; font-size:.78rem; border-radius:8px; }
 
-/* Table card */
+/* Surface card */
 .surface-card {
     background:#fff; border-radius:14px; padding:1.25rem;
     box-shadow:0 1px 4px rgba(0,0,0,.07); margin-bottom:1.5rem;
 }
 .card-title-row {
     display:flex; justify-content:space-between; align-items:center;
-    gap:1rem; margin-bottom:1rem;
+    gap:1rem; margin-bottom:1rem; flex-wrap:wrap;
 }
 .card-title-row h4 { margin:0; font-size:.95rem; font-weight:700; color:#0f172a; }
 
-/* Train table */
+/* Data table */
 .data-table { width:100%; border-collapse:collapse; font-size:.82rem; }
 .data-table th {
     padding:.6rem .7rem; color:#64748b; font-weight:600; text-align:left;
-    border-bottom:2px solid #f1f5f9; font-size:.73rem; text-transform:uppercase; letter-spacing:.5px;
-    white-space:nowrap;
+    border-bottom:2px solid #f1f5f9; font-size:.72rem; text-transform:uppercase; letter-spacing:.5px;
+    white-space:nowrap; position:sticky; top:0; background:#fff; z-index:1;
 }
-.data-table td {
-    padding:.6rem .7rem; border-bottom:1px solid #f8fafc; color:#334155;
-    vertical-align:middle;
-}
+.data-table th a { color:#64748b; text-decoration:none; }
+.data-table th a:hover { color:#1e40af; }
+.data-table td { padding:.6rem .7rem; border-bottom:1px solid #f8fafc; color:#334155; vertical-align:middle; }
 .data-table tbody tr { cursor:pointer; transition:background .15s; }
 .data-table tbody tr:hover { background:#f8fafc; }
-.data-table tbody tr.row-selected { background:#eff6ff; }
+.data-table tbody tr.row-selected { background:#eff6ff; box-shadow:inset 3px 0 0 #3b82f6; }
 .data-table .train-name { font-weight:700; color:#1e40af; }
 .data-table .train-num  { font-family:monospace; font-size:.77rem; color:#6366f1; }
+.data-table tfoot td { font-weight:700; background:#f8fafc; border-top:2px solid #e2e8f0; }
 
 /* Progress bar */
-.prog-bar { background:#f1f5f9; border-radius:99px; height:6px; overflow:hidden; min-width:80px; }
+.prog-bar { background:#f1f5f9; border-radius:99px; height:7px; overflow:hidden; min-width:80px; }
 .prog-bar-fill { height:100%; border-radius:99px; transition:width .4s ease; }
-.prog-fill-high  { background:linear-gradient(90deg,#16a34a,#22c55e); }
+.prog-fill-high  { background:linear-gradient(90deg,#ef4444,#f97316); }
 .prog-fill-mid   { background:linear-gradient(90deg,#d97706,#f59e0b); }
-.prog-fill-low   { background:linear-gradient(90deg,#3b82f6,#6366f1); }
+.prog-fill-low   { background:linear-gradient(90deg,#16a34a,#22c55e); }
 
-/* Status pill */
+/* Pill */
 .pill { display:inline-block; padding:.2em .65em; border-radius:999px; font-size:.7rem; font-weight:600; }
 .pill-active      { background:#dcfce7; color:#166534; }
 .pill-maintenance { background:#fef3c7; color:#92400e; }
@@ -225,7 +384,6 @@ require_once 'inc/header.php';
 .pill-confirmed   { background:#dcfce7; color:#166534; }
 .pill-pending     { background:#fef3c7; color:#92400e; }
 .pill-cancelled   { background:#fee2e2; color:#991b1b; }
-.pill-completed-p { background:#dbeafe; color:#1e40af; }
 
 /* Detail panel */
 .detail-panel {
@@ -233,11 +391,10 @@ require_once 'inc/header.php';
     padding:1.4rem; margin-top:1rem; margin-bottom:1.5rem;
 }
 .detail-panel h5 { font-size:.95rem; font-weight:700; color:#0f172a; margin:0 0 .25rem; }
-.detail-panel .meta { font-size:.78rem; color:#64748b; margin-bottom:1rem; }
-.detail-grid {
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr));
-    gap:.75rem;
-}
+.detail-panel .meta { font-size:.78rem; color:#64748b; margin-bottom:.75rem; }
+
+/* Seat cards */
+.detail-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(290px,1fr)); gap:.7rem; }
 .seat-card {
     background:#fff; border:1px solid #e2e8f0; border-radius:10px;
     padding:.85rem 1rem; display:flex; gap:.85rem; align-items:flex-start;
@@ -245,7 +402,7 @@ require_once 'inc/header.php';
 }
 .seat-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .seat-card .sc-icon {
-    width:40px; height:40px; border-radius:9px; flex-shrink:0;
+    width:42px; height:42px; border-radius:9px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
     font-size:.85rem; font-weight:700;
 }
@@ -256,28 +413,71 @@ require_once 'inc/header.php';
 .seat-card .sc-body .sc-seat { font-weight:700; color:#0f172a; font-size:.85rem; }
 .seat-card .sc-body .sc-passenger { font-size:.8rem; color:#334155; margin-top:.15rem; }
 .seat-card .sc-body .sc-route { font-size:.73rem; color:#64748b; margin-top:.2rem; }
-.seat-card .sc-body .sc-ref {
-    font-family:monospace; font-size:.72rem; color:#6366f1; margin-top:.15rem;
+.seat-card .sc-body .sc-ref { font-family:monospace; font-size:.72rem; color:#6366f1; margin-top:.15rem; }
+.seat-card .sc-body .sc-actions { margin-top:.35rem; }
+.seat-card .sc-body .sc-actions a { font-size:.7rem; margin-right:.6rem; text-decoration:none; font-weight:600; }
+
+/* ── SEAT MAP ───────────────────────────────────── */
+.seat-map-legend {
+    display:flex; gap:1.2rem; align-items:center; flex-wrap:wrap;
+    margin-bottom:1rem; padding:.6rem 1rem; background:#fff; border-radius:8px;
+    font-size:.75rem; font-weight:600;
 }
+.seat-map-legend span { display:flex; align-items:center; gap:.35rem; }
+.seat-map-legend .dot { width:14px; height:14px; border-radius:4px; display:inline-block; }
+.dot-available  { background:#dcfce7; border:1px solid #86efac; }
+.dot-booked     { background:#fee2e2; border:1px solid #fca5a5; }
+.dot-reserved   { background:#fef3c7; border:1px solid #fcd34d; }
+
+.seat-grid-wrapper {
+    background:#fff; border-radius:12px; padding:1.25rem;
+    border:1px solid #e2e8f0; overflow-x:auto;
+}
+.seat-grid {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(52px, 1fr));
+    gap:6px; max-width:900px;
+}
+.seat-cell {
+    aspect-ratio:1; border-radius:6px; display:flex;
+    flex-direction:column; align-items:center; justify-content:center;
+    font-size:.68rem; font-weight:700; cursor:pointer; transition:transform .15s;
+    border:1.5px solid transparent; position:relative; min-width:48px;
+}
+.seat-cell:hover { transform:scale(1.1); z-index:2; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.seat-cell.available { background:#dcfce7; color:#166534; border-color:#86efac; }
+.seat-cell.booked    { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+.seat-cell.reserved  { background:#fef3c7; color:#92400e; border-color:#fcd34d; }
+.seat-cell .stype { font-size:.55rem; opacity:.7; margin-top:1px; }
+
+/* Seat type chips */
+.seat-type-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+.seat-type-chip {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.45rem .85rem; background:#fff; border:1px solid #e2e8f0;
+    border-radius:8px; font-size:.78rem; font-weight:600;
+}
+.seat-type-chip .chip-dot { width:10px; height:10px; border-radius:3px; }
+.chip-eco  .chip-dot { background:#3b82f6; }
+.chip-prem .chip-dot { background:#7c3aed; }
+.chip-lux  .chip-dot { background:#d97706; }
 
 /* Empty state */
-.empty-state {
-    text-align:center; padding:3rem 1.5rem; color:#94a3b8;
-}
+.empty-state { text-align:center; padding:3rem 1.5rem; color:#94a3b8; }
 .empty-state i { font-size:3rem; display:block; margin-bottom:.75rem; opacity:.4; }
 .empty-state p { font-size:.9rem; margin:0; }
 
-/* Responsive */
 @media (max-width:860px) {
     .adm-sidebar { display:none; }
     .adm-main { padding:1rem; }
+    .detail-grid { grid-template-columns:1fr; }
+    .seat-grid { grid-template-columns:repeat(auto-fill, minmax(44px, 1fr)); }
 }
 </style>
 
 <div class="adm-wrap">
 
     <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
-    <aside class="adm-sidebar">
+    <aside class="adm-sidebar" id="admSidebar">
         <div class="sb-brand">
             <span>Management Panel</span>
             <strong>🚂 Railway Admin</strong>
@@ -316,15 +516,30 @@ require_once 'inc/header.php';
         </div>
     </aside>
 
-    <!-- ══ MAIN CONTENT ══════════════════════════════════════ -->
+    <!-- ══ MAIN CONTENT ════════════════════════════════ -->
     <main class="adm-main">
 
         <!-- Page Header -->
         <div class="adm-page-header">
             <div>
-                <h2><i class="bi bi-diagram-3 me-2"></i>Train Seats Report</h2>
-                <p>View which trains have how many and which seats booked.</p>
+                <h2><i class="bi bi-train-front me-2"></i>Train Seats Report</h2>
+                <p>View train occupancy, seat maps &amp; export reports.</p>
             </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                <a href="train-seats-report.php?export=csv<?= $filter_status !== 'all' ? '&status=' . urlencode($filter_status) : '' ?><?= $search ? '&q=' . urlencode($search) : '' ?>" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            </div>
+        </div>
+
+        <!-- View Tabs -->
+        <div class="view-tabs">
+            <a href="?<?= http_build_query(array_filter(array_merge($sort_params, ['view' => 'table']), fn($v) => $v !== '' && $v !== 'all')) ?>" class="<?= $view_mode === 'table' ? 'active' : '' ?>">
+                <i class="bi bi-table me-1"></i> Summary Table
+            </a>
+            <a href="?<?= http_build_query(array_filter(array_merge($sort_params, ['view' => 'map', 'train_id' => $filter_train_id ?: ($trains[0]['train_id'] ?? 0)]), fn($v) => $v !== '' && $v !== 'all')) ?>" class="<?= $view_mode === 'map' ? 'active' : '' ?>">
+                <i class="bi bi-grid-3x3-gap me-1"></i> Seat Map
+            </a>
         </div>
 
         <!-- KPI Strip -->
@@ -333,26 +548,41 @@ require_once 'inc/header.php';
                 <div class="kpi-icon"><i class="bi bi-train-front"></i></div>
                 <div class="kpi-val"><?= $total_trains_n ?></div>
                 <div class="kpi-lbl">Total Trains</div>
+                <div class="kpi-sub"><?= $fully_booked_trains ?> fully booked</div>
             </div>
-            <div class="kpi-box kpi-green">
+            <div class="kpi-box kpi-red">
                 <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
                 <div class="kpi-val"><?= $total_booked_seats ?></div>
-                <div class="kpi-lbl">Total Booked Seats</div>
+                <div class="kpi-lbl">Booked Seats</div>
+                <div class="kpi-sub"><?= $total_confirmed ?> confirmed</div>
+            </div>
+            <div class="kpi-box kpi-green">
+                <div class="kpi-icon"><i class="bi bi-circle"></i></div>
+                <div class="kpi-val"><?= $total_available ?></div>
+                <div class="kpi-lbl">Available</div>
+                <div class="kpi-sub">of <?= $total_capacity ?> total</div>
             </div>
             <div class="kpi-box kpi-amber">
                 <div class="kpi-icon"><i class="bi bi-pie-chart"></i></div>
                 <div class="kpi-val"><?= $overall_booking_pct ?>%</div>
-                <div class="kpi-lbl">Overall Occupancy</div>
+                <div class="kpi-lbl">Occupancy</div>
             </div>
-            <div class="kpi-box kpi-purple">
-                <div class="kpi-icon"><i class="bi bi-people"></i></div>
-                <div class="kpi-val"><?= $total_capacity ?></div>
-                <div class="kpi-lbl">Total Capacity</div>
+            <div class="kpi-box kpi-indigo">
+                <div class="kpi-icon"><i class="bi bi-bar-chart-steps"></i></div>
+                <div class="kpi-val" style="font-size:1rem;">
+                    <span style="color:#3b82f6;">E:<?= $total_economy_bkd ?></span>
+                    <span style="color:#7c3aed;margin-left:.5rem;">P:<?= $total_premium_bkd ?></span>
+                    <span style="color:#d97706;margin-left:.5rem;">L:<?= $total_luxury_bkd ?></span>
+                </div>
+                <div class="kpi-lbl">By Seat Type</div>
             </div>
         </div>
 
-        <!-- Filters -->
+        <?php if ($view_mode === 'table'): ?>
+        <!-- ═══════ TABLE VIEW ═══════ -->
+
         <form method="GET" class="filter-bar" id="filterForm">
+            <input type="hidden" name="view" value="table">
             <select name="status" onchange="document.getElementById('filterForm').submit()">
                 <option value="all"  <?= $filter_status === 'all' ? 'selected' : '' ?>>All Statuses</option>
                 <option value="active"      <?= $filter_status === 'active'      ? 'selected' : '' ?>>Active</option>
@@ -360,13 +590,13 @@ require_once 'inc/header.php';
                 <option value="inactive"    <?= $filter_status === 'inactive'    ? 'selected' : '' ?>>Inactive</option>
             </select>
             <input type="text" name="q" placeholder="Search train name or number…"
-                   value="<?= htmlspecialchars($search) ?>" style="min-width:220px;">
-            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+                   value="<?= htmlspecialchars($search) ?>" style="min-width:200px;">
+            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search me-1"></i>Search</button>
             <?php if ($filter_train_id): ?>
                 <input type="hidden" name="train_id" value="<?= $filter_train_id ?>">
             <?php endif; ?>
             <?php if ($search || $filter_status !== 'all'): ?>
-                <a href="train-seats-report.php" class="btn btn-sm btn-outline-secondary">Clear</a>
+                <a href="train-seats-report.php?view=table" class="btn btn-sm btn-outline-secondary">Clear</a>
             <?php endif; ?>
         </form>
 
@@ -374,7 +604,7 @@ require_once 'inc/header.php';
         <div class="surface-card">
             <div class="card-title-row">
                 <h4><i class="bi bi-train-front me-2"></i>Train Seat Occupancy</h4>
-                <span class="text-muted" style="font-size:.75rem;">Click a row to see booked seat details</span>
+                <span class="text-muted" style="font-size:.73rem;">Click row → detail &nbsp;·&nbsp; Click headers to sort</span>
             </div>
 
             <?php if (empty($trains)): ?>
@@ -383,17 +613,18 @@ require_once 'inc/header.php';
                     <p>No trains found matching your filters.</p>
                 </div>
             <?php else: ?>
-            <div style="overflow-x:auto;">
+            <div style="overflow-x:auto; max-height:65vh; overflow-y:auto;">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Train</th>
-                        <th>Type</th>
+                        <th><a href="<?= sortLink('name', $sort_by, $sort_dir, $sort_params) ?>">Train <?= sortIcon('name', $sort_by, $sort_dir) ?></a></th>
+                        <th><a href="<?= sortLink('type', $sort_by, $sort_dir, $sort_params) ?>">Type <?= sortIcon('type', $sort_by, $sort_dir) ?></a></th>
                         <th>Status</th>
-                        <th>Total Seats</th>
-                        <th>Booked</th>
-                        <th>Available</th>
-                        <th>Occupancy</th>
+                        <th><a href="<?= sortLink('total', $sort_by, $sort_dir, $sort_params) ?>">Total <?= sortIcon('total', $sort_by, $sort_dir) ?></a></th>
+                        <th><a href="<?= sortLink('booked', $sort_by, $sort_dir, $sort_params) ?>">Booked <?= sortIcon('booked', $sort_by, $sort_dir) ?></a></th>
+                        <th>Seat Types</th>
+                        <th><a href="<?= sortLink('available', $sort_by, $sort_dir, $sort_params) ?>">Avail <?= sortIcon('available', $sort_by, $sort_dir) ?></a></th>
+                        <th><a href="<?= sortLink('occupancy', $sort_by, $sort_dir, $sort_params) ?>">Occupancy <?= sortIcon('occupancy', $sort_by, $sort_dir) ?></a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -402,6 +633,10 @@ require_once 'inc/header.php';
                         $total      = (int)$train['total_seats'];
                         $booked     = (int)$train['booked_seats'];
                         $available  = (int)$train['available_seats'];
+                        $confirmed  = (int)$train['confirmed_seats'];
+                        $eco_bkd    = (int)$train['economy_booked'];
+                        $prem_bkd   = (int)$train['premium_booked'];
+                        $lux_bkd    = (int)$train['luxury_booked'];
                         $pct        = $total > 0 ? round(($booked / $total) * 100, 1) : 0;
                         $isSelected = ($filter_train_id === $t_id);
                         $fillClass  = $pct >= 80 ? 'prog-fill-high' : ($pct >= 40 ? 'prog-fill-mid' : 'prog-fill-low');
@@ -410,13 +645,14 @@ require_once 'inc/header.php';
                             'maintenance' => 'pill-maintenance',
                             default       => 'pill-inactive'
                         };
-                        $rowUrl = "train-seats-report.php?train_id={$t_id}" .
+                        $rowUrl = "train-seats-report.php?view=table&train_id={$t_id}" .
                                   ($filter_status !== 'all' ? "&status={$filter_status}" : '') .
-                                  ($search !== '' ? "&q=" . urlencode($search) : '');
+                                  ($search !== '' ? "&q=" . urlencode($search) : '') .
+                                  "&sort={$sort_by}&dir=" . strtolower($sort_dir);
                     ?>
                     <tr class="<?= $isSelected ? 'row-selected' : '' ?>"
                         onclick="window.location='<?= $rowUrl ?>'"
-                        title="Click to see booked seats for <?= htmlspecialchars($train['train_name']) ?>">
+                        title="View booked seats for <?= htmlspecialchars($train['train_name']) ?>">
                         <td>
                             <div class="train-name"><?= htmlspecialchars($train['train_name']) ?></div>
                             <div class="train-num"><?= htmlspecialchars($train['train_number']) ?></div>
@@ -424,28 +660,144 @@ require_once 'inc/header.php';
                         <td><?= htmlspecialchars($train['train_type']) ?></td>
                         <td><span class="pill <?= $statusClass ?>"><?= ucfirst($train['status']) ?></span></td>
                         <td><strong><?= $total ?></strong></td>
-                        <td><strong style="color:<?= $booked > 0 ? '#2563eb' : '#94a3b8' ?>"><?= $booked ?></strong></td>
+                        <td>
+                            <strong style="color:<?= $booked > 0 ? '#dc2626' : '#94a3b8' ?>"><?= $booked ?></strong>
+                            <?php if ($confirmed > 0 && $confirmed < $booked): ?>
+                                <span style="font-size:.68rem;color:#64748b;">(<?= $confirmed ?> conf.)</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span style="font-size:.72rem;">
+                                <?php if ($eco_bkd): ?><span style="color:#3b82f6;">E:<?= $eco_bkd ?></span> <?php endif; ?>
+                                <?php if ($prem_bkd): ?><span style="color:#7c3aed;">P:<?= $prem_bkd ?></span> <?php endif; ?>
+                                <?php if ($lux_bkd): ?><span style="color:#d97706;">L:<?= $lux_bkd ?></span><?php endif; ?>
+                                <?php if (!$eco_bkd && !$prem_bkd && !$lux_bkd): ?><span style="color:#94a3b8;">—</span><?php endif; ?>
+                            </span>
+                        </td>
                         <td><?= $available ?></td>
                         <td>
                             <div style="display:flex;align-items:center;gap:.5rem;">
                                 <div class="prog-bar" style="flex:1;">
                                     <div class="prog-bar-fill <?= $fillClass ?>" style="width:<?= $pct ?>%"></div>
                                 </div>
-                                <span style="font-size:.75rem;font-weight:600;white-space:nowrap;"><?= $pct ?>%</span>
+                                <span style="font-size:.75rem;font-weight:700;white-space:nowrap;color:<?= $pct >= 80 ? '#dc2626' : ($pct >= 40 ? '#d97706' : '#16a34a') ?>"><?= $pct ?>%</span>
                             </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Totals (<?= $total_trains_n ?> trains)</strong></td>
+                        <td><strong><?= $total_capacity ?></strong></td>
+                        <td><strong style="color:#dc2626;"><?= $total_booked_seats ?></strong></td>
+                        <td><strong><?= $total_confirmed ?> conf.</strong></td>
+                        <td><strong><?= $total_available ?></strong></td>
+                        <td><strong><?= $overall_booking_pct ?>%</strong></td>
+                    </tr>
+                </tfoot>
             </table>
             </div>
             <?php endif; ?>
         </div>
 
-        <!-- Selected Train Detail: Which Seats Are Booked -->
+        <?php elseif ($view_mode === 'map'): ?>
+        <!-- ═══════ SEAT MAP VIEW ═══════ -->
+
+        <form method="GET" class="filter-bar" id="mapFilterForm">
+            <input type="hidden" name="view" value="map">
+            <select name="train_id" onchange="document.getElementById('mapFilterForm').submit()" style="min-width:220px;">
+                <option value="">-- Select a train --</option>
+                <?php foreach ($trains as $t): ?>
+                    <option value="<?= (int)$t['train_id'] ?>" <?= $filter_train_id === (int)$t['train_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($t['train_name']) ?> (<?= htmlspecialchars($t['train_number']) ?>) — <?= (int)$t['booked_seats'] ?>/<?= (int)$t['total_seats'] ?> booked
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <?php if ($filter_train_id && !empty($train_routes)): ?>
+                <select name="route_id" onchange="document.getElementById('mapFilterForm').submit()" style="min-width:200px;">
+                    <option value="">Latest upcoming route</option>
+                    <?php foreach ($train_routes as $rt): ?>
+                        <option value="<?= (int)$rt['route_id'] ?>" <?= (isset($_GET['route_id']) && (int)$_GET['route_id'] === (int)$rt['route_id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($rt['departure_city'] . ' → ' . $rt['arrival_city']) ?> · <?= date('d M', strtotime($rt['journey_date'])) ?> (<?= (int)$rt['available_seats'] ?> avail.)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <a href="train-seats-report.php?view=table&train_id=<?= $filter_train_id ?>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-table me-1"></i> Table Detail
+                </a>
+            <?php endif; ?>
+        </form>
+
         <?php if ($selected_train): ?>
-        <div class="detail-panel" id="seatDetail">
+        <div class="surface-card" style="margin-bottom:1rem;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h4 style="margin:0;color:#0f172a;">
+                        <i class="bi bi-train-front me-1"></i>
+                        <?= htmlspecialchars($selected_train['train_name']) ?>
+                        <span style="font-family:monospace;font-size:.8rem;color:#6366f1;font-weight:400;">
+                            (<?= htmlspecialchars($selected_train['train_number']) ?>)
+                        </span>
+                    </h4>
+                    <p class="meta" style="margin:.3rem 0 0;">
+                        Type: <?= htmlspecialchars($selected_train['train_type']) ?> &nbsp;·&nbsp;
+                        Total: <?= (int)$selected_train['total_seats'] ?> seats &nbsp;·&nbsp;
+                        Booked: <?= count($booked_seats_detail) ?> &nbsp;·&nbsp;
+                        Available: <?= (int)$selected_train['total_seats'] - count($booked_seats_detail) ?>
+                    </p>
+                </div>
+                <div class="seat-type-row">
+                    <div class="seat-type-chip chip-eco"><span class="chip-dot"></span> Economy: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'economy')) ?></div>
+                    <div class="seat-type-chip chip-prem"><span class="chip-dot"></span> Premium: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'premium')) ?></div>
+                    <div class="seat-type-chip chip-lux"><span class="chip-dot"></span> Luxury: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'luxury')) ?></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seat Map Grid -->
+        <div class="seat-grid-wrapper">
+            <div class="seat-map-legend">
+                <span><span class="dot dot-available"></span> Available</span>
+                <span><span class="dot dot-booked"></span> Booked</span>
+                <span><span class="dot dot-reserved"></span> Reserved</span>
+            </div>
+
+            <?php if (empty($seat_map_all)): ?>
+                <div class="empty-state" style="padding:2rem 1rem;">
+                    <i class="bi bi-map"></i>
+                    <p>No upcoming routes found. Add a route to see the seat map.</p>
+                </div>
+            <?php else: ?>
+                <div class="seat-grid">
+                    <?php foreach ($seat_map_all as $cell):
+                        $cellStatus = $cell['status'];
+                        $stShort = match($cell['seat_type']) { 'premium' => 'P', 'luxury' => 'L', default => 'E' };
+                    ?>
+                    <div class="seat-cell <?= $cellStatus ?>" title="Seat <?= htmlspecialchars($cell['seat_number']) ?> · <?= ucfirst($cell['seat_type']) ?> · <?= ucfirst($cellStatus) ?>">
+                        <span><?= htmlspecialchars($cell['seat_number']) ?></span>
+                        <span class="stype"><?= $stShort ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php else: ?>
+            <div class="surface-card">
+                <div class="empty-state">
+                    <i class="bi bi-train-front"></i>
+                    <p>Select a train above to view its seat map.</p>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php endif; ?><!-- /view mode -->
+
+        <!-- ═══════ DETAIL PANEL (table view, train selected) ═══════ -->
+        <?php if ($selected_train && $view_mode === 'table'): ?>
+        <div class="detail-panel" id="seatDetail">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem;">
                 <div>
                     <h5>
                         <i class="bi bi-train-front me-1"></i>
@@ -456,29 +808,59 @@ require_once 'inc/header.php';
                     </h5>
                     <p class="meta">
                         Type: <?= htmlspecialchars($selected_train['train_type']) ?> &nbsp;·&nbsp;
-                        Total Seats: <?= (int)$selected_train['total_seats'] ?> &nbsp;·&nbsp;
-                        Booked: <?= count($booked_seats_detail) ?> &nbsp;·&nbsp;
+                        Total: <?= (int)$selected_train['total_seats'] ?> &nbsp;·&nbsp;
+                        Booked: <strong style="color:#dc2626;"><?= count($booked_seats_detail) ?></strong> &nbsp;·&nbsp;
+                        Available: <strong style="color:#16a34a;"><?= max(0, (int)$selected_train['total_seats'] - count($booked_seats_detail)) ?></strong> &nbsp;·&nbsp;
                         Status: <span class="pill <?= $selected_train['status'] === 'active' ? 'pill-active' : ($selected_train['status'] === 'maintenance' ? 'pill-maintenance' : 'pill-inactive') ?>"><?= ucfirst($selected_train['status']) ?></span>
                     </p>
                 </div>
-                <a href="train-seats-report.php<?= $filter_status !== 'all' ? "?status={$filter_status}" : '' ?><?= $search ? ($filter_status !== 'all' ? '&' : '?') . 'q=' . urlencode($search) : '' ?>" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-lg"></i> Close Detail
-                </a>
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                    <form method="GET" style="display:flex;gap:.35rem;align-items:center;">
+                        <input type="hidden" name="view" value="table">
+                        <input type="hidden" name="train_id" value="<?= $filter_train_id ?>">
+                        <?php if ($filter_status !== 'all'): ?><input type="hidden" name="status" value="<?= htmlspecialchars($filter_status) ?>"><?php endif; ?>
+                        <?php if ($search): ?><input type="hidden" name="q" value="<?= htmlspecialchars($search) ?>"><?php endif; ?>
+                        <input type="date" name="from" value="<?= htmlspecialchars($date_from) ?>" style="font-size:.73rem;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:6px;width:130px;" title="From date">
+                        <span style="font-size:.75rem;color:#94a3b8;">to</span>
+                        <input type="date" name="to" value="<?= htmlspecialchars($date_to) ?>" style="font-size:.73rem;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:6px;width:130px;" title="To date">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;padding:.3rem .6rem;">Filter</button>
+                        <?php if ($date_from || $date_to): ?>
+                            <a href="?view=table&train_id=<?= $filter_train_id ?><?= $filter_status !== 'all' ? '&status=' . urlencode($filter_status) : '' ?><?= $search ? '&q=' . urlencode($search) : '' ?>" class="btn btn-sm btn-outline-danger" style="font-size:.7rem;padding:.3rem .6rem;" title="Clear date filter">&times;</a>
+                        <?php endif; ?>
+                    </form>
+                    <a href="train-seats-report.php?view=map&train_id=<?= $filter_train_id ?>" class="btn btn-sm btn-outline-primary" style="font-size:.73rem;">
+                        <i class="bi bi-grid-3x3-gap me-1"></i> Seat Map
+                    </a>
+                    <a href="train-seats-report.php?view=table<?= $filter_status !== 'all' ? '&status=' . urlencode($filter_status) : '' ?><?= $search ? '&q=' . urlencode($search) : '' ?>" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i> Close
+                    </a>
+                </div>
+            </div>
+
+            <!-- Seat Type Breakdown -->
+            <div class="seat-type-row">
+                <div class="seat-type-chip chip-eco"><span class="chip-dot"></span> Economy: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'economy')) ?></div>
+                <div class="seat-type-chip chip-prem"><span class="chip-dot"></span> Premium: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'premium')) ?></div>
+                <div class="seat-type-chip chip-lux"><span class="chip-dot"></span> Luxury: <?= count(array_filter($booked_seats_detail, fn($s) => $s['seat_type'] === 'luxury')) ?></div>
             </div>
 
             <?php if (empty($booked_seats_detail)): ?>
                 <div class="empty-state" style="padding:2rem 1rem;">
                     <i class="bi bi-check2-circle"></i>
-                    <p>No seats are currently booked on this train.</p>
+                    <p>No seats booked<?= ($date_from || $date_to) ? ' in selected date range' : '' ?>.</p>
                 </div>
             <?php else: ?>
                 <?php
-                // Group by route + journey date for better organization
                 $grouped = [];
                 foreach ($booked_seats_detail as $seat) {
                     $key = ($seat['departure_city'] ?? '?') . ' → ' . ($seat['arrival_city'] ?? '?') . ' | ' . ($seat['journey_date'] ?? '?');
                     $grouped[$key][] = $seat;
                 }
+                uksort($grouped, function($a, $b) {
+                    $dateA = explode(' | ', $a)[1] ?? '';
+                    $dateB = explode(' | ', $b)[1] ?? '';
+                    return strcmp($dateB, $dateA);
+                });
                 ?>
                 <?php foreach ($grouped as $route_label => $seats): ?>
                 <div style="margin-top:1rem;">
@@ -496,43 +878,43 @@ require_once 'inc/header.php';
                             $statusPill = match($s['booking_status']) {
                                 'confirmed' => 'pill-confirmed',
                                 'pending'   => 'pill-pending',
-                                'cancelled' => 'pill-cancelled',
+                                default     => 'pill-pending'
+                            };
+                            $payPill = match($s['payment_status']) {
+                                'completed' => 'pill-confirmed',
+                                'refunded'  => 'pill-cancelled',
+                                'failed'    => 'pill-inactive',
                                 default     => 'pill-pending'
                             };
                         ?>
                         <div class="seat-card">
-                            <div class="sc-icon <?= $seatClass ?>">
-                                <?= htmlspecialchars($s['seat_number']) ?>
-                            </div>
+                            <div class="sc-icon <?= $seatClass ?>"><?= htmlspecialchars($s['seat_number']) ?></div>
                             <div class="sc-body">
                                 <div class="sc-seat">
                                     Seat <?= htmlspecialchars($s['seat_number']) ?>
                                     <span style="font-weight:400;font-size:.72rem;color:#64748b;">(<?= ucfirst($s['seat_type']) ?>)</span>
                                     <span class="pill <?= $statusPill ?>" style="margin-left:.3rem;"><?= ucfirst($s['booking_status']) ?></span>
+                                    <span class="pill <?= $payPill ?>" style="margin-left:.2rem;"><?= ucfirst($s['payment_status']) ?></span>
                                 </div>
                                 <div class="sc-passenger">
-                                    <i class="bi bi-person"></i>
-                                    <?= htmlspecialchars($s['passenger_name'] ?: 'N/A') ?>
-                                    <?php if ($s['passenger_age']): ?>
-                                        · Age: <?= (int)$s['passenger_age'] ?>
-                                    <?php endif; ?>
-                                    <?php if ($s['passenger_gender']): ?>
-                                        · <?= $s['passenger_gender'] ?>
-                                    <?php endif; ?>
+                                    <i class="bi bi-person"></i> <?= htmlspecialchars($s['passenger_name'] ?: 'N/A') ?>
+                                    <?php if ($s['passenger_age']): ?>· Age: <?= (int)$s['passenger_age'] ?><?php endif; ?>
+                                    <?php if ($s['passenger_gender']): ?>· <?= $s['passenger_gender'] ?><?php endif; ?>
                                 </div>
                                 <div class="sc-route">
-                                    <i class="bi bi-geo-alt"></i>
-                                    <?= htmlspecialchars($s['departure_city']) ?> → <?= htmlspecialchars($s['arrival_city']) ?>
+                                    <i class="bi bi-geo-alt"></i> <?= htmlspecialchars($s['departure_city']) ?> → <?= htmlspecialchars($s['arrival_city']) ?>
                                     · <?= date('d M Y', strtotime($s['journey_date'])) ?>
-                                    <?php if (!empty($s['departure_time'])): ?>
-                                        · <?= date('H:i', strtotime($s['departure_time'])) ?>
-                                    <?php endif; ?>
+                                    <?php if (!empty($s['departure_time'])): ?>· <?= date('H:i', strtotime($s['departure_time'])) ?><?php endif; ?>
                                 </div>
                                 <div class="sc-ref">
-                                    <i class="bi bi-receipt"></i>
-                                    Ref: <?= htmlspecialchars($s['booking_reference']) ?>
-                                    · Booked by: <?= htmlspecialchars($s['booked_by']) ?>
-                                    · Fare: Rs. <?= number_format((float)$s['total_fare'], 2) ?>
+                                    <i class="bi bi-receipt"></i> Ref: <?= htmlspecialchars($s['booking_reference']) ?>
+                                    · <?= htmlspecialchars($s['booked_by']) ?>
+                                    · Rs. <?= number_format((float)$s['total_fare'], 2) ?>
+                                </div>
+                                <div class="sc-actions">
+                                    <a href="booking_details.php?id=<?= (int)$s['booking_id'] ?>" target="_blank">
+                                        <i class="bi bi-box-arrow-up-right"></i> View Booking
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -547,15 +929,12 @@ require_once 'inc/header.php';
     </main>
 </div>
 
-<!-- Mobile toggle script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('admSidebar');
     const toggle  = document.getElementById('admSidebarToggle');
     if (toggle && sidebar) {
-        toggle.addEventListener('click', function() {
-            sidebar.classList.toggle('open');
-        });
+        toggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
         document.addEventListener('click', function(e) {
             if (!sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
                 sidebar.classList.remove('open');
