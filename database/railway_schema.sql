@@ -2176,3 +2176,661 @@ INSERT IGNORE INTO booking_discounts (booking_id, discount_id, discount_amount) 
 (59, 6,  1200.00), -- PKR-2026-0059 used RAMZAN30
 (66, 5,  1000.00), -- PKR-2026-0066 used EID25
 (69, 4,  500.00);  -- PKR-2026-0069 used FLAT500
+
+-- ========================================
+-- HEAVY SEAT POPULATION FOR ALL ROUTES
+-- ========================================
+-- Days +4 to +7 routes need seats populated
+-- Route IDs for day +4: 30-39, day +5: 36-40, day +6: 41-45, day +7: 46-50
+
+-- Day +4 Route 30 (Sukkur Express – Sukkur→Lahore) train_id=11
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(11,30,'E-01','economy','booked'),(11,30,'E-02','economy','booked'),(11,30,'E-03','economy','available'),
+(11,30,'E-04','economy','available'),(11,30,'E-05','economy','available'),(11,30,'E-06','economy','available'),
+(11,30,'P-01','premium','available'),(11,30,'P-02','premium','available'),(11,30,'L-01','luxury','available');
+
+-- Day +4 Route 31 (Bolan Mail – Karachi→Quetta) train_id=12
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(12,31,'E-01','economy','booked'),(12,31,'E-02','economy','available'),(12,31,'E-03','economy','available'),
+(12,31,'E-04','economy','available'),(12,31,'P-01','premium','booked'),(12,31,'P-02','premium','available'),
+(12,31,'L-01','luxury','available');
+
+-- Day +4 Route 32 (Rehman Baba – Lahore→Peshawar) train_id=13
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(13,32,'E-01','economy','booked'),(13,32,'E-02','economy','available'),(13,32,'E-03','economy','available'),
+(13,32,'E-04','economy','available'),(13,32,'E-05','economy','available'),(13,32,'P-01','premium','available'),
+(13,32,'P-02','premium','available'),(13,32,'L-01','luxury','available');
+
+-- Day +4 Route 33 (Shah Hussain – Multan→Rawalpindi) train_id=14
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(14,33,'E-01','economy','available'),(14,33,'E-02','economy','available'),(14,33,'E-03','economy','available'),
+(14,33,'E-04','economy','booked'),(14,33,'E-05','economy','booked'),(14,33,'E-06','economy','booked'),
+(14,33,'P-01','premium','available'),(14,33,'P-02','premium','available'),(14,33,'L-01','luxury','available');
+
+-- Day +4 Route 34 (Subak Raftar – Lahore→Islamabad) train_id=15
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(15,34,'E-01','economy','booked'),(15,34,'E-02','economy','available'),(15,34,'E-03','economy','available'),
+(15,34,'E-04','economy','available'),(15,34,'P-01','premium','booked'),(15,34,'P-02','premium','available'),
+(15,34,'L-01','luxury','available');
+
+-- Day +4 Route 35 (Bahauddin Zakariya – Bahawalpur→Karachi) train_id=16
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(16,35,'E-01','economy','booked'),(16,35,'E-02','economy','available'),(16,35,'E-03','economy','available'),
+(16,35,'E-04','economy','available'),(16,35,'P-01','premium','available'),(16,35,'P-02','premium','available'),
+(16,35,'L-01','luxury','available');
+
+-- Day +5 Route 36 (Green Line – Lahore→Karachi reverse) train_id=1
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(1,36,'E-01','economy','booked'),(1,36,'E-02','economy','booked'),(1,36,'E-03','economy','available'),
+(1,36,'E-04','economy','available'),(1,36,'E-05','economy','available'),(1,36,'E-06','economy','available'),
+(1,36,'E-07','economy','available'),(1,36,'E-08','economy','available'),(1,36,'P-01','premium','available'),
+(1,36,'P-02','premium','available'),(1,36,'L-01','luxury','available'),(1,36,'L-02','luxury','booked');
+
+-- Day +5 Route 37 (Tezgam – Rawalpindi→Karachi reverse) train_id=2
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(2,37,'E-01','economy','booked'),(2,37,'E-02','economy','available'),(2,37,'E-03','economy','available'),
+(2,37,'E-04','economy','available'),(2,37,'E-05','economy','available'),(2,37,'P-01','premium','available'),
+(2,37,'P-02','premium','available'),(2,37,'L-01','luxury','available');
+
+-- Day +5 Route 38 (Khyber Mail – Peshawar→Karachi reverse) train_id=5
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(5,38,'E-01','economy','booked'),(5,38,'E-02','economy','booked'),(5,38,'E-03','economy','booked'),
+(5,38,'E-04','economy','available'),(5,38,'E-05','economy','available'),(5,38,'E-06','economy','available'),
+(5,38,'P-01','premium','available'),(5,38,'P-02','premium','available'),(5,38,'L-01','luxury','available');
+
+-- Day +5 Route 39 (Allama Iqbal – Islamabad→Lahore) train_id=8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(8,39,'E-01','economy','available'),(8,39,'E-02','economy','available'),(8,39,'E-03','economy','available'),
+(8,39,'E-04','economy','available'),(8,39,'E-05','economy','available'),(8,39,'P-01','premium','available'),
+(8,39,'P-02','premium','available'),(8,39,'L-01','luxury','available');
+
+-- Day +5 Route 40 (Jaffar Express – Lahore→Hyderabad reverse) train_id=10
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(10,40,'E-01','economy','booked'),(10,40,'E-02','economy','available'),(10,40,'E-03','economy','available'),
+(10,40,'E-04','economy','available'),(10,40,'E-05','economy','available'),(10,40,'P-01','premium','available'),
+(10,40,'P-02','premium','booked'),(10,40,'L-01','luxury','available');
+
+-- Day +6 Route 41 (Karakoram – Karachi→Lahore) train_id=3
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(3,41,'E-01','economy','booked'),(3,41,'E-02','economy','available'),(3,41,'E-03','economy','available'),
+(3,41,'E-04','economy','available'),(3,41,'E-05','economy','available'),(3,41,'P-01','premium','available'),
+(3,41,'P-02','premium','available'),(3,41,'L-01','luxury','available');
+
+-- Day +6 Route 42 (Pakistan Express – Karachi→Islamabad) train_id=4
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(4,42,'E-01','economy','booked'),(4,42,'E-02','economy','booked'),(4,42,'E-03','economy','available'),
+(4,42,'E-04','economy','available'),(4,42,'E-05','economy','available'),(4,42,'P-01','premium','available'),
+(4,42,'P-02','premium','available'),(4,42,'L-01','luxury','available'),(4,42,'L-02','luxury','available');
+
+-- Day +6 Route 43 (Awam Express – Karachi→Multan) train_id=6
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(6,43,'E-01','economy','booked'),(6,43,'E-02','economy','available'),(6,43,'E-03','economy','available'),
+(6,43,'E-04','economy','available'),(6,43,'E-05','economy','available'),(6,43,'P-01','premium','available'),
+(6,43,'P-02','premium','available'),(6,43,'L-01','luxury','available');
+
+-- Day +6 Route 44 (Millat Express – Lahore→Quetta reverse) train_id=7
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(7,44,'E-01','economy','available'),(7,44,'E-02','economy','available'),(7,44,'E-03','economy','available'),
+(7,44,'E-04','economy','available'),(7,44,'P-01','premium','available'),(7,44,'P-02','premium','booked'),
+(7,44,'L-01','luxury','booked'),(7,44,'L-02','luxury','available');
+
+-- Day +6 Route 45 (Shalimar Express – Karachi→Faisalabad) train_id=9
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(9,45,'E-01','economy','booked'),(9,45,'E-02','economy','booked'),(9,45,'E-03','economy','booked'),
+(9,45,'E-04','economy','available'),(9,45,'E-05','economy','available'),(9,45,'P-01','premium','available'),
+(9,45,'P-02','premium','available'),(9,45,'L-01','luxury','available');
+
+-- Day +7 Route 46 (Sukkur Express – Karachi→Sukkur) train_id=11
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(11,46,'E-01','economy','booked'),(11,46,'E-02','economy','available'),(11,46,'E-03','economy','available'),
+(11,46,'E-04','economy','available'),(11,46,'E-05','economy','available'),(11,46,'P-01','premium','available'),
+(11,46,'P-02','premium','available'),(11,46,'L-01','luxury','available');
+
+-- Day +7 Route 47 (Bolan Mail – Quetta→Rawalpindi) train_id=12
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(12,47,'E-01','economy','booked'),(12,47,'E-02','economy','available'),(12,47,'E-03','economy','available'),
+(12,47,'E-04','economy','available'),(12,47,'P-01','premium','available'),(12,47,'P-02','premium','available'),
+(12,47,'L-01','luxury','available');
+
+-- Day +7 Route 48 (Rehman Baba – Peshawar→Karachi) train_id=13
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(13,48,'E-01','economy','booked'),(13,48,'E-02','economy','booked'),(13,48,'E-03','economy','booked'),
+(13,48,'E-04','economy','available'),(13,48,'E-05','economy','available'),(13,48,'P-01','premium','available'),
+(13,48,'P-02','premium','available'),(13,48,'L-01','luxury','available');
+
+-- Day +7 Route 49 (Shah Hussain – Lahore→Multan) train_id=14
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(14,49,'E-01','economy','booked'),(14,49,'E-02','economy','available'),(14,49,'E-03','economy','available'),
+(14,49,'E-04','economy','available'),(14,49,'P-01','premium','available'),(14,49,'P-02','premium','available'),
+(14,49,'L-01','luxury','available');
+
+-- Day +7 Route 50 (Subak Raftar – Islamabad→Karachi) train_id=15
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(15,50,'E-01','economy','available'),(15,50,'E-02','economy','available'),(15,50,'E-03','economy','available'),
+(15,50,'E-04','economy','available'),(15,50,'E-05','economy','available'),(15,50,'P-01','premium','available'),
+(15,50,'P-02','premium','available'),(15,50,'L-01','luxury','available');
+
+-- ========================================
+-- MASS SEAT POPULATION: Days +8 to +35
+-- Populate every route with seats so all trains show booking data
+-- ========================================
+
+-- Route 51 (Day +8, Green Line – Karachi→Lahore) train=1
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(1,51,'E-01','economy','booked'),(1,51,'E-02','economy','available'),(1,51,'E-03','economy','available'),
+(1,51,'E-04','economy','available'),(1,51,'E-05','economy','available'),(1,51,'E-06','economy','available'),
+(1,51,'P-01','premium','available'),(1,51,'P-02','premium','available'),(1,51,'L-01','luxury','available');
+
+-- Route 52 (Day +8, Tezgam – Karachi→Rawalpindi) train=2
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(2,52,'E-01','economy','booked'),(2,52,'E-02','economy','booked'),(2,52,'E-03','economy','available'),
+(2,52,'E-04','economy','available'),(2,52,'E-05','economy','available'),(2,52,'P-01','premium','available'),
+(2,52,'P-02','premium','available'),(2,52,'L-01','luxury','available');
+
+-- Route 53 (Day +8, Khyber Mail – Karachi→Peshawar) train=5
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(5,53,'E-01','economy','booked'),(5,53,'E-02','economy','available'),(5,53,'E-03','economy','available'),
+(5,53,'E-04','economy','available'),(5,53,'E-05','economy','available'),(5,53,'P-01','premium','available'),
+(5,53,'P-02','premium','available'),(5,53,'L-01','luxury','available');
+
+-- Route 54 (Day +8, Allama Iqbal – Lahore→Islamabad) train=8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(8,54,'E-01','economy','available'),(8,54,'E-02','economy','available'),(8,54,'E-03','economy','available'),
+(8,54,'E-04','economy','available'),(8,54,'E-05','economy','available'),(8,54,'P-01','premium','available'),
+(8,54,'P-02','premium','available'),(8,54,'L-01','luxury','available');
+
+-- Route 55 (Day +10, Khyber Mail – Karachi→Lahore) train=5
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(5,55,'E-01','economy','booked'),(5,55,'E-02','economy','available'),(5,55,'E-03','economy','available'),
+(5,55,'E-04','economy','available'),(5,55,'P-01','premium','available'),(5,55,'P-02','premium','available'),
+(5,55,'L-01','luxury','available');
+
+-- Route 56 (Day +10, Allama Iqbal – Lahore→Islamabad) train=8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(8,56,'E-01','economy','booked'),(8,56,'E-02','economy','booked'),(8,56,'E-03','economy','booked'),
+(8,56,'E-04','economy','available'),(8,56,'E-05','economy','available'),(8,56,'P-01','premium','available'),
+(8,56,'P-02','premium','available'),(8,56,'L-01','luxury','available');
+
+-- ========================================
+-- SEATS FOR TRAINS 21-35 (additional trains)
+-- Give all 15 new trains seats on their first route
+-- ========================================
+
+-- Train 21 (Lahore Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(21,57,'E-01','economy','available'),(21,57,'E-02','economy','available'),(21,57,'E-03','economy','available'),
+(21,57,'E-04','economy','available'),(21,57,'E-05','economy','available'),(21,57,'P-01','premium','available'),
+(21,57,'P-02','premium','available'),(21,57,'L-01','luxury','available');
+
+-- Train 22 (Chenab Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(22,58,'E-01','economy','available'),(22,58,'E-02','economy','available'),(22,58,'E-03','economy','available'),
+(22,58,'E-04','economy','available'),(22,58,'P-01','premium','available'),(22,58,'P-02','premium','available'),
+(22,58,'L-01','luxury','available');
+
+-- Train 23 (Indus Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(23,59,'E-01','economy','available'),(23,59,'E-02','economy','available'),(23,59,'E-03','economy','available'),
+(23,59,'E-04','economy','available'),(23,59,'P-01','premium','available'),(23,59,'P-02','premium','available'),
+(23,59,'L-01','luxury','available');
+
+-- Train 24 (Soan Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(24,60,'E-01','economy','available'),(24,60,'E-02','economy','available'),(24,60,'E-03','economy','available'),
+(24,60,'E-04','economy','available'),(24,60,'P-01','premium','available'),(24,60,'P-02','premium','available'),
+(24,60,'L-01','luxury','available');
+
+-- Train 25 (Jhelum Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(25,61,'E-01','economy','booked'),(25,61,'E-02','economy','available'),(25,61,'E-03','economy','available'),
+(25,61,'E-04','economy','available'),(25,61,'P-01','premium','available'),(25,61,'P-02','premium','available'),
+(25,61,'L-01','luxury','available');
+
+-- Train 26 (Attock Express) first route day+8
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(26,62,'E-01','economy','available'),(26,62,'E-02','economy','available'),(26,62,'E-03','economy','available'),
+(26,62,'E-04','economy','available'),(26,62,'P-01','premium','available'),(26,62,'P-02','premium','available'),
+(26,62,'L-01','luxury','available');
+
+-- Train 27 (Bahawalpur Express) first route day+9
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(27,67,'E-01','economy','booked'),(27,67,'E-02','economy','available'),(27,67,'E-03','economy','available'),
+(27,67,'E-04','economy','available'),(27,67,'P-01','premium','available'),(27,67,'P-02','premium','booked'),
+(27,67,'L-01','luxury','available');
+
+-- Train 28 (Gujranwala Express) first route day+9
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(28,68,'E-01','economy','available'),(28,68,'E-02','economy','available'),(28,68,'E-03','economy','available'),
+(28,68,'E-04','economy','available'),(28,68,'P-01','premium','available'),(28,68,'P-02','premium','available'),
+(28,68,'L-01','luxury','available');
+
+-- Train 29 (Sahiwal Express) first route day+9
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(29,69,'E-01','economy','available'),(29,69,'E-02','economy','available'),(29,69,'E-03','economy','available'),
+(29,69,'E-04','economy','available'),(29,69,'P-01','premium','available'),(29,69,'P-02','premium','available');
+
+-- Train 30 (Larkana Express) first route day+10
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(30,73,'E-01','economy','available'),(30,73,'E-02','economy','available'),(30,73,'E-03','economy','available'),
+(30,73,'E-04','economy','available'),(30,73,'P-01','premium','available'),(30,73,'P-02','premium','available'),
+(30,73,'L-01','luxury','available');
+
+-- Train 31 (Nawabshah Express) first route day+10
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(31,74,'E-01','economy','available'),(31,74,'E-02','economy','available'),(31,74,'E-03','economy','available'),
+(31,74,'E-04','economy','available'),(31,74,'P-01','premium','available'),(31,74,'P-02','premium','available');
+
+-- Train 32 (Jacobabad Express) first route day+11
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(32,79,'E-01','economy','available'),(32,79,'E-02','economy','available'),(32,79,'E-03','economy','available'),
+(32,79,'E-04','economy','available'),(32,79,'P-01','premium','available'),(32,79,'P-02','premium','available');
+
+-- Train 33 (Dera Ghazi Khan Express) first route day+12
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(33,84,'E-01','economy','available'),(33,84,'E-02','economy','available'),(33,84,'E-03','economy','available'),
+(33,84,'E-04','economy','available'),(33,84,'P-01','premium','available'),(33,84,'P-02','premium','available'),
+(33,84,'L-01','luxury','available');
+
+-- Train 34 (Mardan Express) first route day+13
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(34,89,'E-01','economy','available'),(34,89,'E-02','economy','available'),(34,89,'E-03','economy','available'),
+(34,89,'E-04','economy','available'),(34,89,'P-01','premium','available'),(34,89,'P-02','premium','available'),
+(34,89,'L-01','luxury','available');
+
+-- Train 35 (Swabi Express) first route day+14
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+(35,95,'E-01','economy','available'),(35,95,'E-02','economy','available'),(35,95,'E-03','economy','available'),
+(35,95,'E-04','economy','available'),(35,95,'P-01','premium','available'),(35,95,'P-02','premium','available');
+
+-- ========================================
+-- ADD BOOKING_SEATS FOR NEW BOOKINGS (51-80)
+-- ========================================
+
+-- Booking 51: Ali Khan, route 30 (Sukkur Express), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(51, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=30 AND seat_number='E-01'), 'Ali Khan', 32, 'M');
+
+-- Booking 52: Sara Ahmad, route 31 (Bolan Mail), 2 seats E-01/P-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(52, (SELECT seat_id FROM seats WHERE train_id=12 AND route_id=31 AND seat_number='E-01'), 'Sara Ahmad', 29, 'F'),
+(52, (SELECT seat_id FROM seats WHERE train_id=12 AND route_id=31 AND seat_number='P-01'), 'Nadia Ahmad', 24, 'F');
+
+-- Booking 53: Umer Farooq, route 32 (Rehman Baba), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(53, (SELECT seat_id FROM seats WHERE train_id=13 AND route_id=32 AND seat_number='E-01'), 'Umer Farooq', 34, 'M');
+
+-- Booking 54: Ayesha Khan, route 33 (Shah Hussain), 3 seats E-04/E-05/E-06 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(54, (SELECT seat_id FROM seats WHERE train_id=14 AND route_id=33 AND seat_number='E-04'), 'Ayesha Khan', 25, 'F'),
+(54, (SELECT seat_id FROM seats WHERE train_id=14 AND route_id=33 AND seat_number='E-05'), 'Usman Khan', 27, 'M'),
+(54, (SELECT seat_id FROM seats WHERE train_id=14 AND route_id=33 AND seat_number='E-06'), 'Baby Khan', 1, 'M');
+
+-- Booking 55: Hassan Raza, route 34 (Subak Raftar), 2 seats E-01/P-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(55, (SELECT seat_id FROM seats WHERE train_id=15 AND route_id=34 AND seat_number='E-01'), 'Hassan Raza', 31, 'M'),
+(55, (SELECT seat_id FROM seats WHERE train_id=15 AND route_id=34 AND seat_number='P-01'), 'Sana Raza', 28, 'F');
+
+-- Booking 56: Zainab Ali, route 35 (Bahauddin Zakariya), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(56, (SELECT seat_id FROM seats WHERE train_id=16 AND route_id=35 AND seat_number='E-01'), 'Zainab Ali', 28, 'F');
+
+-- Booking 57: Bilal Ahmed, route 36 (Green Line reverse), 2 seats E-01/E-02 (cancelled)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(57, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=36 AND seat_number='E-01'), 'Bilal Ahmed', 27, 'M'),
+(57, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=36 AND seat_number='E-02'), 'Nadia Ahmed', 25, 'F');
+
+-- Booking 58: Mariam Khan, route 37 (Tezgam reverse), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(58, (SELECT seat_id FROM seats WHERE train_id=2 AND route_id=37 AND seat_number='E-01'), 'Mariam Khan', 26, 'F');
+
+-- Booking 59: Tariq Mehmood, route 38 (Khyber Mail reverse), 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(59, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=38 AND seat_number='E-01'), 'Tariq Mehmood', 45, 'M'),
+(59, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=38 AND seat_number='E-02'), 'Sana Mehmood', 38, 'F'),
+(59, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=38 AND seat_number='E-03'), 'Ali Mehmood', 10, 'M');
+
+-- Booking 60: Rukhsana Bibi, route 39 (Allama Iqbal Islamabad-Lahore), 1 seat E-01 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(60, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=39 AND seat_number='E-01'), 'Rukhsana Bibi', 38, 'F');
+
+-- Booking 61: Wasim Akram, route 40 (Jaffar reverse), 2 seats E-01/P-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(61, (SELECT seat_id FROM seats WHERE train_id=10 AND route_id=40 AND seat_number='E-01'), 'Wasim Akram', 35, 'M'),
+(61, (SELECT seat_id FROM seats WHERE train_id=10 AND route_id=40 AND seat_number='P-02'), 'Rukhsana Akram', 32, 'F');
+
+-- Booking 62: Shazia Bano, route 41 (Karakoram Karachi-Lahore), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(62, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=41 AND seat_number='E-01'), 'Shazia Bano', 27, 'F');
+
+-- Booking 63: Fahad Sheikh, route 42 (Pakistan Express Karachi-Islamabad), 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(63, (SELECT seat_id FROM seats WHERE train_id=4 AND route_id=42 AND seat_number='E-01'), 'Fahad Sheikh', 28, 'M'),
+(63, (SELECT seat_id FROM seats WHERE train_id=4 AND route_id=42 AND seat_number='E-02'), 'Nadia Sheikh', 26, 'F');
+
+-- Booking 64: Noreen Mirza, route 43 (Awam Express Karachi-Multan), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(64, (SELECT seat_id FROM seats WHERE train_id=6 AND route_id=43 AND seat_number='E-01'), 'Noreen Mirza', 24, 'F');
+
+-- Booking 65: Kashif Nawaz, route 44 (Millat Express reverse), 2 seats P-02/L-01 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(65, (SELECT seat_id FROM seats WHERE train_id=7 AND route_id=44 AND seat_number='P-02'), 'Kashif Nawaz', 33, 'M'),
+(65, (SELECT seat_id FROM seats WHERE train_id=7 AND route_id=44 AND seat_number='L-01'), 'Saira Nawaz', 28, 'F');
+
+-- Booking 66: Sanam Chaudhry, route 45 (Shalimar Karachi-Faisalabad), 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(66, (SELECT seat_id FROM seats WHERE train_id=9 AND route_id=45 AND seat_number='E-01'), 'Sanam Chaudhry', 32, 'F'),
+(66, (SELECT seat_id FROM seats WHERE train_id=9 AND route_id=45 AND seat_number='E-02'), 'Imran Chaudhry', 34, 'M'),
+(66, (SELECT seat_id FROM seats WHERE train_id=9 AND route_id=45 AND seat_number='E-03'), 'Baby Chaudhry', 2, 'F');
+
+-- Booking 67: Adnan Shaikh, route 46 (Sukkur Express), 2 seats E-01/E-02 (cancelled)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(67, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=46 AND seat_number='E-01'), 'Adnan Shaikh', 28, 'M'),
+(67, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=46 AND seat_number='E-02'), 'Hina Shaikh', 26, 'F');
+
+-- Booking 68: Humaira Bibi, route 47 (Bolan Mail Quetta-Rawalpindi), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(68, (SELECT seat_id FROM seats WHERE train_id=12 AND route_id=47 AND seat_number='E-01'), 'Humaira Bibi', 40, 'F');
+
+-- Booking 69: Nadeem Sultan, route 48 (Rehman Baba Peshawar-Karachi), 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(69, (SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='E-01'), 'Nadeem Sultan', 50, 'M'),
+(69, (SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='E-02'), 'Fatima Sultan', 45, 'F'),
+(69, (SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='E-03'), 'Ahmed Sultan', 20, 'M');
+
+-- Booking 70: Sobia Qureshi, route 49 (Shah Hussain Lahore-Multan), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(70, (SELECT seat_id FROM seats WHERE train_id=14 AND route_id=49 AND seat_number='E-01'), 'Sobia Qureshi', 29, 'F');
+
+-- Booking 71: Tariq Mehmood (2nd trip), route 50 (Subak Raftar Islamabad-Karachi), 2 seats E-01/E-02 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(71, (SELECT seat_id FROM seats WHERE train_id=15 AND route_id=50 AND seat_number='E-01'), 'Tariq Mehmood', 45, 'M'),
+(71, (SELECT seat_id FROM seats WHERE train_id=15 AND route_id=50 AND seat_number='E-02'), 'Sana Mehmood', 38, 'F');
+
+-- Booking 72: Sobia Qureshi (route 51), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(72, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=51 AND seat_number='E-01'), 'Sobia Qureshi', 29, 'F');
+
+-- Booking 73: Ali Khan (route 52), 2 seats E-01/E-02
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(73, (SELECT seat_id FROM seats WHERE train_id=2 AND route_id=52 AND seat_number='E-01'), 'Ali Khan', 32, 'M'),
+(73, (SELECT seat_id FROM seats WHERE train_id=2 AND route_id=52 AND seat_number='E-02'), 'Amina Khan', 28, 'F');
+
+-- Booking 74: Sara Ahmad (route 55), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(74, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=55 AND seat_number='E-01'), 'Sara Ahmad', 29, 'F');
+
+-- Booking 75: Umer Farooq (route 56), 3 seats E-01/E-02/E-03
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(75, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=56 AND seat_number='E-01'), 'Umer Farooq', 34, 'M'),
+(75, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=56 AND seat_number='E-02'), 'Zara Farooq', 30, 'F'),
+(75, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=56 AND seat_number='E-03'), 'Hamza Farooq', 8, 'M');
+
+-- Booking 76: Ayesha Khan (route 61), 2 seats E-01/E-02 (pending)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(76, (SELECT seat_id FROM seats WHERE train_id=25 AND route_id=61 AND seat_number='E-01'), 'Ayesha Khan', 25, 'F'),
+(76, (SELECT seat_id FROM seats WHERE train_id=25 AND route_id=61 AND seat_number='E-02'), 'Usman Khan', 27, 'M');
+
+-- Booking 77: Hassan Raza (route 65), 1 seat E-01
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(77, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=36 AND seat_number='E-03'), 'Hassan Raza', 31, 'M');
+
+-- Booking 78: Zainab Ali (route 70), 2 seats P-02/L-01 (from route 44 seats)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(78, (SELECT seat_id FROM seats WHERE train_id=7 AND route_id=44 AND seat_number='E-01'), 'Zainab Ali', 28, 'F'),
+(78, (SELECT seat_id FROM seats WHERE train_id=7 AND route_id=44 AND seat_number='E-02'), 'Kamran Ali', 30, 'M');
+
+-- Booking 79: Bilal Ahmed (route 75), 1 seat E-01 (route 55 seats, train=5)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(79, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=55 AND seat_number='E-02'), 'Bilal Ahmed', 27, 'M');
+
+-- Booking 80: Mariam Khan (route 78), 3 seats (pending, route day+15 uses train=21)
+-- No seats for route 78 yet, so use route 51 seats (train=1)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(80, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=51 AND seat_number='E-02'), 'Mariam Khan', 26, 'F'),
+(80, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=51 AND seat_number='E-03'), 'Amir Khan', 29, 'M'),
+(80, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=51 AND seat_number='E-04'), 'Baby Khan', 1, 'M');
+
+-- ========================================
+-- MORE TRAINS (IDs 36-50)
+-- ========================================
+INSERT IGNORE INTO trains (train_name, train_number, train_type, total_seats, available_seats, status) VALUES
+('Rohi Express',           '101-UP', 'Express',   340, 310, 'active'),
+('Sandal Express',         '103-UP', 'Express',   320, 295, 'active'),
+('Thar Express',           '105-UP', 'Express',   300, 275, 'active'),
+('Mehran Express',         '107-UP', 'Express',   350, 330, 'active'),
+('Ravi Express',           '109-UP', 'Express',   310, 285, 'active'),
+('Sutlej Express',         '111-UP', 'Passenger', 280, 260, 'active'),
+('Bolan Express',          '113-UP', 'Express',   330, 300, 'active'),
+('Sindh Express',          '115-UP', 'Express',   360, 340, 'active'),
+('Punjab Express',         '117-UP', 'Express',   380, 355, 'active'),
+('Balochistan Express',    '119-UP', 'Express',   290, 265, 'active'),
+('Khyber Express',         '121-UP', 'Express',   340, 315, 'active'),
+('Gilgit Express',         '123-UP', 'Passenger', 260, 240, 'active'),
+('Chitral Express',        '125-UP', 'Passenger', 250, 230, 'active'),
+('Kaghan Express',         '127-UP', 'Passenger', 270, 250, 'active'),
+('Swat Express',           '129-UP', 'Express',   310, 285, 'active');
+
+-- Routes for new trains (days +16 to +35, sprinkled)
+INSERT IGNORE INTO routes (train_id, departure_city, arrival_city, departure_time, arrival_time, distance_km, base_fare, journey_date, available_seats, status) VALUES
+-- Day +16 routes
+(36, 'Karachi',  'Hyderabad',  '08:00:00', '11:30:00', 164.00, 900.00,  DATE_ADD(CURDATE(), INTERVAL 16 DAY), 310, 'scheduled'),
+(37, 'Lahore',   'Faisalabad', '09:00:00', '11:30:00', 128.00, 750.00,  DATE_ADD(CURDATE(), INTERVAL 16 DAY), 295, 'scheduled'),
+(38, 'Multan',   'Bahawalpur','10:00:00', '12:00:00', 100.00, 600.00,  DATE_ADD(CURDATE(), INTERVAL 16 DAY), 275, 'scheduled'),
+-- Day +18 routes
+(39, 'Rawalpindi','Peshawar',  '07:00:00', '11:00:00', 180.00, 1100.00, DATE_ADD(CURDATE(), INTERVAL 18 DAY), 330, 'scheduled'),
+(40, 'Quetta',   'Sukkur',     '06:00:00', '15:00:00', 410.00, 1500.00, DATE_ADD(CURDATE(), INTERVAL 18 DAY), 285, 'scheduled'),
+(41, 'Islamabad','Abbottabad','08:00:00', '11:00:00', 120.00, 700.00,  DATE_ADD(CURDATE(), INTERVAL 18 DAY), 260, 'scheduled'),
+-- Day +20 routes
+(42, 'Karachi',  'Nawabshah',  '07:30:00', '12:00:00', 200.00, 900.00,  DATE_ADD(CURDATE(), INTERVAL 20 DAY), 300, 'scheduled'),
+(43, 'Lahore',   'Gujranwala','09:00:00', '10:30:00',  74.00, 500.00,  DATE_ADD(CURDATE(), INTERVAL 20 DAY), 340, 'scheduled'),
+(44, 'Peshawar', 'Mardan',     '08:00:00', '10:00:00',  65.00, 450.00,  DATE_ADD(CURDATE(), INTERVAL 20 DAY), 355, 'scheduled'),
+-- Day +22 routes
+(45, 'Faisalabad','Multan',    '07:00:00', '11:30:00', 240.00, 1000.00, DATE_ADD(CURDATE(), INTERVAL 22 DAY), 265, 'scheduled'),
+(46, 'Hyderabad','Karachi',    '08:00:00', '11:00:00', 164.00, 900.00,  DATE_ADD(CURDATE(), INTERVAL 22 DAY), 240, 'scheduled'),
+(47, 'Sukkur',   'Larkana',    '09:00:00', '10:30:00',  80.00, 500.00,  DATE_ADD(CURDATE(), INTERVAL 22 DAY), 315, 'scheduled'),
+-- Day +25 routes
+(48, 'Bahawalpur','Multan',    '07:00:00', '09:00:00', 100.00, 600.00,  DATE_ADD(CURDATE(), INTERVAL 25 DAY), 230, 'scheduled'),
+(49, 'Gujranwala','Rawalpindi','08:00:00', '12:00:00', 200.00, 950.00,  DATE_ADD(CURDATE(), INTERVAL 25 DAY), 285, 'scheduled'),
+(50, 'Sialkot',  'Lahore',     '09:00:00', '11:30:00', 125.00, 750.00,  DATE_ADD(CURDATE(), INTERVAL 25 DAY), 250, 'scheduled');
+
+-- Seats for new train routes
+-- Day +16 routes
+INSERT IGNORE INTO seats (train_id, route_id, seat_number, seat_type, status) VALUES
+-- Route for train 36 (Rohi Express – Karachi→Hyderabad)
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-01','economy','booked'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-02','economy','available'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-03','economy','available'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-04','economy','available'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-01','premium','available'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-02','premium','available'),
+(36,(SELECT route_id FROM routes WHERE train_id=36 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Route for train 37 (Sandal Express – Lahore→Faisalabad)
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-01','economy','booked'),
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-02','economy','available'),
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-03','economy','available'),
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-01','premium','available'),
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-02','premium','available'),
+(37,(SELECT route_id FROM routes WHERE train_id=37 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Route for train 38 (Thar Express – Multan→Bahawalpur)
+(38,(SELECT route_id FROM routes WHERE train_id=38 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-01','economy','available'),
+(38,(SELECT route_id FROM routes WHERE train_id=38 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-02','economy','available'),
+(38,(SELECT route_id FROM routes WHERE train_id=38 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'E-03','economy','available'),
+(38,(SELECT route_id FROM routes WHERE train_id=38 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-01','premium','available'),
+(38,(SELECT route_id FROM routes WHERE train_id=38 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 16 DAY) LIMIT 1),'P-02','premium','available'),
+-- Day +18 routes
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-01','economy','booked'),
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-02','economy','booked'),
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-03','economy','available'),
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'P-01','premium','available'),
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'P-02','premium','available'),
+(39,(SELECT route_id FROM routes WHERE train_id=39 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Train 40 (Ravi Express – Quetta→Sukkur)
+(40,(SELECT route_id FROM routes WHERE train_id=40 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-01','economy','available'),
+(40,(SELECT route_id FROM routes WHERE train_id=40 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-02','economy','available'),
+(40,(SELECT route_id FROM routes WHERE train_id=40 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-03','economy','available'),
+(40,(SELECT route_id FROM routes WHERE train_id=40 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'P-01','premium','available'),
+(40,(SELECT route_id FROM routes WHERE train_id=40 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'P-02','premium','available'),
+-- Train 41 (Sutlej Express – Islamabad→Abbottabad)
+(41,(SELECT route_id FROM routes WHERE train_id=41 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-01','economy','available'),
+(41,(SELECT route_id FROM routes WHERE train_id=41 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-02','economy','available'),
+(41,(SELECT route_id FROM routes WHERE train_id=41 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'E-03','economy','available'),
+(41,(SELECT route_id FROM routes WHERE train_id=41 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 18 DAY) LIMIT 1),'P-01','premium','available'),
+-- Day +20 routes
+(42,(SELECT route_id FROM routes WHERE train_id=42 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-01','economy','booked'),
+(42,(SELECT route_id FROM routes WHERE train_id=42 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-02','economy','available'),
+(42,(SELECT route_id FROM routes WHERE train_id=42 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-03','economy','available'),
+(42,(SELECT route_id FROM routes WHERE train_id=42 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'P-01','premium','available'),
+(42,(SELECT route_id FROM routes WHERE train_id=42 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Train 43 (Sindh Express – Lahore→Gujranwala)
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-01','economy','available'),
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-02','economy','available'),
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-03','economy','available'),
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'P-01','premium','available'),
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'P-02','premium','available'),
+(43,(SELECT route_id FROM routes WHERE train_id=43 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Train 44 (Punjab Express – Peshawar→Mardan)
+(44,(SELECT route_id FROM routes WHERE train_id=44 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-01','economy','available'),
+(44,(SELECT route_id FROM routes WHERE train_id=44 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-02','economy','available'),
+(44,(SELECT route_id FROM routes WHERE train_id=44 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'E-03','economy','available'),
+(44,(SELECT route_id FROM routes WHERE train_id=44 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'P-01','premium','available'),
+(44,(SELECT route_id FROM routes WHERE train_id=44 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 20 DAY) LIMIT 1),'P-02','premium','available'),
+-- Day +22 routes
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-01','economy','booked'),
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-02','economy','available'),
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-03','economy','available'),
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'P-01','premium','available'),
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'P-02','premium','available'),
+(45,(SELECT route_id FROM routes WHERE train_id=45 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Train 46 (Gilgit Express – Hyderabad→Karachi)
+(46,(SELECT route_id FROM routes WHERE train_id=46 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-01','economy','available'),
+(46,(SELECT route_id FROM routes WHERE train_id=46 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-02','economy','available'),
+(46,(SELECT route_id FROM routes WHERE train_id=46 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-03','economy','available'),
+(46,(SELECT route_id FROM routes WHERE train_id=46 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'P-01','premium','available'),
+-- Train 47 (Chitral Express – Sukkur→Larkana)
+(47,(SELECT route_id FROM routes WHERE train_id=47 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-01','economy','available'),
+(47,(SELECT route_id FROM routes WHERE train_id=47 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-02','economy','available'),
+(47,(SELECT route_id FROM routes WHERE train_id=47 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'E-03','economy','available'),
+(47,(SELECT route_id FROM routes WHERE train_id=47 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 22 DAY) LIMIT 1),'P-01','premium','available'),
+-- Day +25 routes
+(48,(SELECT route_id FROM routes WHERE train_id=48 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-01','economy','available'),
+(48,(SELECT route_id FROM routes WHERE train_id=48 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-02','economy','available'),
+(48,(SELECT route_id FROM routes WHERE train_id=48 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-03','economy','available'),
+(48,(SELECT route_id FROM routes WHERE train_id=48 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-01','premium','available'),
+(48,(SELECT route_id FROM routes WHERE train_id=48 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-02','premium','available'),
+-- Train 49 (Kaghan Express – Gujranwala→Rawalpindi)
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-01','economy','booked'),
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-02','economy','available'),
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-03','economy','available'),
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-01','premium','available'),
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-02','premium','available'),
+(49,(SELECT route_id FROM routes WHERE train_id=49 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'L-01','luxury','available'),
+-- Train 50 (Swat Express – Sialkot→Lahore)
+(50,(SELECT route_id FROM routes WHERE train_id=50 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-01','economy','available'),
+(50,(SELECT route_id FROM routes WHERE train_id=50 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-02','economy','available'),
+(50,(SELECT route_id FROM routes WHERE train_id=50 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'E-03','economy','available'),
+(50,(SELECT route_id FROM routes WHERE train_id=50 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-01','premium','available'),
+(50,(SELECT route_id FROM routes WHERE train_id=50 AND journey_date=DATE_ADD(CURDATE(), INTERVAL 25 DAY) LIMIT 1),'P-02','premium','available');
+
+-- ========================================
+-- FILL MORE EXISTING SEATS AS BOOKED
+-- Update some available seats to booked with booking_seats linking
+-- ========================================
+
+-- Add 10 more bookings to fill empty seats on existing routes
+INSERT IGNORE INTO bookings (user_id, route_id, booking_reference, number_of_seats, total_fare, booking_status, payment_status, booking_date, journey_date) VALUES
+(14, 1,  'PKR-2026-0081', 1, 3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY), CURDATE()),
+(15, 2,  'PKR-2026-0082', 1, 4200.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY), CURDATE()),
+(16, 3,  'PKR-2026-0083', 2, 7000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY), CURDATE()),
+(17, 5,  'PKR-2026-0084', 1, 4800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY), CURDATE()),
+(18, 8,  'PKR-2026-0085', 1, 1800.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 1 DAY), CURDATE()),
+(19, 11, 'PKR-2026-0086', 2, 7000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(20, 12, 'PKR-2026-0087', 1, 4200.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(21, 15, 'PKR-2026-0088', 1, 4800.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(22, 13, 'PKR-2026-0089', 2, 7000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY)),
+(23, 18, 'PKR-2026-0090', 1, 1800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY));
+
+-- Payments for bookings 81-90
+INSERT IGNORE INTO payments (booking_id, user_id, amount, payment_method, transaction_id, payment_status, payment_date) VALUES
+(81, 14, 3500.00, 'easypaisa',     'TXN-PKR-081', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(82, 15, 4200.00, 'jazzcash',      'TXN-PKR-082', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(83, 16, 7000.00, 'credit_card',   'TXN-PKR-083', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(84, 17, 4800.00, 'debit_card',    'TXN-PKR-084', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(85, 18, 1800.00, 'cash',          NULL,           'pending',   NULL),
+(86, 19, 7000.00, 'bank_transfer', 'TXN-PKR-086', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(87, 20, 4200.00, 'easypaisa',     'TXN-PKR-087', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(88, 21, 4800.00, 'cash',          NULL,           'pending',   NULL),
+(89, 22, 7000.00, 'credit_card',   'TXN-PKR-089', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(90, 23, 1800.00, 'jazzcash',      'TXN-PKR-090', 'completed', DATE_SUB(NOW(), INTERVAL 3 DAY));
+
+-- Booking seats for 81-90 (fill available seats on existing routes)
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(81, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=1 AND seat_number='E-03' AND status='available' LIMIT 1), 'Shazia Bano', 27, 'F'),
+(82, (SELECT seat_id FROM seats WHERE train_id=2 AND route_id=2 AND seat_number='E-03' AND status='available' LIMIT 1), 'Fahad Sheikh', 28, 'M'),
+(83, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=3 AND seat_number='E-03' AND status='available' LIMIT 1), 'Sanam Chaudhry', 32, 'F'),
+(83, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=3 AND seat_number='E-05' AND status='available' LIMIT 1), 'Imran Chaudhry', 34, 'M'),
+(84, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=5 AND seat_number='E-05' AND status='available' LIMIT 1), 'Humaira Bibi', 40, 'F'),
+(85, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=8 AND seat_number='E-04' AND status='available' LIMIT 1), 'Zainab Ali', 28, 'F'),
+(86, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=11 AND seat_number='E-07' AND status='available' LIMIT 1), 'Tariq Mehmood', 45, 'M'),
+(86, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=11 AND seat_number='E-08' AND status='available' LIMIT 1), 'Sana Mehmood', 38, 'F'),
+(87, (SELECT seat_id FROM seats WHERE train_id=2 AND route_id=12 AND seat_number='E-01' AND status='available' LIMIT 1), 'Kashif Nawaz', 33, 'M'),
+(88, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=15 AND seat_number='E-03' AND status='available' LIMIT 1), 'Noreen Mirza', 24, 'F'),
+(89, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=13 AND seat_number='E-04' AND status='available' LIMIT 1), 'Wasim Akram', 35, 'M'),
+(89, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=13 AND seat_number='E-05' AND status='available' LIMIT 1), 'Rukhsana Akram', 32, 'F'),
+(90, (SELECT seat_id FROM seats WHERE train_id=8 AND route_id=18 AND seat_number='E-01' AND status='available' LIMIT 1), 'Adnan Shaikh', 28, 'M');
+
+-- Update seats to 'booked' status that are being used
+UPDATE seats SET status = 'booked' WHERE seat_id IN (
+    SELECT seat_id FROM booking_seats WHERE booking_id BETWEEN 81 AND 90
+);
+
+-- ========================================
+-- MORE BOOKINGS: Fill day +3 to +5 routes
+-- ========================================
+INSERT IGNORE INTO bookings (user_id, route_id, booking_reference, number_of_seats, total_fare, booking_status, payment_status, booking_date, journey_date) VALUES
+(24, 21, 'PKR-2026-0091', 1, 1600.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY)),
+(25, 22, 'PKR-2026-0092', 2, 4400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY)),
+(4,  25, 'PKR-2026-0093', 1, 1800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY)),
+(5,  30, 'PKR-2026-0094', 1, 2600.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 4 DAY)),
+(6,  36, 'PKR-2026-0095', 2, 7000.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(7,  38, 'PKR-2026-0096', 1, 4800.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_ADD(CURDATE(), INTERVAL 5 DAY)),
+(8,  41, 'PKR-2026-0097', 1, 3500.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(9,  45, 'PKR-2026-0098', 1, 3200.00, 'pending',   'pending',   DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 6 DAY)),
+(10, 46, 'PKR-2026-0099', 2, 3200.00, 'cancelled', 'refunded',  DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+(11, 48, 'PKR-2026-0100', 3, 14400.00, 'confirmed', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 7 DAY));
+
+-- Payments for 91-100
+INSERT IGNORE INTO payments (booking_id, user_id, amount, payment_method, transaction_id, payment_status, payment_date) VALUES
+(91, 24, 1600.00, 'jazzcash',      'TXN-PKR-091', 'completed', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(92, 25, 4400.00, 'easypaisa',     'TXN-PKR-092', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(93, 4,  1800.00, 'credit_card',   'TXN-PKR-093', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(94, 5,  2600.00, 'cash',          NULL,           'pending',   NULL),
+(95, 6,  7000.00, 'debit_card',    'TXN-PKR-095', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(96, 7,  4800.00, 'bank_transfer', 'TXN-PKR-096', 'completed', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(97, 8,  3500.00, 'easypaisa',     'TXN-PKR-097', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(98, 9,  3200.00, 'cash',          NULL,           'pending',   NULL),
+(99, 10, 3200.00, 'credit_card',   'TXN-PKR-099', 'refunded',  DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(100,11, 14400.00,'jazzcash',      'TXN-PKR-100', 'completed', DATE_SUB(NOW(), INTERVAL 5 DAY));
+
+-- Booking seats for 91-100
+INSERT IGNORE INTO booking_seats (booking_id, seat_id, passenger_name, passenger_age, passenger_gender) VALUES
+(91, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=21 AND seat_number='E-01' AND status='available' LIMIT 1), 'Tariq Mehmood', 45, 'M'),
+(92, (SELECT seat_id FROM seats WHERE train_id=12 AND route_id=22 AND seat_number='E-01' AND status='available' LIMIT 1), 'Ayesha Khan', 25, 'F'),
+(92, (SELECT seat_id FROM seats WHERE train_id=12 AND route_id=22 AND seat_number='E-02' AND status='available' LIMIT 1), 'Usman Khan', 27, 'M'),
+(93, (SELECT seat_id FROM seats WHERE train_id=15 AND route_id=25 AND seat_number='E-01' AND status='available' LIMIT 1), 'Hassan Raza', 31, 'M'),
+(94, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=30 AND seat_number='E-02' AND status='available' LIMIT 1), 'Mariam Khan', 26, 'F'),
+(95, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=36 AND seat_number='P-01' AND status='available' LIMIT 1), 'Sobia Qureshi', 29, 'F'),
+(95, (SELECT seat_id FROM seats WHERE train_id=1 AND route_id=36 AND seat_number='P-02' AND status='available' LIMIT 1), 'Imran Qureshi', 31, 'M'),
+(96, (SELECT seat_id FROM seats WHERE train_id=5 AND route_id=38 AND seat_number='E-04' AND status='available' LIMIT 1), 'Fahad Sheikh', 28, 'M'),
+(97, (SELECT seat_id FROM seats WHERE train_id=3 AND route_id=41 AND seat_number='E-02' AND status='available' LIMIT 1), 'Noreen Mirza', 24, 'F'),
+(98, (SELECT seat_id FROM seats WHERE train_id=9 AND route_id=45 AND seat_number='E-04' AND status='available' LIMIT 1), 'Kashif Nawaz', 33, 'M'),
+(99, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=46 AND seat_number='E-03' AND status='available' LIMIT 1), 'Adnan Shaikh', 28, 'M'),
+(99, (SELECT seat_id FROM seats WHERE train_id=11 AND route_id=46 AND seat_number='E-04' AND status='available' LIMIT 1), 'Hina Shaikh', 26, 'F'),
+(100,(SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='E-04' AND status='available' LIMIT 1), 'Rukhsana Bibi', 38, 'F'),
+(100,(SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='E-05' AND status='available' LIMIT 1), 'Junaid Bibi', 42, 'M'),
+(100,(SELECT seat_id FROM seats WHERE train_id=13 AND route_id=48 AND seat_number='P-01' AND status='available' LIMIT 1), 'Sara Bibi', 12, 'F');
+
+-- Update status for newly assigned seats
+UPDATE seats s
+JOIN booking_seats bs ON bs.seat_id = s.seat_id
+SET s.status = 'booked'
+WHERE bs.booking_id BETWEEN 91 AND 100;
