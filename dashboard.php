@@ -20,8 +20,6 @@ $role    = $_SESSION['role'];
 
 if ($role === 'admin') {
     header('Location: admin-dashboard.php'); exit();
-} elseif ($role === 'employee') {
-    header('Location: employee-dashboard.php'); exit();
 }
 
 $user_obj = new User($db);

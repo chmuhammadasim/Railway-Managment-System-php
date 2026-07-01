@@ -37,7 +37,6 @@ session_start();
 // Define User Roles
 define('ROLE_USER', 'user');
 define('ROLE_ADMIN', 'admin');
-define('ROLE_EMPLOYEE', 'employee');
 
 // Booking Status Constants
 define('BOOKING_PENDING', 'pending');

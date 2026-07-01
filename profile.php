@@ -58,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $back_url = match($_SESSION['role'] ?? 'user') {
     'admin'    => 'admin-dashboard.php',
-    'employee' => 'employee-dashboard.php',
     default    => 'dashboard.php',
 };
 

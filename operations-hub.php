@@ -17,8 +17,8 @@ $conn = $db->getConnection();
 
 $role = $_SESSION['role'] ?? ROLE_USER;
 
-// Operations Hub is for admin and employee only
-if ($role === ROLE_USER) {
+// Operations Hub is for admin only
+if ($role !== ROLE_ADMIN) {
     header('Location: dashboard.php');
     exit();
 }
@@ -170,8 +170,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'upsert_live_status') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('live', 'danger', 'Only staff can update live train status.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('live', 'danger', 'Only admins can update live train status.', $flashKey);
         }
 
         $routeId = (int)($_POST['route_id'] ?? 0);
@@ -293,8 +293,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'update_lost_found') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('lost-found', 'danger', 'Only staff can update lost and found cases.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('lost-found', 'danger', 'Only admins can update lost and found cases.', $flashKey);
         }
 
         $itemId = (int)($_POST['item_id'] ?? 0);
@@ -345,8 +345,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'add_maintenance') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('crew', 'danger', 'Only staff can manage maintenance schedules.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('crew', 'danger', 'Only admins can manage maintenance schedules.', $flashKey);
         }
 
         $trainId = (int)($_POST['train_id'] ?? 0);
@@ -384,8 +384,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'update_maintenance_status') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('crew', 'danger', 'Only staff can manage maintenance schedules.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('crew', 'danger', 'Only admins can manage maintenance schedules.', $flashKey);
         }
 
         $maintenanceId = (int)($_POST['maintenance_id'] ?? 0);
@@ -415,8 +415,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'add_crew_assignment') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('crew', 'danger', 'Only staff can assign crews.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('crew', 'danger', 'Only admins can assign crews.', $flashKey);
         }
 
         $routeId = (int)($_POST['route_id'] ?? 0);
@@ -454,8 +454,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'update_crew_status') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('crew', 'danger', 'Only staff can update crew assignments.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('crew', 'danger', 'Only admins can update crew assignments.', $flashKey);
         }
 
         $assignmentId = (int)($_POST['assignment_id'] ?? 0);
@@ -506,8 +506,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'process_waitlist') {
-        if (!in_array($role, [ROLE_ADMIN, ROLE_EMPLOYEE], true)) {
-            operationsHubRedirect('waitlist', 'danger', 'Only staff can process the waitlist queue.', $flashKey);
+        if ($role !== ROLE_ADMIN) {
+            operationsHubRedirect('waitlist', 'danger', 'Only admins can process the waitlist queue.', $flashKey);
         }
 
         $routeId = (int)($_POST['route_id'] ?? 0);
@@ -722,13 +722,6 @@ if ($role === ROLE_USER) {
         ['href' => 'my-cargo.php', 'icon' => 'bi-box-seam', 'title' => 'Cargo & Luggage', 'text' => 'Book luggage, parcels, and track shipments.'],
         ['href' => 'index.php', 'icon' => 'bi-grid-3x3-gap-fill', 'title' => 'Seat Map Booking', 'text' => 'Use the visual coach layout when booking tickets.'],
         ['href' => 'operations-hub.php?tab=live', 'icon' => 'bi-broadcast-pin', 'title' => 'Live Status', 'text' => 'Track platform updates, delays, and route progress.'],
-    ];
-} elseif ($role === ROLE_EMPLOYEE) {
-    $quickLinks = [
-        ['href' => 'check-passengers.php', 'icon' => 'bi-people-fill', 'title' => 'Passenger Desk', 'text' => 'Search passengers and confirm boarding data.'],
-        ['href' => 'assign-seats.php', 'icon' => 'bi-grid-3x3-gap-fill', 'title' => 'Seat Control', 'text' => 'Handle reservations and free seat releases.'],
-        ['href' => 'cargo-shipments.php', 'icon' => 'bi-box-seam', 'title' => 'Cargo Desk', 'text' => 'Manage parcels, luggage, and travelling cargo.'],
-        ['href' => 'operations-hub.php?tab=crew', 'icon' => 'bi-tools', 'title' => 'Crew & Maintenance', 'text' => 'Update assignments and train service work.'],
     ];
 } else {
     $quickLinks = [
@@ -1093,15 +1086,6 @@ require_once 'inc/header.php';
 .ops-sidebar .sb-user .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#6366f1); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; color:#fff; flex-shrink:0; }
 .ops-sidebar .sb-user .info small { display:block; font-size:.68rem; opacity:.5; }
 .ops-sidebar .sb-user .info strong { font-size:.78rem; color:#fff; }
-/* Employee sidebar accent */
-.ops-sidebar.emp { background:linear-gradient(180deg,#012117 0%,#064e3b 100%); }
-.ops-sidebar.emp nav a:hover, .ops-sidebar.emp nav a.active { border-left-color:#10b981; background:rgba(16,185,129,.12); }
-/* emp-sb-brand shared style */
-.emp-sb-brand { padding:1.4rem 1.25rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.1); }
-.emp-sb-brand .brand-icon { width:38px; height:38px; border-radius:10px; background:rgba(16,185,129,.2); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:.55rem; }
-.emp-sb-brand .brand-name { font-weight:800; font-size:.95rem; color:#fff; line-height:1.2; }
-.emp-sb-brand .brand-role { font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.15rem; }
-.emp-sb-footer { margin-top:auto; padding:1rem 1.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.71rem; color:rgba(255,255,255,.3); text-align:center; }
 /* User sidebar accent */
 .ops-sidebar.usr { background:linear-gradient(180deg,#1e1b4b 0%,#312e81 100%); }
 .ops-sidebar.usr nav a:hover, .ops-sidebar.usr nav a.active { border-left-color:#818cf8; }
@@ -1147,32 +1131,6 @@ require_once 'inc/header.php';
     </div>
 </aside>
 
-<?php elseif ($role === ROLE_EMPLOYEE): ?>
-<!-- ══ EMPLOYEE SIDEBAR ═══════════════════════════ -->
-<aside class="ops-sidebar emp">
-    <div class="emp-sb-brand">
-        <div class="brand-icon"><i class="bi bi-train-front-fill"></i></div>
-        <div class="brand-name">Employee Panel</div>
-        <div class="brand-role">Operations &amp; Management</div>
-    </div>
-    <nav>
-        <div class="sb-sep">Main</div>
-        <a href="employee-dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <div class="sb-sep">Operations</div>
-        <a href="my-trains.php"><i class="bi bi-train-front"></i> My Trains</a>
-        <a href="check-passengers.php"><i class="bi bi-people"></i> Passengers</a>
-        <a href="assign-seats.php"><i class="bi bi-grid-3x3-gap"></i> Seat Management</a>
-        <a href="operations-hub.php" class="active"><i class="bi bi-diagram-3"></i> Operations Hub</a>
-        <div class="sb-sep">Bookings</div>
-        <a href="check-passengers.php?view=bookings"><i class="bi bi-journal-check"></i> Today's Bookings</a>
-        <div class="sb-sep">Account</div>
-        <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
-        <a href="profile.php"><i class="bi bi-person-circle"></i> My Profile</a>
-        <a href="logout.php" style="color:rgba(252,165,165,.8)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
-    </nav>
-    <div class="emp-sb-footer">Railway Management System</div>
-</aside>
-
 <?php else: ?>
 <!-- ══ USER SIDEBAR ═══════════════════════════════ -->
 <aside class="ops-sidebar usr">
@@ -1212,8 +1170,6 @@ require_once 'inc/header.php';
                     <p>
                         <?php if ($role === ROLE_USER): ?>
                         Track live trains, waitlist and RAC requests, lost items, cargo and your travel operations from one place.
-                        <?php elseif ($role === ROLE_EMPLOYEE): ?>
-                        Coordinate live status updates, crew duties, train maintenance, passenger queues, cargo, and service operations in one workspace.
                         <?php else: ?>
                         Centralize station setup, live operations, crew planning, lost and found, and passenger queue management across the railway network.
                         <?php endif; ?>

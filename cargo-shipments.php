@@ -6,7 +6,7 @@ require_once 'src/classes/Database.php';
 require_once 'src/classes/User.php';
 require_once 'src/classes/AuditLog.php';
 
-if (!User::isLoggedIn() || !in_array($_SESSION['role'], ['admin', 'employee'])) {
+if (!User::isLoggedIn() || $_SESSION['role'] !== 'admin') {
     header('Location: login.php'); exit();
 }
 

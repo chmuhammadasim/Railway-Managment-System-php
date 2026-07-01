@@ -88,14 +88,12 @@ function time_ago(int $ts): string {
 }
 
 // ── Role-specific tab config ───────────────────────────────────────────────
-// Admins and employees see different tab labels/priorities
-$is_staff = in_array($_role, ['admin', 'employee'], true);
 
 $hideMainNavbar = true;
 $pageTitle = 'Notifications – Railway System';
 require_once 'inc/header.php';
 
-$back_url = match($_role) { 'admin'=>'admin-dashboard.php', 'employee'=>'employee-dashboard.php', default=>'dashboard.php' };
+$back_url = match($_role) { 'admin'=>'admin-dashboard.php', default=>'dashboard.php' };
 ?>
 
 <style>

@@ -208,17 +208,6 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                                 <i class="bi bi-box-seam"></i> Cargo
                             </a>
                         </li>
-                    <?php elseif ($navRole === ROLE_EMPLOYEE): ?>
-                        <li class="nav-item">
-                            <a class="nav-link<?= ($current_page === 'check-passengers.php') ? ' active' : '' ?>" href="check-passengers.php">
-                                <i class="bi bi-people"></i> Passengers
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link<?= ($current_page === 'my-trains.php') ? ' active' : '' ?>" href="my-trains.php">
-                                <i class="bi bi-train-front"></i> My Trains
-                            </a>
-                        </li>
                     <?php elseif ($navRole === ROLE_ADMIN): ?>
                         <li class="nav-item">
                             <a class="nav-link<?= ($current_page === 'manage-routes.php') ? ' active' : '' ?>" href="manage-routes.php">
@@ -285,17 +274,6 @@ if (!class_exists('User') && file_exists(__DIR__ . '/../src/classes/User.php')) 
                             <li>
                                 <a class="dropdown-item" href="my-cargo.php">
                                     <i class="bi bi-box-seam text-muted"></i> Cargo &amp; Luggage
-                                </a>
-                            </li>
-                            <?php elseif ($navRole === ROLE_EMPLOYEE): ?>
-                            <li>
-                                <a class="dropdown-item" href="check-passengers.php">
-                                    <i class="bi bi-people text-muted"></i> Passenger Desk
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="my-trains.php">
-                                    <i class="bi bi-train-front text-muted"></i> My Trains
                                 </a>
                             </li>
                             <?php elseif ($navRole === ROLE_ADMIN): ?>

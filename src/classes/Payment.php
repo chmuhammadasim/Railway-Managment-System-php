@@ -21,7 +21,7 @@ class Payment {
     }
 
     private function pushNotifToStaff(string $message, string $type = 'info', int $related_id = 0): void {
-        $staff = $this->db->select("SELECT user_id FROM users WHERE role IN ('admin','employee') AND is_active = 1");
+        $staff = $this->db->select("SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1");
         foreach ($staff ?: [] as $s) {
             $this->pushNotif((int)$s['user_id'], $message, $type, $related_id);
         }

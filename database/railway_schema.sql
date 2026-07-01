@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    role ENUM('user', 'admin', 'employee') DEFAULT 'user',
+    role ENUM('user', 'admin') DEFAULT 'user',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -429,8 +429,6 @@ CREATE INDEX IF NOT EXISTS idx_seat_route ON seats(route_id);
 -- Insert Users (Password: password123 - hashed with bcrypt)
 INSERT IGNORE INTO users (username, email, password, full_name, phone, address, role, is_active) VALUES
 ('admin', 'admin@pakrail.pk', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Admin Pakistan Railways', '+92-300-1234567', 'Railway Headquarters, Islamabad', 'admin', 1),
-('employee1', 'employee1@pakrail.pk', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Ahmed Hassan', '+92-321-7654321', 'Lahore Railway Station, Lahore', 'employee', 1),
-('employee2', 'employee2@pakrail.pk', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Fatima Ali', '+92-333-9876543', 'Karachi Cantt Station, Karachi', 'employee', 1),
 ('alikhan', 'ali.khan@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Ali Khan', '+92-300-1111111', 'DHA Phase 5, Karachi', 'user', 1),
 ('saraahmad', 'sara.ahmad@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Sara Ahmad', '+92-321-2222222', 'Model Town, Lahore', 'user', 1),
 ('umerfarooq', 'umer.farooq@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Umer Farooq', '+92-333-3333333', 'F-7, Islamabad', 'user', 1),
@@ -567,8 +565,6 @@ INSERT IGNORE INTO admin_logs (admin_id, action, description, affected_table, af
 
 -- Additional Users (Pakistani names, cities, local phone numbers)
 INSERT IGNORE INTO users (username, email, password, full_name, phone, address, role, is_active) VALUES
-('employee3', 'employee3@pakrail.pk', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Imran Siddiqui', '+92-345-1122334', 'Rawalpindi Railway Station, Rawalpindi', 'employee', 1),
-('employee4', 'employee4@pakrail.pk', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Nadia Butt', '+92-312-5566778', 'Multan Railway Station, Multan', 'employee', 1),
 ('tariqmehmood', 'tariq.mehmood@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Tariq Mehmood', '+92-300-9988776', 'Johar Town, Lahore', 'user', 1),
 ('rukhsanabibi', 'rukhsana.bibi@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Rukhsana Bibi', '+92-321-6644332', 'Qasimabad, Hyderabad', 'user', 1),
 ('wasimakram', 'wasim.akram@gmail.com', '$2y$10$u3QIpirX9D6Shx5Z/cw9MuOOk9PdMbDfawONQmR6OSXBt5AR.p6Zy', 'Wasim Akram', '+92-333-7755991', 'Wapda Town, Faisalabad', 'user', 1),
@@ -790,10 +786,10 @@ INSERT IGNORE INTO admin_logs (admin_id, action, description, affected_table, af
 (1, 'CREATE_DISCOUNT','Created Azadi Day discount AZADI75',                      'discounts', 7),
 (1, 'UPDATE_STATUS',  'Marked route 21 (Karachi→Lahore yesterday) as completed', 'routes',   21),
 (1, 'UPDATE_STATUS',  'Marked route 22 (Rawalpindi→Karachi yesterday) as completed','routes', 22),
-(2, 'CHECK_IN',       'Checked in passenger for booking PKR-2026-0001',          'bookings',  1),
-(2, 'CHECK_IN',       'Checked in passengers for booking PKR-2026-0003',         'bookings',  3),
-(3, 'CHECK_IN',       'Checked in passenger for booking PKR-2026-0005',          'bookings',  5),
-(3, 'SEAT_ASSIGN',    'Assigned seat P-01 to booking PKR-2026-0002',             'seats',    16);
+(1, 'CHECK_IN',       'Checked in passenger for booking PKR-2026-0001 (admin)',          'bookings',  1),
+(1, 'CHECK_IN',       'Checked in passengers for booking PKR-2026-0003 (admin)',         'bookings',  3),
+(1, 'CHECK_IN',       'Checked in passenger for booking PKR-2026-0005 (admin)',          'bookings',  5),
+(1, 'SEAT_ASSIGN',    'Assigned seat P-01 to booking PKR-2026-0002 (admin)',             'seats',    16);
 
 -- ========================================
 -- DATA FOR REMAINING TABLES
@@ -829,16 +825,16 @@ INSERT IGNORE INTO stations (station_name, station_code, city, province, is_acti
 
 -- Live Train Status (Today's Active Routes)
 INSERT IGNORE INTO live_train_status (route_id, service_state, current_station, next_station, delay_minutes, expected_arrival, status_note, updated_by) VALUES
-(1,  'running',   'Hyderabad',  'Lahore',      0,  '2026-04-11 20:30:00', 'On time – running smoothly',                          2),
-(2,  'running',   'Multan',     'Rawalpindi',  15, '2026-04-11 22:15:00', 'Minor delay due to track maintenance near Multan',     2),
-(3,  'boarding',  'Lahore',     'Hyderabad',   0,  '2026-04-11 21:30:00', 'Boarding in progress at Lahore – Gate 4',              3),
-(4,  'running',   'Multan',     'Karachi',     30, '2026-04-12 07:00:00', 'Delayed due to signal fault near Multan',              2),
-(5,  'arrived',   'Peshawar',   NULL,          0,  '2026-04-11 08:30:00', 'Train arrived at Peshawar Cantonment on schedule',     3),
-(6,  'completed', 'Karachi',    NULL,          0,  '2026-04-11 22:00:00', 'Journey completed on time at Karachi City',            2),
-(7,  'running',   'Lodhran',    'Lahore',      20, '2026-04-11 22:20:00', '20 min delay due to freight train crossing at Lodhran',3),
-(8,  'completed', 'Islamabad',  NULL,          0,  '2026-04-11 12:30:00', 'Arrived on schedule at Islamabad Railway Station',     12),
-(9,  'running',   'Hyderabad',  'Faisalabad',  0,  '2026-04-11 23:00:00', 'Running on schedule',                                 3),
-(10, 'running',   'Raiwind',    'Lahore',      10, '2026-04-11 22:40:00', '10 min delay at Raiwind corridor',                    12);
+(1,  'running',   'Hyderabad',  'Lahore',      0,  '2026-04-11 20:30:00', 'On time – running smoothly',                          1),
+(2,  'running',   'Multan',     'Rawalpindi',  15, '2026-04-11 22:15:00', 'Minor delay due to track maintenance near Multan',     1),
+(3,  'boarding',  'Lahore',     'Hyderabad',   0,  '2026-04-11 21:30:00', 'Boarding in progress at Lahore – Gate 4',              1),
+(4,  'running',   'Multan',     'Karachi',     30, '2026-04-12 07:00:00', 'Delayed due to signal fault near Multan',              1),
+(5,  'arrived',   'Peshawar',   NULL,          0,  '2026-04-11 08:30:00', 'Train arrived at Peshawar Cantonment on schedule',     1),
+(6,  'completed', 'Karachi',    NULL,          0,  '2026-04-11 22:00:00', 'Journey completed on time at Karachi City',            1),
+(7,  'running',   'Lodhran',    'Lahore',      20, '2026-04-11 22:20:00', '20 min delay due to freight train crossing at Lodhran',1),
+(8,  'completed', 'Islamabad',  NULL,          0,  '2026-04-11 12:30:00', 'Arrived on schedule at Islamabad Railway Station',     1),
+(9,  'running',   'Hyderabad',  'Faisalabad',  0,  '2026-04-11 23:00:00', 'Running on schedule',                                 1),
+(10, 'running',   'Raiwind',    'Lahore',      10, '2026-04-11 22:40:00', '10 min delay at Raiwind corridor',                    1);
 
 -- Cargo Shipments
 INSERT IGNORE INTO cargo_shipments (tracking_number, shipment_type, passenger_name, passenger_cnic, linked_booking_ref, sender_name, sender_phone, sender_address, receiver_name, receiver_phone, receiver_address, origin_city, destination_city, route_id, weight_kg, cargo_type, declared_value, shipping_fee, shipment_status, payment_status, special_instructions, booked_by, handled_by, booking_date, estimated_delivery, actual_delivery) VALUES
@@ -847,70 +843,70 @@ INSERT IGNORE INTO cargo_shipments (tracking_number, shipment_type, passenger_na
  'Khalid Textile Mills', '+92-321-9988776', 'Ferozepur Road, Lahore',
  'Karachi', 'Lahore', 1, 250.00, 'general', 45000.00, 3200.00,
  'delivered', 'paid', 'Handle with care. Textile goods.',
- 4, 2, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
+ 4, NULL, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
 
 ('PKR-CGO-2026-0002', 'cargo_delivery', NULL, NULL, NULL,
  'Sunrise Pharma Ltd', '+92-21-34512345', 'Korangi Industrial Area, Karachi',
  'Punjab Medical Store', '+92-42-35761234', 'Anarkali Bazaar, Lahore',
  'Karachi', 'Lahore', 1, 80.00, 'fragile', 120000.00, 2800.00,
  'in_transit', 'paid', 'Temperature sensitive medicines. Keep cool.',
- 5, 2, DATE_SUB(NOW(), INTERVAL 2 DAY), CURDATE(), NULL),
+ 5, NULL, DATE_SUB(NOW(), INTERVAL 2 DAY), CURDATE(), NULL),
 
 ('PKR-CGO-2026-0003', 'cargo_delivery', NULL, NULL, NULL,
  'Green Valley Farms', '+92-301-7654321', 'Shah Latif Town, Karachi',
  'Rawalpindi Fresh Market', '+92-51-5561234', 'Committee Chowk, Rawalpindi',
  'Karachi', 'Rawalpindi', 2, 500.00, 'perishable', 35000.00, 4500.00,
  'in_transit', 'paid', 'Perishable fresh produce. Refrigerated storage required.',
- 6, 3, DATE_SUB(NOW(), INTERVAL 1 DAY), CURDATE(), NULL),
+ 6, NULL, DATE_SUB(NOW(), INTERVAL 1 DAY), CURDATE(), NULL),
 
 ('PKR-CGO-2026-0004', 'travelling', 'Umer Farooq', '35202-1234567-3', 'PKR-2026-0003',
  'Umer Farooq', '+92-333-3333333', 'F-7, Islamabad',
  'Umer Farooq', '+92-333-3333333', 'F-7, Islamabad',
  'Lahore', 'Islamabad', 8, 45.00, 'general', 15000.00, 800.00,
  'delivered', 'paid', 'Passenger personal excess luggage.',
- 6, 12, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY)),
+ 6, NULL, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY)),
 
 ('PKR-CGO-2026-0005', 'cargo_delivery', NULL, NULL, NULL,
  'Hassan Traders', '+92-300-5544332', 'Saddar Bazar, Rawalpindi',
  'Multan Commercial Importers', '+92-61-4512233', 'Hussain Agahi, Multan',
  'Rawalpindi', 'Multan', NULL, 150.00, 'general', 250000.00, 2500.00,
  'pending', 'pending', 'Electronic goods. Insurance required.',
- 8, 3, NOW(), DATE_ADD(CURDATE(), INTERVAL 3 DAY), NULL),
+ 8, NULL, NOW(), DATE_ADD(CURDATE(), INTERVAL 3 DAY), NULL),
 
 ('PKR-CGO-2026-0006', 'cargo_delivery', NULL, NULL, NULL,
  'Peshawar Dry Fruits Co.', '+92-91-5271234', 'Qissa Khwani Bazaar, Peshawar',
  'Karachi Dry Fruits Hub', '+92-21-35681234', 'Bolton Market, Karachi',
  'Peshawar', 'Karachi', 5, 200.00, 'general', 180000.00, 3800.00,
  'in_transit', 'paid', 'Premium dry fruits. Handle carefully.',
- 9, 3, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
+ 9, NULL, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
 
 ('PKR-CGO-2026-0007', 'cargo_delivery', NULL, NULL, NULL,
  'Lahore Furniture Co.', '+92-42-36141234', 'Bilal Gunj, Lahore',
  'Islamabad Home Furnish', '+92-51-2271234', 'Blue Area, Islamabad',
  'Lahore', 'Islamabad', 8, 320.00, 'general', 85000.00, 2200.00,
  'delivered', 'paid', 'Fragile furniture items. Do not stack.',
- 10, 12, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
+ 10, NULL, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
 
 ('PKR-CGO-2026-0008', 'travelling', 'Zainab Ali', '45301-9876543-8', 'PKR-2026-0006',
  'Zainab Ali', '+92-333-6666666', 'Satellite Town, Quetta',
  'Zainab Ali', '+92-333-6666666', 'Satellite Town, Quetta',
  'Karachi', 'Peshawar', 5, 30.00, 'general', 8000.00, 600.00,
  'delivered', 'paid', 'Passenger excess luggage.',
- 9, 3, DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_SUB(CURDATE(), INTERVAL 4 DAY), DATE_SUB(NOW(), INTERVAL 4 DAY)),
+ 9, NULL, DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_SUB(CURDATE(), INTERVAL 4 DAY), DATE_SUB(NOW(), INTERVAL 4 DAY)),
 
 ('PKR-CGO-2026-0009', 'cargo_delivery', NULL, NULL, NULL,
  'Quetta Apple Growers', '+92-81-2821234', 'Zarghoon Road, Quetta',
  'Lahore Fruit Market', '+92-42-37421234', 'Badami Bagh, Lahore',
  'Quetta', 'Lahore', 7, 800.00, 'perishable', 60000.00, 6500.00,
  'in_transit', 'paid', 'Fresh apples. Keep in cool dry place.',
- 11, 13, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
+ 11, NULL, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
 
 ('PKR-CGO-2026-0010', 'cargo_delivery', NULL, NULL, NULL,
  'Faisalabad Textile Exports', '+92-41-8501234', 'D-Ground, Faisalabad',
  'Karachi Export Zone', '+92-21-35141234', 'Port Qasim, Karachi',
  'Faisalabad', 'Karachi', 9, 1200.00, 'general', 500000.00, 8500.00,
  'pending', 'pending', 'Export quality fabrics. Handle with care.',
- 14, 2, NOW(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
+ 14, NULL, NOW(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
 
 ('PKR-CGO-2026-0011', 'cargo_delivery', NULL, NULL, NULL,
  'Multan Mango Farms', '+92-61-6181234', 'Qasimpur Colony, Multan',
@@ -954,7 +950,7 @@ INSERT IGNORE INTO notifications (user_id, message, is_read, created_at) VALUES
 (24, 'Your booking PKR-2026-0025 has been cancelled. Refund of PKR 3,500 processed.',     1, DATE_SUB(NOW(), INTERVAL 6 DAY)),
 (4,  'Cargo shipment PKR-CGO-2026-0001 status: Delivered. Thank you for using Pakistan Railways Cargo.', 1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
 (9,  'Your cargo shipment PKR-CGO-2026-0008 has been delivered successfully.',            1, DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(2,  'Train Tezgam (Route 2) is running 15 minutes late. Passengers notified.',           0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+(1,  'Train Tezgam (Route 2) is running 15 minutes late. Passengers notified.',           0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 (1,  'System Alert: 3 bookings are pending payment for more than 24 hours.',              0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 (1,  'System Alert: Train Akbar Express (train_id=17) is currently under maintenance.',   0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
 (21, 'Your waitlist entry for Karachi–Peshawar (tomorrow) is at position 4. We will notify you if a seat becomes available.', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR));
@@ -969,11 +965,11 @@ INSERT IGNORE INTO audit_logs (user_id, user_role, action, module, description, 
 (1,  'admin',    'CREATE',   'routes',           'Created route: Karachi to Rawalpindi via Tezgam',                NULL,        'route_id=2',    2,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 9 DAY)),
 (1,  'admin',    'CREATE',   'discounts',        'Created discount code WELCOME10 – 10% off (max PKR 500)',         NULL,        'WELCOME10',     1,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 8 DAY)),
 (1,  'admin',    'CREATE',   'discounts',        'Created discount code STUDENT15 – 15% off for students',         NULL,        'STUDENT15',     2,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 8 DAY)),
-(2,  'employee', 'LOGIN',    'auth',             'Employee Ahmed Hassan logged in',                                 NULL,        NULL,            2,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 7 DAY)),
-(2,  'employee', 'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0001 for user Ali Khan',               'pending',   'confirmed',     1,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 7 DAY)),
-(2,  'employee', 'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0002 for user Sara Ahmad',             'pending',   'confirmed',     2,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 6 DAY)),
-(3,  'employee', 'LOGIN',    'auth',             'Employee Fatima Ali logged in',                                   NULL,        NULL,            3,  '192.168.1.102', DATE_SUB(NOW(), INTERVAL 6 DAY)),
-(3,  'employee', 'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0005 for user Hassan Raza',            'pending',   'confirmed',     5,  '192.168.1.102', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(1,  'admin',    'LOGIN',    'auth',             'System auto-login – booking confirmed',                       NULL,        NULL,            1,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(1,  'admin',    'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0001 for user Ali Khan',               'pending',   'confirmed',     1,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(1,  'admin',    'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0002 for user Sara Ahmad',             'pending',   'confirmed',     2,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(1,  'admin',    'LOGIN',    'auth',             'System auto-login – booking confirmed',                           NULL,        NULL,            1,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(1,  'admin',    'UPDATE',   'bookings',         'Confirmed booking PKR-2026-0005 for user Hassan Raza',            'pending',   'confirmed',     5,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 5 DAY)),
 (4,  'user',     'LOGIN',    'auth',             'User Ali Khan logged in',                                         NULL,        NULL,            4,  '103.245.12.56', DATE_SUB(NOW(), INTERVAL 5 DAY)),
 (4,  'user',     'CREATE',   'bookings',         'Created booking PKR-2026-0001 – 2 seats Karachi to Lahore',      NULL,        'PKR-2026-0001', 1,  '103.245.12.56', DATE_SUB(NOW(), INTERVAL 5 DAY)),
 (4,  'user',     'CREATE',   'payments',         'Payment TXN-PKR-001 completed – PKR 7,000 for booking 1',        'pending',   'completed',     1,  '103.245.12.56', DATE_SUB(NOW(), INTERVAL 5 DAY)),
@@ -985,10 +981,10 @@ INSERT IGNORE INTO audit_logs (user_id, user_role, action, module, description, 
 (9,  'user',     'CREATE',   'bookings',         'Created booking PKR-2026-0006 – 4 seats Karachi to Peshawar',   NULL,        'PKR-2026-0006', 6,  '182.76.14.200', DATE_SUB(NOW(), INTERVAL 2 DAY)),
 (1,  'admin',    'UPDATE',   'trains',           'Set train Akbar Express (id=17) status to maintenance',          'active',    'maintenance',   17, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 3 DAY)),
 (1,  'admin',    'CREATE',   'discounts',        'Created RAMZAN30 – 30% Ramzan special discount',                 NULL,        'RAMZAN30',      6,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(12, 'employee', 'LOGIN',    'auth',             'Employee Imran Siddiqui logged in',                              NULL,        NULL,            12, '192.168.2.50',  DATE_SUB(NOW(), INTERVAL 4 HOUR)),
-(12, 'employee', 'UPDATE',   'live_train_status','Marked route 8 (Lahore–Islamabad) as completed',                'running',   'completed',     8,  '192.168.2.50',  DATE_SUB(NOW(), INTERVAL 3 HOUR)),
-(2,  'employee', 'UPDATE',   'live_train_status','Updated route 2 (Tezgam): 15 min delay near Multan',            'scheduled', 'delayed',       2,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
-(2,  'employee', 'UPDATE',   'live_train_status','Updated route 4 (Pakistan Express): 30 min delay near Multan', 'scheduled', 'delayed',       4,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+(1,  'admin',    'LOGIN',    'auth',             'System auto-login – live status update',                      NULL,        NULL,            1,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 4 HOUR)),
+(1,  'admin',    'UPDATE',   'live_train_status','Marked route 8 (Lahore–Islamabad) as completed',                'running',   'completed',     8,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+(1,  'admin',    'UPDATE',   'live_train_status','Updated route 2 (Tezgam): 15 min delay near Multan',            'scheduled', 'delayed',       2,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+(1,  'admin',    'UPDATE',   'live_train_status','Updated route 4 (Pakistan Express): 30 min delay near Multan', 'scheduled', 'delayed',       4,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 (14, 'user',     'CREATE',   'bookings',         'Created booking PKR-2026-0013 – 2 seats Karachi to Lahore',     NULL,        'PKR-2026-0013', 13, '117.104.66.5',  DATE_SUB(NOW(), INTERVAL 5 DAY)),
 (22, 'user',     'UPDATE',   'bookings',         'Cancelled booking PKR-2026-0022 – schedule conflict',           'confirmed', 'cancelled',     22, '203.81.22.111', DATE_SUB(NOW(), INTERVAL 1 DAY)),
 (1,  'admin',    'DELETE',   'login_attempts',   'Cleared login attempt records older than 30 days',              NULL,        NULL,            NULL,'192.168.1.100', NOW());
@@ -1007,55 +1003,55 @@ INSERT IGNORE INTO booking_discounts (booking_id, discount_id, discount_amount) 
 
 -- Lost & Found Items
 INSERT IGNORE INTO lost_found_items (record_type, route_id, reported_by, assigned_to, claimed_by, item_name, category, description, location_hint, contact_phone, status, resolution_note, resolved_at) VALUES
-('lost',  1,  4,  2,    NULL, 'Black Leather Wallet',   'wallet',      'Black leather wallet containing CNIC and PKR 5,000 cash. Has a family photo inside.',       'Economy class compartment, Green Line Karachi to Lahore',       '+92-300-1111111', 'under_review', NULL, NULL),
-('found', 1,  2,  2,    NULL, 'Ladies Handbag (Brown)', 'bag',         'Brown ladies handbag containing cosmetics and documents. Found on seat E-07 after journey.',  'Seat E-07, Economy class, Green Line Express Karachi-Lahore',    '+92-321-7654321', 'reported',     NULL, NULL),
-('lost',  8,  6,  12,   NULL, 'Samsung Galaxy S23',     'electronics', 'Black Samsung Galaxy S23 with cracked screen protector. May have slipped under seat.',       'Premium class coach P, Allama Iqbal Express Lahore-Islamabad',  '+92-333-3333333', 'reported',     NULL, NULL),
-('found', 3,  3,  3,    NULL, 'Child Purple Backpack',  'bag',         'Small purple backpack with cartoon characters. Contains school books and a lunch box.',        'Economy class near door, Karakoram Express Lahore-Karachi',     '+92-333-9876543', 'matched',      'Owner identified via booking records – family contacted', NULL),
-('lost',  5,  9,  3,    NULL, 'Gold Necklace',          'jewelry',     'Gold necklace with heart-shaped locket. Family heirloom from grandmother. Lost during journey.','Luxury class compartment L-1, Khyber Mail Karachi-Peshawar',  '+92-333-6666666', 'reported',     NULL, NULL),
-('found', 2,  2,  2,    8,    'Toyota Car Keys',        'keys',        'Toyota car keys with red key chain and remote. Found on seat E-02 after train departed.',      'Seat E-02, Tezgam Express Karachi-Rawalpindi',                  '+92-321-7654321', 'claimed',      'Owner Hassan Raza claimed keys at Rawalpindi station', '2026-04-09 15:30:00'),
-('lost',  7,  11, 13,   NULL, 'Blue Samsonite Suitcase','luggage',     'Medium blue Samsonite suitcase. Contains formal clothes and important documents.',            'Luggage compartment, Millat Express Quetta-Lahore',             '+92-321-8888888', 'under_review', NULL, NULL),
-('found', 8,  12, 12,   6,    'Reading Glasses',        'accessories', 'Black-framed reading glasses in a brown leather case. Found in coach P-01 after cleaning.',   'Seat P-01, Allama Iqbal Express Lahore-Islamabad',              '+92-345-1122334', 'claimed',      'Umer Farooq reclaimed glasses at Islamabad station', '2026-04-08 14:00:00'),
-('lost',  9,  14, 3,    NULL, 'Dell Laptop Bag',        'electronics', 'Black Dell laptop bag with Dell Inspiron laptop and charger. Accidentally left on seat.',      'Economy class seat E-03, Shalimar Express Faisalabad-Karachi',  '+92-300-9988776', 'reported',     NULL, NULL),
-('found', 1,  2,  2,    NULL, 'White Prayer Cap',       'accessories', 'White embroidered prayer cap (topi/kufi). Found in economy compartment during coach cleaning.','Economy class, Green Line Express Karachi-Lahore',              '+92-321-7654321', 'reported',     NULL, NULL);
+('lost',  1,  4,  NULL, NULL, 'Black Leather Wallet',   'wallet',      'Black leather wallet containing CNIC and PKR 5,000 cash. Has a family photo inside.',       'Economy class compartment, Green Line Karachi to Lahore',       '+92-300-1111111', 'under_review', NULL, NULL),
+('found', 1,  1,  NULL, NULL, 'Ladies Handbag (Brown)', 'bag',         'Brown ladies handbag containing cosmetics and documents. Found on seat E-07 after journey.',  'Seat E-07, Economy class, Green Line Express Karachi-Lahore',    '+92-300-1234567', 'reported',     NULL, NULL),
+('lost',  8,  6,  NULL, NULL, 'Samsung Galaxy S23',     'electronics', 'Black Samsung Galaxy S23 with cracked screen protector. May have slipped under seat.',       'Premium class coach P, Allama Iqbal Express Lahore-Islamabad',  '+92-333-3333333', 'reported',     NULL, NULL),
+('found', 3,  1,  NULL, NULL, 'Child Purple Backpack',  'bag',         'Small purple backpack with cartoon characters. Contains school books and a lunch box.',        'Economy class near door, Karakoram Express Lahore-Karachi',     '+92-300-1234567', 'matched',      'Owner identified via booking records – family contacted', NULL),
+('lost',  5,  9,  NULL, NULL, 'Gold Necklace',          'jewelry',     'Gold necklace with heart-shaped locket. Family heirloom from grandmother. Lost during journey.','Luxury class compartment L-1, Khyber Mail Karachi-Peshawar',  '+92-333-6666666', 'reported',     NULL, NULL),
+('found', 2,  1,  NULL, 8,    'Toyota Car Keys',        'keys',        'Toyota car keys with red key chain and remote. Found on seat E-02 after train departed.',      'Seat E-02, Tezgam Express Karachi-Rawalpindi',                  '+92-300-1234567', 'claimed',      'Owner Hassan Raza claimed keys at Rawalpindi station', '2026-04-09 15:30:00'),
+('lost',  7,  11, NULL, NULL, 'Blue Samsonite Suitcase','luggage',     'Medium blue Samsonite suitcase. Contains formal clothes and important documents.',            'Luggage compartment, Millat Express Quetta-Lahore',             '+92-321-8888888', 'under_review', NULL, NULL),
+('found', 8,  1,  NULL, 6,    'Reading Glasses',        'accessories', 'Black-framed reading glasses in a brown leather case. Found in coach P-01 after cleaning.',   'Seat P-01, Allama Iqbal Express Lahore-Islamabad',              '+92-300-1234567', 'claimed',      'Umer Farooq reclaimed glasses at Islamabad station', '2026-04-08 14:00:00'),
+('lost',  9,  14, NULL, NULL, 'Dell Laptop Bag',        'electronics', 'Black Dell laptop bag with Dell Inspiron laptop and charger. Accidentally left on seat.',      'Economy class seat E-03, Shalimar Express Faisalabad-Karachi',  '+92-300-9988776', 'reported',     NULL, NULL),
+('found', 1,  1,  NULL, NULL, 'White Prayer Cap',       'accessories', 'White embroidered prayer cap (topi/kufi). Found in economy compartment during coach cleaning.','Economy class, Green Line Express Karachi-Lahore',              '+92-300-1234567', 'reported',     NULL, NULL);
 
 -- Train Maintenance
 INSERT IGNORE INTO train_maintenance (train_id, maintenance_type, scheduled_date, status, assigned_employee_id, notes) VALUES
-(1,  'inspection', DATE_SUB(CURDATE(), INTERVAL 30 DAY), 'completed',   2,    'Monthly safety inspection. All systems normal. Brakes, lights, and emergency equipment checked.'),
-(2,  'inspection', DATE_SUB(CURDATE(), INTERVAL 25 DAY), 'completed',   3,    'Routine inspection completed. AC units serviced and coolant refilled. All coaches cleared.'),
-(3,  'cleaning',   DATE_SUB(CURDATE(), INTERVAL 14 DAY), 'completed',   12,   'Deep cleaning of all 12 compartments. Upholstery cleaned and sanitized. Washrooms disinfected.'),
-(4,  'repair',     DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'completed',   2,    'Replaced faulty door lock mechanism on coach 3. All locks tested and operational.'),
-(5,  'inspection', DATE_SUB(CURDATE(), INTERVAL 7 DAY),  'completed',   3,    'Pre-journey inspection passed. Engine performance satisfactory. Pantograph checked.'),
-(7,  'overhaul',   DATE_SUB(CURDATE(), INTERVAL 5 DAY),  'completed',   13,   'Full overhaul of diesel engine and electrical distribution system. Train certified ready for service.'),
-(17, 'repair',     CURDATE(),                             'in_progress', 2,    'Axle bearing replacement on coach 5. Train temporarily out of service. Expected completion: tomorrow.'),
-(8,  'cleaning',   DATE_ADD(CURDATE(), INTERVAL 1 DAY),  'scheduled',   12,   'Scheduled weekly deep clean and disinfection. Seat covers to be replaced in economy class.'),
-(6,  'inspection', DATE_ADD(CURDATE(), INTERVAL 2 DAY),  'scheduled',   3,    'Scheduled bi-monthly safety and mechanical inspection including bogie check.'),
-(9,  'inspection', DATE_ADD(CURDATE(), INTERVAL 3 DAY),  'scheduled',   13,   'Routine inspection and lubrication of running gear and wheel flanges.'),
-(10, 'cleaning',   DATE_ADD(CURDATE(), INTERVAL 4 DAY),  'scheduled',   12,   'Routine full-train cleaning and pest control treatment.'),
-(11, 'inspection', DATE_ADD(CURDATE(), INTERVAL 5 DAY),  'scheduled',   2,    'Monthly safety inspection including brake test and fire extinguisher check.'),
-(15, 'overhaul',   DATE_ADD(CURDATE(), INTERVAL 7 DAY),  'scheduled',   3,    'Scheduled engine overhaul and traction motor service. Train out of service for 3 days.'),
-(20, 'repair',     DATE_ADD(CURDATE(), INTERVAL 2 DAY),  'scheduled',   13,   'Window glass replacement in coaches 2 and 4. Minor seat repair in luxury class.');
+(1,  'inspection', DATE_SUB(CURDATE(), INTERVAL 30 DAY), 'completed',   NULL, 'Monthly safety inspection. All systems normal. Brakes, lights, and emergency equipment checked.'),
+(2,  'inspection', DATE_SUB(CURDATE(), INTERVAL 25 DAY), 'completed',   NULL, 'Routine inspection completed. AC units serviced and coolant refilled. All coaches cleared.'),
+(3,  'cleaning',   DATE_SUB(CURDATE(), INTERVAL 14 DAY), 'completed',   NULL, 'Deep cleaning of all 12 compartments. Upholstery cleaned and sanitized. Washrooms disinfected.'),
+(4,  'repair',     DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'completed',   NULL, 'Replaced faulty door lock mechanism on coach 3. All locks tested and operational.'),
+(5,  'inspection', DATE_SUB(CURDATE(), INTERVAL 7 DAY),  'completed',   NULL, 'Pre-journey inspection passed. Engine performance satisfactory. Pantograph checked.'),
+(7,  'overhaul',   DATE_SUB(CURDATE(), INTERVAL 5 DAY),  'completed',   NULL, 'Full overhaul of diesel engine and electrical distribution system. Train certified ready for service.'),
+(17, 'repair',     CURDATE(),                             'in_progress', NULL, 'Axle bearing replacement on coach 5. Train temporarily out of service. Expected completion: tomorrow.'),
+(8,  'cleaning',   DATE_ADD(CURDATE(), INTERVAL 1 DAY),  'scheduled',   NULL, 'Scheduled weekly deep clean and disinfection. Seat covers to be replaced in economy class.'),
+(6,  'inspection', DATE_ADD(CURDATE(), INTERVAL 2 DAY),  'scheduled',   NULL, 'Scheduled bi-monthly safety and mechanical inspection including bogie check.'),
+(9,  'inspection', DATE_ADD(CURDATE(), INTERVAL 3 DAY),  'scheduled',   NULL, 'Routine inspection and lubrication of running gear and wheel flanges.'),
+(10, 'cleaning',   DATE_ADD(CURDATE(), INTERVAL 4 DAY),  'scheduled',   NULL, 'Routine full-train cleaning and pest control treatment.'),
+(11, 'inspection', DATE_ADD(CURDATE(), INTERVAL 5 DAY),  'scheduled',   NULL, 'Monthly safety inspection including brake test and fire extinguisher check.'),
+(15, 'overhaul',   DATE_ADD(CURDATE(), INTERVAL 7 DAY),  'scheduled',   NULL, 'Scheduled engine overhaul and traction motor service. Train out of service for 3 days.'),
+(20, 'repair',     DATE_ADD(CURDATE(), INTERVAL 2 DAY),  'scheduled',   NULL, 'Window glass replacement in coaches 2 and 4. Minor seat repair in luxury class.');
 
 -- Crew Assignments
 INSERT IGNORE INTO crew_assignments (route_id, employee_id, role_title, shift_start, shift_end, assignment_status, notes) VALUES
--- Today's routes (April 11, 2026)
-(1,  2,  'Train Conductor',     '2026-04-11 07:30:00', '2026-04-11 21:00:00', 'checked_in', 'Lead conductor Green Line Express Karachi-Lahore'),
-(1,  3,  'Ticket Checker',      '2026-04-11 07:30:00', '2026-04-11 21:00:00', 'checked_in', 'Economy and premium class ticket verification, Green Line'),
-(2,  12, 'Train Conductor',     '2026-04-11 07:00:00', '2026-04-11 22:30:00', 'checked_in', 'Lead conductor Tezgam express Karachi-Rawalpindi'),
-(2,  13, 'Catering Supervisor', '2026-04-11 07:00:00', '2026-04-11 22:30:00', 'checked_in', 'Oversee food and beverage service aboard Tezgam'),
-(3,  3,  'Train Conductor',     '2026-04-11 08:30:00', '2026-04-11 22:00:00', 'assigned',   'Conductor Karakoram Express Lahore-Karachi'),
-(4,  2,  'Ticket Checker',      '2026-04-11 09:30:00', '2026-04-12 07:00:00', 'checked_in', 'Overnight journey ID and ticket verification, Pakistan Express'),
-(5,  13, 'Train Conductor',     '2026-04-11 05:30:00', '2026-04-11 09:00:00', 'completed',  'Khyber Mail Karachi-Peshawar – journey completed'),
-(6,  3,  'Station Captain',     '2026-04-11 10:30:00', '2026-04-11 22:30:00', 'completed',  'Awam Express Multan-Karachi – journey completed'),
-(7,  12, 'Train Conductor',     '2026-04-11 04:30:00', '2026-04-11 22:30:00', 'checked_in', 'Millat Express Quetta-Lahore long-haul service'),
-(8,  2,  'Train Conductor',     '2026-04-11 06:30:00', '2026-04-11 13:00:00', 'completed',  'Allama Iqbal Express Lahore-Islamabad – journey completed'),
-(9,  13, 'Ticket Checker',      '2026-04-11 08:00:00', '2026-04-11 23:30:00', 'checked_in', 'Shalimar Express Faisalabad-Karachi, economy class'),
-(10, 3,  'Train Conductor',     '2026-04-11 09:00:00', '2026-04-11 23:00:00', 'checked_in', 'Jaffar Express Hyderabad-Lahore, all classes'),
--- Tomorrow's routes (April 12, 2026)
-(11, 2,  'Train Conductor',     '2026-04-12 07:30:00', '2026-04-12 21:00:00', 'assigned', 'Green Line Karachi-Lahore tomorrow'),
-(11, 13, 'Ticket Checker',      '2026-04-12 07:30:00', '2026-04-12 21:00:00', 'assigned', 'Economy and premium ticket verification tomorrow, Green Line'),
-(12, 3,  'Train Conductor',     '2026-04-12 07:00:00', '2026-04-12 22:30:00', 'assigned', 'Tezgam Karachi-Rawalpindi tomorrow'),
-(15, 12, 'Train Conductor',     '2026-04-12 05:30:00', '2026-04-12 09:00:00', 'assigned', 'Khyber Mail Karachi-Peshawar tomorrow'),
-(18, 13, 'Station Captain',     '2026-04-12 06:30:00', '2026-04-12 13:00:00', 'assigned', 'Allama Iqbal Express Lahore-Islamabad tomorrow');
+-- Today's routes
+(1,  NULL, 'Train Conductor',     '2026-04-11 07:30:00', '2026-04-11 21:00:00', 'checked_in', 'Lead conductor Green Line Express Karachi-Lahore'),
+(1,  NULL, 'Ticket Checker',      '2026-04-11 07:30:00', '2026-04-11 21:00:00', 'checked_in', 'Economy and premium class ticket verification, Green Line'),
+(2,  NULL, 'Train Conductor',     '2026-04-11 07:00:00', '2026-04-11 22:30:00', 'checked_in', 'Lead conductor Tezgam express Karachi-Rawalpindi'),
+(2,  NULL, 'Catering Supervisor', '2026-04-11 07:00:00', '2026-04-11 22:30:00', 'checked_in', 'Oversee food and beverage service aboard Tezgam'),
+(3,  NULL, 'Train Conductor',     '2026-04-11 08:30:00', '2026-04-11 22:00:00', 'assigned',   'Conductor Karakoram Express Lahore-Karachi'),
+(4,  NULL, 'Ticket Checker',      '2026-04-11 09:30:00', '2026-04-12 07:00:00', 'checked_in', 'Overnight journey ID and ticket verification, Pakistan Express'),
+(5,  NULL, 'Train Conductor',     '2026-04-11 05:30:00', '2026-04-11 09:00:00', 'completed',  'Khyber Mail Karachi-Peshawar'),
+(6,  NULL, 'Station Captain',     '2026-04-11 10:30:00', '2026-04-11 22:30:00', 'completed',  'Awam Express Multan-Karachi'),
+(7,  NULL, 'Train Conductor',     '2026-04-11 04:30:00', '2026-04-11 22:30:00', 'checked_in', 'Millat Express Quetta-Lahore long-haul service'),
+(8,  NULL, 'Train Conductor',     '2026-04-11 06:30:00', '2026-04-11 13:00:00', 'completed',  'Allama Iqbal Express Lahore-Islamabad'),
+(9,  NULL, 'Ticket Checker',      '2026-04-11 08:00:00', '2026-04-11 23:30:00', 'checked_in', 'Shalimar Express Faisalabad-Karachi, economy class'),
+(10, NULL, 'Train Conductor',     '2026-04-11 09:00:00', '2026-04-11 23:00:00', 'checked_in', 'Jaffar Express Hyderabad-Lahore, all classes'),
+-- Tomorrow's routes
+(11, NULL, 'Train Conductor',     '2026-04-12 07:30:00', '2026-04-12 21:00:00', 'assigned', 'Green Line Karachi-Lahore tomorrow'),
+(11, NULL, 'Ticket Checker',      '2026-04-12 07:30:00', '2026-04-12 21:00:00', 'assigned', 'Economy and premium ticket verification tomorrow, Green Line'),
+(12, NULL, 'Train Conductor',     '2026-04-12 07:00:00', '2026-04-12 22:30:00', 'assigned', 'Tezgam Karachi-Rawalpindi tomorrow'),
+(15, NULL, 'Train Conductor',     '2026-04-12 05:30:00', '2026-04-12 09:00:00', 'assigned', 'Khyber Mail Karachi-Peshawar tomorrow'),
+(18, NULL, 'Station Captain',     '2026-04-12 06:30:00', '2026-04-12 13:00:00', 'assigned', 'Allama Iqbal Express Lahore-Islamabad tomorrow');
 
 -- ========================================
 -- MORE TRAINS (IDs 21-35)
@@ -2078,17 +2074,17 @@ INSERT IGNORE INTO payments (booking_id, user_id, amount, payment_method, transa
 -- More Crew Assignments (days +3 to +7, future routes)
 INSERT IGNORE INTO crew_assignments (route_id, employee_id, role_title, shift_start, shift_end, assignment_status, notes) VALUES
 -- Day +3 routes
-(21, 2,  'Train Conductor',  DATE_ADD('2026-06-30 06:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 15:00:00', INTERVAL 3 DAY), 'assigned', 'Sukkur Express Karachi-Sukkur'),
-(22, 13, 'Ticket Checker',   DATE_ADD('2026-06-30 06:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 3 DAY), 'assigned', 'Bolan Mail Quetta-Karachi'),
-(23, 12, 'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 3 DAY), 'assigned', 'Rehman Baba Peshawar-Lahore'),
-(24, 3,  'Station Captain',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:00:00', INTERVAL 3 DAY), 'assigned', 'Shah Hussain Lahore-Multan'),
-(25, 2,  'Ticket Checker',   DATE_ADD('2026-06-30 09:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:30:00', INTERVAL 3 DAY), 'assigned', 'Subak Raftar Islamabad-Lahore'),
+(21, NULL, 'Train Conductor',  DATE_ADD('2026-06-30 06:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 15:00:00', INTERVAL 3 DAY), 'assigned', 'Sukkur Express Karachi-Sukkur'),
+(22, NULL, 'Ticket Checker',   DATE_ADD('2026-06-30 06:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 3 DAY), 'assigned', 'Bolan Mail Quetta-Karachi'),
+(23, NULL, 'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 3 DAY), 'assigned', 'Rehman Baba Peshawar-Lahore'),
+(24, NULL, 'Station Captain',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:00:00', INTERVAL 3 DAY), 'assigned', 'Shah Hussain Lahore-Multan'),
+(25, NULL, 'Ticket Checker',   DATE_ADD('2026-06-30 09:00:00', INTERVAL 3 DAY), DATE_ADD('2026-06-30 13:30:00', INTERVAL 3 DAY), 'assigned', 'Subak Raftar Islamabad-Lahore'),
 -- Day +4 routes
-(30, 3,  'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 23:00:00', INTERVAL 4 DAY), 'assigned', 'Sukkur Express Sukkur-Lahore long haul'),
-(31, 12, 'Catering Supervisor', DATE_ADD('2026-06-30 06:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 4 DAY), 'assigned', 'Bolan Mail Karachi-Quetta'),
-(32, 13, 'Train Conductor',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 16:00:00', INTERVAL 4 DAY), 'assigned', 'Rehman Baba Lahore-Peshawar'),
-(36, 2,  'Train Conductor',  DATE_ADD('2026-06-30 05:00:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 18:30:00', INTERVAL 5 DAY), 'assigned', 'Green Line Lahore-Karachi (reverse)'),
-(38, 13, 'Ticket Checker',   DATE_ADD('2026-06-30 07:30:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 5 DAY), 'assigned', 'Allama Iqbal Islamabad-Lahore');
+(30, NULL, 'Train Conductor',  DATE_ADD('2026-06-30 05:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 23:00:00', INTERVAL 4 DAY), 'assigned', 'Sukkur Express Sukkur-Lahore long haul'),
+(31, NULL, 'Catering Supervisor', DATE_ADD('2026-06-30 06:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 22:30:00', INTERVAL 4 DAY), 'assigned', 'Bolan Mail Karachi-Quetta'),
+(32, NULL, 'Train Conductor',  DATE_ADD('2026-06-30 07:30:00', INTERVAL 4 DAY), DATE_ADD('2026-06-30 16:00:00', INTERVAL 4 DAY), 'assigned', 'Rehman Baba Lahore-Peshawar'),
+(36, NULL, 'Train Conductor',  DATE_ADD('2026-06-30 05:00:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 18:30:00', INTERVAL 5 DAY), 'assigned', 'Green Line Lahore-Karachi (reverse)'),
+(38, NULL, 'Ticket Checker',   DATE_ADD('2026-06-30 07:30:00', INTERVAL 5 DAY), DATE_ADD('2026-06-30 14:00:00', INTERVAL 5 DAY), 'assigned', 'Allama Iqbal Islamabad-Lahore');
 
 -- More Cargo Shipments
 INSERT IGNORE INTO cargo_shipments (tracking_number, shipment_type, passenger_name, passenger_cnic, linked_booking_ref, sender_name, sender_phone, sender_address, receiver_name, receiver_phone, receiver_address, origin_city, destination_city, route_id, weight_kg, cargo_type, declared_value, shipping_fee, shipment_status, payment_status, special_instructions, booked_by, handled_by, booking_date, estimated_delivery, actual_delivery) VALUES
@@ -2097,51 +2093,51 @@ INSERT IGNORE INTO cargo_shipments (tracking_number, shipment_type, passenger_na
  'Karachi Electronics Hub', '+92-21-35811234', 'Saddar, Karachi',
  'Rawalpindi', 'Karachi', 2, 180.00, 'fragile', 350000.00, 4200.00,
  'pending', 'paid', 'LED TVs and monitors. Fragile – handle with extreme care.',
- 4, 2, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
+ 4, NULL, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 1 DAY), NULL),
 
 ('PKR-CGO-2026-0014', 'cargo_delivery', NULL, NULL, NULL,
  'Lahore Book Depot', '+92-42-37301234', 'Urdu Bazar, Lahore',
  'Islamabad University Library', '+92-51-9261234', 'Sector H-10, Islamabad',
  'Lahore', 'Islamabad', 8, 350.00, 'general', 85000.00, 1800.00,
  'delivered', 'paid', 'Educational books and journals. Keep dry.',
- 5, 12, DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
+ 5, NULL, DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
 
 ('PKR-CGO-2026-0015', 'cargo_delivery', NULL, NULL, NULL,
  'Peshawar Marble Exports', '+92-91-5601234', 'Industrial Estate, Peshawar',
  'Karachi Construction Co.', '+92-21-32561234', 'M A Jinnah Road, Karachi',
  'Peshawar', 'Karachi', 5, 2000.00, 'general', 500000.00, 12000.00,
  'in_transit', 'paid', 'Marble slabs. Use forklift only. Do not drop.',
- 9, 3, DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
+ 9, NULL, DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
 
 ('PKR-CGO-2026-0016', 'travelling', 'Ali Khan', '42101-1122334-9', 'PKR-2026-0001',
  'Ali Khan', '+92-300-1111111', 'DHA Phase 5, Karachi',
  'Ali Khan', '+92-300-1111111', 'DHA Phase 5, Karachi',
  'Karachi', 'Lahore', 1, 25.00, 'general', 10000.00, 500.00,
  'delivered', 'paid', 'Passenger personal luggage – 1 suitcase.',
- 4, 2, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
+ 4, NULL, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
 
 ('PKR-CGO-2026-0017', 'cargo_delivery', NULL, NULL, NULL,
  'Faisalabad Yarn Mills', '+92-41-8751234', 'Khurrianwala, Faisalabad',
  'Lahore Textile Market', '+92-42-37651234', 'Azam Cloth Market, Lahore',
  'Faisalabad', 'Lahore', NULL, 500.00, 'general', 120000.00, 2500.00,
  'pending', 'pending', 'Cotton yarn bundles. Keep away from moisture.',
- 14, 12, NOW(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
+ 14, NULL, NOW(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), NULL),
 
 ('PKR-CGO-2026-0018', 'cargo_delivery', NULL, NULL, NULL,
  'Quetta Dry Fruit House', '+92-81-2881234', 'Jinnah Road, Quetta',
  'Islamabad Gift Shop', '+92-51-2821234', 'Super Market, F-6, Islamabad',
  'Quetta', 'Islamabad', NULL, 120.00, 'general', 75000.00, 3200.00,
  'in_transit', 'paid', 'Premium dry fruits gift packs. Fragile packaging.',
- 11, 13, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY), NULL);
+ 11, NULL, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY), NULL);
 
 -- More Lost & Found
 INSERT IGNORE INTO lost_found_items (record_type, route_id, reported_by, assigned_to, claimed_by, item_name, category, description, location_hint, contact_phone, status, resolution_note, resolved_at) VALUES
-('lost',  6,  8,  3,  NULL, 'Silver Bracelet',       'jewelry',     'Silver bracelet with engraving. Sentimental value. Lost somewhere in economy coach.',              'Economy coach, Awam Express Multan-Karachi',      '+92-321-5555555', 'under_review', NULL, NULL),
-('found', 4,  2,  2,  NULL, 'iPhone 15 Pro Max',     'electronics', 'Black iPhone 15 Pro Max found on seat P-02. Screen locked. Awaiting owner contact.',              'Seat P-02, Pakistan Express Islamabad-Karachi',    '+92-321-7654321', 'reported',     NULL, NULL),
-('lost',  10, 10, 12, NULL, 'Prescription Glasses',  'accessories', 'Brown rimmed prescription glasses in a hard case. Left on window sill.',                          'Window seat, Jaffar Express Hyderabad-Lahore',     '+92-321-8888888', 'matched',      'Identified via booking – glasses returned to owner at Lahore station', NULL),
-('found', 5,  3,  3,  NULL, 'Cash Envelope',         'wallet',      'White envelope containing PKR 15,000 cash. No ID inside. Found under seat E-04.',                  'Seat E-04, Khyber Mail Karachi-Peshawar',           '+92-333-9876543', 'under_review', 'Cross-checking with passenger manifest for possible owner', NULL),
-('lost',  11, 10, 2,  NULL, 'Passport & CNIC',       'documents',   'Pakistani passport (green) and CNIC card. Urgent – passenger has flight in 2 days!',              'Seat E-02, Green Line Karachi-Lahore (tomorrow)',   '+92-321-8888888', 'reported',     NULL, NULL),
-('found', 2,  2,  12, NULL, 'Umbrella (Blue)',       'accessories', 'Large blue umbrella with wooden handle. Found in overhead luggage rack.',                         'Coach P-01, Tezgam Karachi-Rawalpindi',             '+92-321-7654321', 'reported',     NULL, NULL);
+('lost',  6,  8,  NULL, NULL, 'Silver Bracelet',       'jewelry',     'Silver bracelet with engraving. Sentimental value. Lost somewhere in economy coach.',              'Economy coach, Awam Express Multan-Karachi',      '+92-321-5555555', 'under_review', NULL, NULL),
+('found', 4,  1,  NULL, NULL, 'iPhone 15 Pro Max',     'electronics', 'Black iPhone 15 Pro Max found on seat P-02. Screen locked. Awaiting owner contact.',              'Seat P-02, Pakistan Express Islamabad-Karachi',    '+92-300-1234567', 'reported',     NULL, NULL),
+('lost',  10, 10, NULL, NULL, 'Prescription Glasses',  'accessories', 'Brown rimmed prescription glasses in a hard case. Left on window sill.',                          'Window seat, Jaffar Express Hyderabad-Lahore',     '+92-321-8888888', 'matched',      'Identified via booking – glasses returned to owner at Lahore station', NULL),
+('found', 5,  1,  NULL, NULL, 'Cash Envelope',         'wallet',      'White envelope containing PKR 15,000 cash. No ID inside. Found under seat E-04.',                  'Seat E-04, Khyber Mail Karachi-Peshawar',           '+92-300-1234567', 'under_review', 'Cross-checking with passenger manifest for possible owner', NULL),
+('lost',  11, 10, NULL, NULL, 'Passport & CNIC',       'documents',   'Pakistani passport (green) and CNIC card. Urgent – passenger has flight in 2 days!',              'Seat E-02, Green Line Karachi-Lahore (tomorrow)',   '+92-321-8888888', 'reported',     NULL, NULL),
+('found', 2,  1,  NULL, NULL, 'Umbrella (Blue)',       'accessories', 'Large blue umbrella with wooden handle. Found in overhead luggage rack.',                         'Coach P-01, Tezgam Karachi-Rawalpindi',             '+92-300-1234567', 'reported',     NULL, NULL);
 
 -- More Waitlist Entries
 INSERT IGNORE INTO waitlist_entries (route_id, user_id, passenger_manifest, passenger_count, preferred_class, queue_status, queue_position, note, linked_booking_id) VALUES
@@ -2158,14 +2154,14 @@ INSERT IGNORE INTO waitlist_entries (route_id, user_id, passenger_manifest, pass
 
 -- More Audit Logs
 INSERT IGNORE INTO audit_logs (user_id, user_role, action, module, description, old_value, new_value, record_id, ip_address, created_at) VALUES
-(2,  'employee', 'CHECK_IN',  'bookings',  'Checked in passenger for booking PKR-2026-0013 (Green Line)',        NULL,       NULL,             13, '192.168.1.101', DATE_SUB(NOW(), INTERVAL 3 DAY)),
-(3,  'employee', 'CHECK_IN',  'bookings',  'Checked in passengers for booking PKR-2026-0015 (Allama Iqbal)',      NULL,       NULL,             15, '192.168.1.102', DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(12, 'employee', 'UPDATE',    'cargo',     'Updated cargo PKR-CGO-2026-0001 status to delivered',                 'in_transit','delivered',      1,  '192.168.2.50',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1,  'admin',    'CHECK_IN',  'bookings',  'Checked in passenger for booking PKR-2026-0013 (Green Line)',        NULL,       NULL,             13, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(1,  'admin',    'CHECK_IN',  'bookings',  'Checked in passengers for booking PKR-2026-0015 (Allama Iqbal)',      NULL,       NULL,             15, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(1,  'admin',    'UPDATE',    'cargo',     'Updated cargo PKR-CGO-2026-0001 status to delivered',                 'in_transit','delivered',      1,  '192.168.1.100',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
 (1,  'admin',    'CREATE',    'discounts', 'Created LAHORE10 city-specific discount',                              NULL,       'LAHORE10',       11, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 4 DAY)),
 (1,  'admin',    'UPDATE',    'trains',    'Updated Subak Raftar available seats count',                           '380',      '370',            15, '192.168.1.100', DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(13, 'employee', 'LOGIN',     'auth',      'Employee Nadia Butt logged in',                                        NULL,       NULL,             13, '192.168.3.75',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(13, 'employee', 'UPDATE',    'cargo',     'Marked cargo PKR-CGO-2026-0009 as in transit',                        'pending',  'in_transit',     9,  '192.168.3.75',  DATE_SUB(NOW(), INTERVAL 12 HOUR)),
-(2,  'employee', 'UPDATE',    'live_train_status', 'Route 3 (Karakoram): departed Lahore on schedule',            'boarding', 'running',         3,  '192.168.1.101', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+(1,  'admin',    'LOGIN',     'auth',      'Admin system login – cargo management',                                NULL,       NULL,             1,  '192.168.1.100',  DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1,  'admin',    'UPDATE',    'cargo',     'Marked cargo PKR-CGO-2026-0009 as in transit',                        'pending',  'in_transit',     9,  '192.168.1.100',  DATE_SUB(NOW(), INTERVAL 12 HOUR)),
+(1,  'admin',    'UPDATE',    'live_train_status', 'Route 3 (Karakoram): departed Lahore on schedule',            'boarding', 'running',         3,  '192.168.1.100', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
 (1,  'admin',    'SYSTEM',    'system',    'Database backup completed successfully',                               NULL,       NULL,              NULL,'192.168.1.100', DATE_SUB(NOW(), INTERVAL 6 HOUR)),
 (1,  'admin',    'CREATE',    'trains',    'Added train maintenance schedule for next month',                     NULL,       'schedule',        NULL,'192.168.1.100', DATE_SUB(NOW(), INTERVAL 30 MINUTE));
 

@@ -35,17 +35,9 @@ class Booking {
         }
     }
 
-    /** Notify all employee users. */
-    private function pushNotifToEmployees(string $message, string $type = 'info', int $related_id = 0): void {
-        $emps = $this->db->select("SELECT user_id FROM users WHERE role = 'employee' AND is_active = 1");
-        foreach ($emps ?: [] as $e) {
-            $this->pushNotif((int)$e['user_id'], $message, $type, $related_id);
-        }
-    }
-
-    /** Notify all staff (admins + employees). */
+    /** Notify all staff (admins). */
     private function pushNotifToStaff(string $message, string $type = 'info', int $related_id = 0): void {
-        $staff = $this->db->select("SELECT user_id FROM users WHERE role IN ('admin','employee') AND is_active = 1");
+        $staff = $this->db->select("SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1");
         foreach ($staff ?: [] as $s) {
             $this->pushNotif((int)$s['user_id'], $message, $type, $related_id);
         }
@@ -163,10 +155,6 @@ class Booking {
         $uname    = $user_row['full_name'] ?? "User #{$user_id}";
         $this->pushNotifToAdmins(
             "New booking #{$booking_ref} by {$uname} · {$dep} → {$arr} · {$jdt} · {$num_seats} seat(s) · Rs {$fare}",
-            'booking', $booking_id
-        );
-        $this->pushNotifToEmployees(
-            "New booking #{$booking_ref} on your route · {$dep} → {$arr} · {$jdt} · {$num_seats} seat(s)",
             'booking', $booking_id
         );
         // ─────────────────────────────────────────────────────────────────
@@ -808,10 +796,6 @@ class Booking {
             "Booking {$bref} cancelled by {$uname} · {$dep} → {$arr} · {$jdt} · Refund: Rs {$rfmt2}",
             'cancel', $booking_id
         );
-        $this->pushNotifToEmployees(
-            "Booking {$bref} cancelled · {$dep} → {$arr} · {$jdt} · {$booking['number_of_seats']} seat(s) freed",
-            'cancel', $booking_id
-        );
         // ─────────────────────────────────────────────────────────────────
 
         return array(
@@ -1272,10 +1256,6 @@ class Booking {
         $uname    = $user_row['full_name'] ?? "User #{$uid}";
         $this->pushNotifToAdmins(
             "Booking {$bref} journey changed by {$uname} → {$ndep} → {$narr} · {$njdt} · Rs {$nfmt}",
-            'update', $booking_id
-        );
-        $this->pushNotifToEmployees(
-            "Booking {$bref} route changed to {$ndep} → {$narr} · {$njdt} · {$num_seats_new} seat(s)",
             'update', $booking_id
         );
         // ─────────────────────────────────────────────────────────────────
